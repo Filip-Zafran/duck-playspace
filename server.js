@@ -127,12 +127,13 @@ app.post('/api/polls', requireAuth, async (req, res) => {
        date1, time1 || null, date2, time2 || null, date3, time3 || null, timerEnd]
     );
 
+    const origin = `${req.protocol}://${req.get('host')}`;
     res.json({
       id: pollId,
       admin_token: adminToken,
-      vote_url: `/poll-vote?token=${pollId}`,
-      admin_url: `/poll?admin=${adminToken}`,
-      results_url: `/poll-results?token=${pollId}`
+      vote_url: `${origin}/poll-vote?token=${pollId}`,
+      admin_url: `${origin}/poll?admin=${adminToken}`,
+      results_url: `${origin}/poll-results?token=${pollId}`
     });
   } catch (error) {
     console.error('Error creating poll:', error);

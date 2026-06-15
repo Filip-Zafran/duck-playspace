@@ -471,7 +471,7 @@
         const data = await response.json();
 
         if (response.ok) {
-          showMessage(`Poll created! Vote URL: ${window.location.origin}${data.vote_url}`, 'success');
+          showMessage(`Poll created! Vote URL: ${data.vote_url}`, 'success');
           document.getElementById('pollForm').reset();
           loadPolls();
           setTimeout(() => switchTab('manage'), 1000);
