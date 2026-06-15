@@ -92,11 +92,17 @@
       background: #f8f9ff;
     }
 
-    .date-option input[type="radio"] {
+    .date-option.selected {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .date-option input[type="checkbox"] {
       margin-right: 12px;
       width: 18px;
       height: 18px;
       cursor: pointer;
+      accent-color: #667eea;
     }
 
     .date-option label {
@@ -241,6 +247,34 @@
     .results-link a:hover {
       text-decoration: underline;
     }
+
+    .backup-message {
+      background: #e8f4ff;
+      border-left: 4px solid #667eea;
+      padding: 12px 15px;
+      border-radius: 5px;
+      margin-top: 10px;
+      display: none;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .backup-message.active {
+      display: block;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
 <body>
@@ -302,10 +336,10 @@
 
         <form id="voteForm">
           <div class="form-group">
-            <label>Select your availability:</label>
+            <label>Select your availability (you can select multiple dates):</label>
 
-            <div class="date-option">
-              <input type="radio" id="date1" name="choice" value="date1" required>
+            <div class="date-option" data-choice="date1">
+              <input type="checkbox" id="date1" name="choice" value="date1">
               <label for="date1">
                 <div class="date-text">
                   <span class="date-value">${formatDate(poll.date1)}</span>
@@ -314,8 +348,8 @@
               </label>
             </div>
 
-            <div class="date-option">
-              <input type="radio" id="date2" name="choice" value="date2" required>
+            <div class="date-option" data-choice="date2">
+              <input type="checkbox" id="date2" name="choice" value="date2">
               <label for="date2">
                 <div class="date-text">
                   <span class="date-value">${formatDate(poll.date2)}</span>
@@ -324,8 +358,8 @@
               </label>
             </div>
 
-            <div class="date-option">
-              <input type="radio" id="date3" name="choice" value="date3" required>
+            <div class="date-option" data-choice="date3">
+              <input type="checkbox" id="date3" name="choice" value="date3">
               <label for="date3">
                 <div class="date-text">
                   <span class="date-value">${formatDate(poll.date3)}</span>
@@ -334,19 +368,22 @@
               </label>
             </div>
 
-            <div class="date-option">
-              <input type="radio" id="none" name="choice" value="none" required>
+            <div class="date-option" data-choice="none">
+              <input type="checkbox" id="none" name="choice" value="none">
               <label for="none">
                 <div class="date-text">
                   <span class="date-value">Can't make any of these dates</span>
                 </div>
               </label>
+              <div class="backup-message" id="backupMessage">
+                👋 No worries, we will invite someone from the backup list
+              </div>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="voterName">Your Name (optional)</label>
-            <input type="text" id="voterName" name="voter_name" placeholder="Enter your name">
+            <label for="voterName">Your Name *</label>
+            <input type="text" id="voterName" name="voter_name" placeholder="Enter your name" required>
           </div>
 
           <div class="button-group">
@@ -360,7 +397,40 @@
 
       document.getElementById('app').innerHTML = html;
 
+      const dateOptions = document.querySelectorAll('.date-option');
+      dateOptions.forEach(option => {
+        option.addEventListener('click', (e) => {
+          if (e.target.tagName === 'INPUT') return;
+
+          const checkbox = option.querySelector('input[type="checkbox"]');
+          checkbox.checked = !checkbox.checked;
+          option.classList.toggle('selected');
+
+          if (checkbox.value === 'none') {
+            toggleBackupMessage(checkbox.checked);
+          }
+        });
+
+        const checkbox = option.querySelector('input[type="checkbox"]');
+        checkbox.addEventListener('change', () => {
+          option.classList.toggle('selected');
+
+          if (checkbox.value === 'none') {
+            toggleBackupMessage(checkbox.checked);
+          }
+        });
+      });
+
       document.getElementById('voteForm').addEventListener('submit', submitVote);
+    }
+
+    function toggleBackupMessage(show) {
+      const backupMessage = document.getElementById('backupMessage');
+      if (show) {
+        backupMessage.classList.add('active');
+      } else {
+        backupMessage.classList.remove('active');
+      }
     }
 
     function formatDate(dateStr) {
@@ -406,14 +476,20 @@
     async function submitVote(e) {
       e.preventDefault();
 
-      const choice = document.querySelector('input[name="choice"]:checked').value;
-      const voterName = document.getElementById('voterName').value || 'Anonymous';
+      const choices = Array.from(document.querySelectorAll('input[name="choice"]:checked')).map(el => el.value);
+
+      if (choices.length === 0) {
+        alert('Please select at least one option');
+        return;
+      }
+
+      const voterName = document.getElementById('voterName').value;
 
       try {
         const response = await fetch(`${API_BASE}/vote/${pollId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ voter_name: voterName, choice })
+          body: JSON.stringify({ voter_name: voterName, choices })
         });
 
         const data = await response.json();
