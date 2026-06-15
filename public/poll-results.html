@@ -250,6 +250,7 @@
     const API_BASE = '/api';
     let pollId = null;
     let timerInterval = null;
+    let currentPoll = null;
 
     async function loadResults() {
       const params = new URLSearchParams(window.location.search);
@@ -266,9 +267,9 @@
           throw new Error('Poll not found');
         }
 
-        const poll = await response.json();
-        renderResults(poll);
-        startTimer(poll.timer_end);
+        currentPoll = await response.json();
+        renderResults(currentPoll);
+        startTimer(currentPoll.timer_end);
 
         // Auto-refresh results every 3 seconds
         setInterval(async () => {
@@ -278,6 +279,15 @@
       } catch (error) {
         document.getElementById('app').innerHTML = `<div class="error">${error.message}</div>`;
       }
+    }
+
+    function dataChanged(oldPoll, newPoll) {
+      if (!oldPoll) return true;
+
+      const countsChanged = JSON.stringify(oldPoll.counts) !== JSON.stringify(newPoll.counts);
+      const previewsChanged = JSON.stringify(oldPoll.previews) !== JSON.stringify(newPoll.previews);
+
+      return countsChanged || previewsChanged;
     }
 
     function renderResults(poll) {
@@ -359,6 +369,10 @@
     }
 
     function updateResults(poll) {
+      if (!dataChanged(currentPoll, poll)) {
+        return;
+      }
+
       const resultsContainer = document.getElementById('resultsContainer');
       if (resultsContainer) {
         const totalVotes = (poll.counts.date1 || 0) + (poll.counts.date2 || 0) + (poll.counts.date3 || 0) + (poll.counts.none || 0);
@@ -369,6 +383,8 @@
       if (votersList && poll.previews) {
         votersList.innerHTML = poll.previews.map((v, idx) => getVoterHtml(v, idx)).join('');
       }
+
+      currentPoll = poll;
     }
 
     function getVoterHtml(voter, idx) {
