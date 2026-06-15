@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(express.static('public'));
 
 app.use(session({
-  secret: 'duck-secret-key',
+  secret: 'duck',
   resave: false,
   saveUninitialized: false,
   cookie: { maxAge: 3600000 }
