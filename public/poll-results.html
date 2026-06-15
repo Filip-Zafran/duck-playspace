@@ -250,7 +250,6 @@
     const API_BASE = '/api';
     let pollId = null;
     let timerInterval = null;
-    let currentPoll = null;
 
     async function loadResults() {
       const params = new URLSearchParams(window.location.search);
@@ -267,27 +266,12 @@
           throw new Error('Poll not found');
         }
 
-        currentPoll = await response.json();
-        renderResults(currentPoll);
-        startTimer(currentPoll.timer_end);
-
-        // Auto-refresh results every 3 seconds
-        setInterval(async () => {
-          const updated = await fetch(`${API_BASE}/vote/${pollId}`).then(r => r.json());
-          updateResults(updated);
-        }, 3000);
+        const poll = await response.json();
+        renderResults(poll);
+        startTimer(poll.timer_end);
       } catch (error) {
         document.getElementById('app').innerHTML = `<div class="error">${error.message}</div>`;
       }
-    }
-
-    function dataChanged(oldPoll, newPoll) {
-      if (!oldPoll) return true;
-
-      const countsChanged = JSON.stringify(oldPoll.counts) !== JSON.stringify(newPoll.counts);
-      const previewsChanged = JSON.stringify(oldPoll.previews) !== JSON.stringify(newPoll.previews);
-
-      return countsChanged || previewsChanged;
     }
 
     function renderResults(poll) {
@@ -333,7 +317,7 @@
         ${votersHtml}
 
         <button onclick="window.location.href='/poll-vote?token=${pollId}'">Vote Now</button>
-        <p class="updating">Results update automatically every 3 seconds</p>
+        <button style="background: #95a5a6; margin-top: 10px;" onclick="location.reload()">Refresh Results</button>
       `;
 
       document.getElementById('app').innerHTML = html;
@@ -366,25 +350,6 @@
           </div>
         `;
       }).join('');
-    }
-
-    function updateResults(poll) {
-      if (!dataChanged(currentPoll, poll)) {
-        return;
-      }
-
-      const resultsContainer = document.getElementById('resultsContainer');
-      if (resultsContainer) {
-        const totalVotes = (poll.counts.date1 || 0) + (poll.counts.date2 || 0) + (poll.counts.date3 || 0) + (poll.counts.none || 0);
-        resultsContainer.innerHTML = renderResultsHtml(poll.counts, totalVotes, poll);
-      }
-
-      const votersList = document.getElementById('votersList');
-      if (votersList && poll.previews) {
-        votersList.innerHTML = poll.previews.map((v, idx) => getVoterHtml(v, idx)).join('');
-      }
-
-      currentPoll = poll;
     }
 
     function getVoterHtml(voter, idx) {
