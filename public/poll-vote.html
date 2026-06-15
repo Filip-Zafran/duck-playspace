@@ -406,22 +406,42 @@
           checkbox.checked = !checkbox.checked;
           option.classList.toggle('selected');
 
-          if (checkbox.value === 'none') {
-            toggleBackupMessage(checkbox.checked);
-          }
+          handleChoiceChange(checkbox);
         });
 
         const checkbox = option.querySelector('input[type="checkbox"]');
         checkbox.addEventListener('change', () => {
           option.classList.toggle('selected');
-
-          if (checkbox.value === 'none') {
-            toggleBackupMessage(checkbox.checked);
-          }
+          handleChoiceChange(checkbox);
         });
       });
 
       document.getElementById('voteForm').addEventListener('submit', submitVote);
+    }
+
+    function handleChoiceChange(changedCheckbox) {
+      const noneCheckbox = document.getElementById('none');
+      const dateCheckboxes = Array.from(document.querySelectorAll('input[value="date1"], input[value="date2"], input[value="date3"]'));
+
+      if (changedCheckbox.value === 'none') {
+        // If "Can't make any" is checked, uncheck all dates
+        if (changedCheckbox.checked) {
+          dateCheckboxes.forEach(cb => {
+            if (cb.checked) {
+              cb.checked = false;
+              cb.closest('.date-option').classList.remove('selected');
+            }
+          });
+        }
+        toggleBackupMessage(changedCheckbox.checked);
+      } else {
+        // If a date is checked, uncheck "Can't make any"
+        if (changedCheckbox.checked && noneCheckbox.checked) {
+          noneCheckbox.checked = false;
+          noneCheckbox.closest('.date-option').classList.remove('selected');
+          toggleBackupMessage(false);
+        }
+      }
     }
 
     function toggleBackupMessage(show) {
