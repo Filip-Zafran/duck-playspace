@@ -286,6 +286,19 @@ body {
   display: inline-block;
 }
 
+@keyframes logoFloat {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.logo-animate {
+  animation: logoFloat 3s ease-in-out infinite;
+}
+
 @media (max-width: 768px) {
   .login-container {
     padding: 1.5rem;
