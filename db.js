@@ -3,15 +3,22 @@ const { Pool } = pkg;
 
 let connectionString = process.env.DATABASE_URL;
 
+console.log('DATABASE_URL env var exists:', !!process.env.DATABASE_URL);
+console.log('DATABASE_URL first 30 chars:', connectionString?.substring(0, 30) || 'not set');
+
 // Convert postgres:// to postgresql:// for modern drivers
 if (connectionString && connectionString.startsWith('postgres://')) {
   connectionString = connectionString.replace('postgres://', 'postgresql://');
+  console.log('Converted postgres:// to postgresql://');
 }
 
 // Fall back to individual DB_* env vars if DATABASE_URL not set
 if (!connectionString) {
+  console.log('Using individual DB_* env vars');
   connectionString = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
 }
+
+console.log('Final connection string format:', connectionString?.substring(0, 30) || 'empty');
 
 const pool = new Pool({
   connectionString,
