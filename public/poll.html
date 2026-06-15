@@ -359,10 +359,17 @@
       padding: 20px;
       border-radius: 8px;
       margin-bottom: 25px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
 
     .modal-detail-item {
-      margin-bottom: 15px;
+      margin-bottom: 0;
+      padding: 15px;
+      background: white;
+      border-radius: 5px;
+      border-left: 4px solid #667eea;
     }
 
     .modal-detail-item:last-child {
@@ -370,17 +377,19 @@
     }
 
     .modal-detail-label {
-      font-size: 12px;
-      color: #666;
+      font-size: 11px;
+      color: #999;
       text-transform: uppercase;
       font-weight: 600;
-      margin-bottom: 5px;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
     }
 
     .modal-detail-value {
       color: #333;
-      font-size: 16px;
-      font-weight: 500;
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.5;
     }
 
     .modal-link-section {
@@ -696,9 +705,6 @@
 
         html += '</tbody></table>';
         pollsList.innerHTML = html;
-
-        // Auto-refresh every 5 seconds
-        setTimeout(loadPolls, 5000);
       } catch (error) {
         pollsList.innerHTML = '<div class="error-message">Failed to load polls</div>';
       }
@@ -751,19 +757,20 @@
       const duration = document.getElementById('duration').value;
 
       const formatDate = (dateStr) => {
-        const [year, month, day] = dateStr.split('-');
-        const date = new Date(year, month - 1, day);
+        if (!dateStr) return 'Not specified';
+        const date = new Date(dateStr + 'T00:00:00');
+        if (isNaN(date.getTime())) return 'Invalid date';
         return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
       };
 
       const eventDetails = `
         <div class="modal-detail-item">
           <div class="modal-detail-label">Event Title</div>
-          <div class="modal-detail-value">${title}</div>
+          <div class="modal-detail-value">${title || 'Not specified'}</div>
         </div>
         <div class="modal-detail-item">
           <div class="modal-detail-label">Duration</div>
-          <div class="modal-detail-value">${duration}</div>
+          <div class="modal-detail-value">${duration || 'Not specified'}</div>
         </div>
         <div class="modal-detail-item">
           <div class="modal-detail-label">Date Options</div>
