@@ -42,9 +42,38 @@ export async function initializeDatabase() {
         date3 VARCHAR(255) NOT NULL,
         time3 VARCHAR(5),
         timer_end TIMESTAMP,
+        about_section TEXT,
+        participation_section TEXT,
+        important_section TEXT,
+        faq_link VARCHAR(500),
+        faq_title VARCHAR(255) DEFAULT 'Read the FAQs',
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // Add missing columns if they don't exist
+    const columnChecks = [
+      { column: 'about_section', type: 'TEXT' },
+      { column: 'participation_section', type: 'TEXT' },
+      { column: 'important_section', type: 'TEXT' },
+      { column: 'faq_link', type: 'VARCHAR(500)' },
+      { column: 'faq_title', type: 'VARCHAR(255)' }
+    ];
+
+    for (const { column, type } of columnChecks) {
+      try {
+        await pool.query(`
+          ALTER TABLE polls ADD COLUMN ${column} ${type}
+          ${column === 'faq_title' ? "DEFAULT 'Read the FAQs'" : ''}
+        `);
+        console.log(`Added column ${column} to polls table`);
+      } catch (err) {
+        // Column likely already exists
+        if (!err.message.includes('already exists')) {
+          console.log(`Column ${column} already exists or other error: ${err.message}`);
+        }
+      }
+    }
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS votes (

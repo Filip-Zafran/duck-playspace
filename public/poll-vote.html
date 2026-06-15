@@ -275,6 +275,75 @@
         transform: translateY(0);
       }
     }
+
+    .info-sections {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .info-bubble {
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+
+    .info-bubble h3 {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .info-bubble p {
+      margin: 0;
+      line-height: 1.6;
+      font-size: 14px;
+    }
+
+    .info-bubble a {
+      color: inherit;
+      font-weight: 600;
+      transition: opacity 0.2s;
+    }
+
+    .info-bubble a:hover {
+      opacity: 0.8;
+    }
+
+    .info-bubble.about {
+      background: #e3f2fd;
+      border-left-color: #2196f3;
+      color: #1565c0;
+    }
+
+    .info-bubble.participation {
+      background: #e8f5e9;
+      border-left-color: #4caf50;
+      color: #2e7d32;
+    }
+
+    .info-bubble.participation a {
+      color: #1565c0;
+      text-decoration: none;
+    }
+
+    .info-bubble.important {
+      background: #fff3e0;
+      border-left-color: #ff9800;
+      color: #e65100;
+    }
+
+    .info-bubble.faq {
+      background: #f3e5f5;
+      border-left-color: #9c27b0;
+      color: #6a1b9a;
+    }
+
+    .info-bubble.faq a {
+      color: #6a1b9a;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -311,6 +380,52 @@
       }
     }
 
+    function buildInfoBubbles(poll) {
+      const bubbles = [];
+
+      if (poll.about_section) {
+        bubbles.push(`
+          <div class="info-bubble about">
+            <h3>What this group is about</h3>
+            <p>${poll.about_section}</p>
+          </div>
+        `);
+      }
+
+      if (poll.participation_section) {
+        bubbles.push(`
+          <div class="info-bubble participation">
+            <h3>Confirm your participation</h3>
+            <p>${poll.participation_section}</p>
+          </div>
+        `);
+      }
+
+      if (poll.important_section) {
+        bubbles.push(`
+          <div class="info-bubble important">
+            <h3>Important</h3>
+            <p>${poll.important_section}</p>
+          </div>
+        `);
+      }
+
+      if (poll.faq_link) {
+        bubbles.push(`
+          <div class="info-bubble faq">
+            <h3>Questions?</h3>
+            <p>You can check our FAQs here: <br><a href="${poll.faq_link}" target="_blank">${poll.faq_title}</a></p>
+          </div>
+        `);
+      }
+
+      if (bubbles.length === 0) {
+        return '';
+      }
+
+      return `<div class="info-sections">${bubbles.join('')}</div>`;
+    }
+
     function renderPoll(poll) {
       const timerHtml = poll.timer_end ? `
         <div class="timer" id="timerDisplay">
@@ -327,12 +442,16 @@
         </div>
       ` : '';
 
+      const infoBubblesHtml = buildInfoBubbles(poll);
+
       const html = `
         <h1>${poll.title}</h1>
         <p class="description">${poll.description}</p>
         <p class="duration">Duration: ${poll.duration}</p>
         <p class="duration">Expected Attendees: ${poll.expected}</p>
         ${timerHtml}
+
+        ${infoBubblesHtml}
 
         <form id="voteForm">
           <div class="form-group">
