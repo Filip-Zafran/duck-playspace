@@ -197,6 +197,36 @@ body {
   box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
 }
 
+.navbar {
+  background: white;
+  border-bottom: 2px solid #000;
+  padding: 0 2rem;
+  display: flex;
+  gap: 2rem;
+  position: relative;
+  z-index: 10;
+}
+
+.nav-link {
+  padding: 1rem 0;
+  color: #000;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 1rem;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s;
+  display: inline-block;
+}
+
+.nav-link:hover {
+  color: #ff5b92;
+}
+
+.nav-link.active {
+  color: #ff5b92;
+  border-bottom-color: #ff5b92;
+}
+
 .content {
   padding: 3rem 2rem;
   color: #000;

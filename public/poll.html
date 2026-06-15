@@ -263,10 +263,71 @@
     .tab-content.active {
       display: block;
     }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      background: white;
+      min-height: 100vh;
+    }
+
+    .page-wrapper {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .navbar-wrapper {
+      background: white;
+      border-bottom: 2px solid #000;
+      padding: 0 2rem;
+      display: flex;
+      gap: 2rem;
+      position: relative;
+      z-index: 10;
+    }
+
+    .navbar-wrapper .nav-link {
+      padding: 1rem 0;
+      color: #000;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+      display: inline-block;
+    }
+
+    .navbar-wrapper .nav-link:hover {
+      color: #ff5b92;
+    }
+
+    .navbar-wrapper .nav-link.active {
+      color: #ff5b92;
+      border-bottom-color: #ff5b92;
+    }
+
+    .content-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      flex: 1;
+    }
+
+    .container {
+      align-self: center;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="navbar-wrapper">
+    <a href="/home" class="nav-link">Home</a>
+    <a href="/poll" class="nav-link active">Polls</a>
+  </div>
+
+  <div class="content-wrapper">
+    <div class="container">
     <div class="header">
       <h1>Poll Admin Dashboard</h1>
       <div class="button-group">
@@ -513,5 +574,7 @@
       }
     }
   </script>
+    </div>
+  </div>
 </body>
 </html>
