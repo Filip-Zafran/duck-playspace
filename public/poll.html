@@ -318,9 +318,179 @@
     .container {
       align-self: center;
     }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    .modal-event-details {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+
+    .modal-detail-item {
+      margin-bottom: 15px;
+    }
+
+    .modal-detail-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-detail-label {
+      font-size: 12px;
+      color: #666;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .modal-detail-value {
+      color: #333;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .modal-link-section {
+      background: #e8f4ff;
+      border: 2px solid #667eea;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+    }
+
+    .modal-link-section h3 {
+      color: #333;
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .modal-link-display {
+      background: white;
+      padding: 12px;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      word-break: break-all;
+      font-family: monospace;
+      font-size: 13px;
+      color: #667eea;
+      line-height: 1.4;
+    }
+
+    .modal-link-note {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 15px;
+    }
+
+    .modal-copy-btn {
+      width: 100%;
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .modal-copy-btn:hover {
+      background: #764ba2;
+    }
+
+    .modal-copy-btn.copied {
+      background: #2ecc71;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-actions button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: background 0.3s;
+    }
+
+    .modal-actions .btn-manage {
+      background: #667eea;
+      color: white;
+    }
+
+    .modal-actions .btn-manage:hover {
+      background: #764ba2;
+    }
+
+    .modal-actions .btn-close {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .modal-actions .btn-close:hover {
+      background: #7f8c8d;
+    }
   </style>
 </head>
 <body>
+  <div class="modal-overlay hidden" id="successModal">
+    <div class="modal">
+      <h2>Poll Created! 🎉</h2>
+      <div class="modal-event-details" id="modalEventDetails"></div>
+      <div class="modal-link-section">
+        <h3>Public Voting Link</h3>
+        <p class="modal-link-note">Share this link with others to collect votes. No password required.</p>
+        <div class="modal-link-display" id="votingLinkDisplay"></div>
+        <button class="modal-copy-btn" id="copyLinkBtn" onclick="copyVotingLink()">Copy Link</button>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-manage" onclick="goToManagePolls()">Manage Polls</button>
+        <button class="btn-close" onclick="closeModal()">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="navbar-wrapper">
     <a href="/home" class="nav-link">Home</a>
     <a href="/poll" class="nav-link active">Polls</a>
@@ -471,10 +641,8 @@
         const data = await response.json();
 
         if (response.ok) {
-          showMessage(`Poll created! Vote URL: ${data.vote_url}`, 'success');
           document.getElementById('pollForm').reset();
-          loadPolls();
-          setTimeout(() => switchTab('manage'), 1000);
+          showSuccessModal(data);
         } else {
           showMessage(data.error || 'Failed to create poll', 'error');
         }
@@ -573,6 +741,66 @@
         errorMsg.style.display = 'block';
         setTimeout(() => errorMsg.style.display = 'none', 5000);
       }
+    }
+
+    function showSuccessModal(pollData) {
+      const date1 = new Date(document.getElementById('date1').value);
+      const date2 = new Date(document.getElementById('date2').value);
+      const date3 = new Date(document.getElementById('date3').value);
+      const title = document.getElementById('title').value;
+      const duration = document.getElementById('duration').value;
+
+      const formatDate = (dateStr) => {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      };
+
+      const eventDetails = `
+        <div class="modal-detail-item">
+          <div class="modal-detail-label">Event Title</div>
+          <div class="modal-detail-value">${title}</div>
+        </div>
+        <div class="modal-detail-item">
+          <div class="modal-detail-label">Duration</div>
+          <div class="modal-detail-value">${duration}</div>
+        </div>
+        <div class="modal-detail-item">
+          <div class="modal-detail-label">Date Options</div>
+          <div class="modal-detail-value">
+            ${formatDate(date1)}<br>
+            ${formatDate(date2)}<br>
+            ${formatDate(date3)}
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modalEventDetails').innerHTML = eventDetails;
+      document.getElementById('votingLinkDisplay').textContent = pollData.vote_url;
+      document.getElementById('successModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('successModal').classList.add('hidden');
+    }
+
+    function copyVotingLink() {
+      const link = document.getElementById('votingLinkDisplay').textContent;
+      navigator.clipboard.writeText(link).then(() => {
+        const btn = document.getElementById('copyLinkBtn');
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = originalText;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    function goToManagePolls() {
+      loadPolls();
+      switchTab('manage');
+      closeModal();
     }
   </script>
     </div>
