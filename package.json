@@ -1,0 +1,17 @@
+{
+  "name": "duck-playspace",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Duck playspace with authentication",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "express-session": "^1.18.0"
+  }
+}
