@@ -501,6 +501,7 @@
         polls.forEach(poll => {
           const createdDate = new Date(poll.created_at).toLocaleDateString();
           const totalVotes = (poll.counts.date1 || 0) + (poll.counts.date2 || 0) + (poll.counts.date3 || 0) + (poll.counts.none || 0);
+          const adminUrl = `${window.location.origin}/poll?admin=${poll.admin_token}`;
 
           html += `
             <tr>
@@ -510,8 +511,8 @@
               <td>${poll.expected}</td>
               <td>
                 <div class="token-display">
-                  ${poll.admin_token.substring(0, 8)}...
-                  <button class="copy-btn" onclick="copyToken('${poll.admin_token}')">Copy</button>
+                  ${adminUrl}
+                  <button class="copy-btn" onclick="copyToken('${adminUrl}')">Copy</button>
                 </div>
               </td>
               <td>
