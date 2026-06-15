@@ -283,10 +283,15 @@ app.get('/api/vote/:pollId', async (req, res) => {
 app.post('/api/vote/:pollId', async (req, res) => {
   try {
     const { pollId } = req.params;
-    const { voter_name, choice } = req.body;
+    const { voter_name, choices } = req.body;
 
-    if (!['date1', 'date2', 'date3', 'none'].includes(choice)) {
-      return res.status(400).json({ error: 'Invalid choice' });
+    if (!Array.isArray(choices) || choices.length === 0) {
+      return res.status(400).json({ error: 'At least one choice is required' });
+    }
+
+    const validChoices = ['date1', 'date2', 'date3', 'none'];
+    if (!choices.every(choice => validChoices.includes(choice))) {
+      return res.status(400).json({ error: 'Invalid choice(s)' });
     }
 
     const pool = getPool();
@@ -300,10 +305,12 @@ app.post('/api/vote/:pollId', async (req, res) => {
       return res.status(400).json({ error: 'Voting has ended' });
     }
 
-    await pool.query(
-      'INSERT INTO votes (poll_id, voter_name, choice) VALUES ($1, $2, $3)',
-      [pollId, voter_name || 'Anonymous', choice]
-    );
+    for (const choice of choices) {
+      await pool.query(
+        'INSERT INTO votes (poll_id, voter_name, choice) VALUES ($1, $2, $3)',
+        [pollId, voter_name || 'Anonymous', choice]
+      );
+    }
 
     res.json({ message: 'Vote recorded' });
   } catch (error) {

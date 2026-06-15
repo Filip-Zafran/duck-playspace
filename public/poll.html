@@ -673,12 +673,12 @@
           return;
         }
 
-        let html = '<table class="polls-table"><thead><tr><th>Title</th><th>Created</th><th>Votes</th><th>Expected</th><th>Admin Token</th><th>Actions</th></tr></thead><tbody>';
+        let html = '<table class="polls-table"><thead><tr><th>Title</th><th>Created</th><th>Votes</th><th>Expected</th><th>Public Voting Link</th><th>Actions</th></tr></thead><tbody>';
 
         polls.forEach(poll => {
           const createdDate = new Date(poll.created_at).toLocaleDateString();
           const totalVotes = (poll.counts.date1 || 0) + (poll.counts.date2 || 0) + (poll.counts.date3 || 0) + (poll.counts.none || 0);
-          const adminUrl = `${window.location.origin}/poll?admin=${poll.admin_token}`;
+          const votingUrl = `${window.location.origin}/poll-vote?token=${poll.id}`;
 
           html += `
             <tr>
@@ -688,8 +688,8 @@
               <td>${poll.expected}</td>
               <td>
                 <div class="token-display">
-                  ${adminUrl}
-                  <button class="copy-btn" onclick="copyToken('${adminUrl}')">Copy</button>
+                  ${votingUrl}
+                  <button class="copy-btn" onclick="copyToken('${votingUrl}')">Copy</button>
                 </div>
               </td>
               <td>
