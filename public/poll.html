@@ -744,14 +744,15 @@
     }
 
     function showSuccessModal(pollData) {
-      const date1 = new Date(document.getElementById('date1').value);
-      const date2 = new Date(document.getElementById('date2').value);
-      const date3 = new Date(document.getElementById('date3').value);
+      const date1Str = document.getElementById('date1').value;
+      const date2Str = document.getElementById('date2').value;
+      const date3Str = document.getElementById('date3').value;
       const title = document.getElementById('title').value;
       const duration = document.getElementById('duration').value;
 
       const formatDate = (dateStr) => {
-        const date = new Date(dateStr);
+        const [year, month, day] = dateStr.split('-');
+        const date = new Date(year, month - 1, day);
         return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
       };
 
@@ -767,9 +768,9 @@
         <div class="modal-detail-item">
           <div class="modal-detail-label">Date Options</div>
           <div class="modal-detail-value">
-            ${formatDate(date1)}<br>
-            ${formatDate(date2)}<br>
-            ${formatDate(date3)}
+            ${formatDate(date1Str)}<br>
+            ${formatDate(date2Str)}<br>
+            ${formatDate(date3Str)}
           </div>
         </div>
       `;
