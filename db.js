@@ -1,9 +1,20 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
+let connectionString = process.env.DATABASE_URL;
+
+// Convert postgres:// to postgresql:// for modern drivers
+if (connectionString && connectionString.startsWith('postgres://')) {
+  connectionString = connectionString.replace('postgres://', 'postgresql://');
+}
+
+// Fall back to individual DB_* env vars if DATABASE_URL not set
+if (!connectionString) {
+  connectionString = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+}
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL ||
-    `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`,
+  connectionString,
   ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
