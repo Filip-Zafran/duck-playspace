@@ -621,7 +621,32 @@
 
           <div class="form-group">
             <label for="faq_link">FAQ Link</label>
-            <input type="url" id="faq_link" name="faq_link" placeholder="https://example.com/faqs">
+            <input type="url" id="faq_link" name="faq_link" value="https://www.duckdatingapps.com/faq.html" placeholder="https://example.com/faqs">
+          </div>
+
+          <h3>Location Options</h3>
+          <p style="color: #666; font-size: 14px; margin-bottom: 15px;">Note: location will be shared once a date is confirmed</p>
+
+          <div class="date-group">
+            <label>Bezirk 1</label>
+            <input type="text" name="location1" placeholder="Enter Bezirk name">
+          </div>
+
+          <div class="date-group">
+            <label>Bezirk 2</label>
+            <input type="text" name="location2" placeholder="Enter Bezirk name">
+          </div>
+
+          <div class="date-group">
+            <label>Bezirk 3</label>
+            <input type="text" name="location3" placeholder="Enter Bezirk name">
+          </div>
+
+          <h3>Payment Information</h3>
+          <div class="form-group">
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #667eea;">
+              <p style="margin: 0; color: #333; line-height: 1.6;">Please send Payment to before the timer elapses.<br><strong>paypal.me/fichozee</strong></p>
+            </div>
           </div>
 
           <button type="submit" style="margin-top: 20px;">Create Poll</button>
@@ -669,7 +694,10 @@
         participation_section: document.getElementById('participation_section').value || null,
         important_section: document.getElementById('important_section').value || null,
         faq_title: document.getElementById('faq_title').value || 'Read the FAQs',
-        faq_link: document.getElementById('faq_link').value || null
+        faq_link: document.getElementById('faq_link').value || null,
+        location1: document.querySelector('input[name="location1"]').value || null,
+        location2: document.querySelector('input[name="location2"]').value || null,
+        location3: document.querySelector('input[name="location3"]').value || null
       };
 
       try {

@@ -59,7 +59,10 @@ export async function initializeDatabase() {
       { column: 'participation_section', type: 'TEXT' },
       { column: 'important_section', type: 'TEXT' },
       { column: 'faq_link', type: 'VARCHAR(500)' },
-      { column: 'faq_title', type: 'VARCHAR(255)' }
+      { column: 'faq_title', type: 'VARCHAR(255)' },
+      { column: 'location1', type: 'VARCHAR(255)' },
+      { column: 'location2', type: 'VARCHAR(255)' },
+      { column: 'location3', type: 'VARCHAR(255)' }
     ];
 
     for (const { column, type } of columnChecks) {
@@ -83,9 +86,20 @@ export async function initializeDatabase() {
         poll_id VARCHAR(36) REFERENCES polls(id) ON DELETE CASCADE,
         voter_name VARCHAR(255),
         choice VARCHAR(50),
+        location_choice VARCHAR(255),
         submitted_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // Add location_choice column if it doesn't exist
+    try {
+      await pool.query(`ALTER TABLE votes ADD COLUMN location_choice VARCHAR(255)`);
+      console.log('Added location_choice column to votes table');
+    } catch (err) {
+      if (!err.message.includes('already exists')) {
+        console.log(`location_choice column already exists or other error: ${err.message}`);
+      }
+    }
 
     console.log('Database tables initialized successfully');
   } catch (error) {

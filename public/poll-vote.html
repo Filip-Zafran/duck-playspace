@@ -505,6 +505,39 @@
             </div>
           </div>
 
+          <div class="form-group" id="locationGroup" style="display: none;">
+            <label>Select your preferred location:</label>
+
+            <div class="date-option" data-choice="location1" id="location1Option" style="display: none;">
+              <input type="checkbox" id="location1" name="location_choice" value="location1">
+              <label for="location1">
+                <div class="date-text">
+                  <span class="date-value" id="location1Text"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="date-option" data-choice="location2" id="location2Option" style="display: none;">
+              <input type="checkbox" id="location2" name="location_choice" value="location2">
+              <label for="location2">
+                <div class="date-text">
+                  <span class="date-value" id="location2Text"></span>
+                </div>
+              </label>
+            </div>
+
+            <div class="date-option" data-choice="location3" id="location3Option" style="display: none;">
+              <input type="checkbox" id="location3" name="location_choice" value="location3">
+              <label for="location3">
+                <div class="date-text">
+                  <span class="date-value" id="location3Text"></span>
+                </div>
+              </label>
+            </div>
+
+            <p style="color: #999; font-size: 13px; margin-top: 10px; font-style: italic;">Note: location will be shared once a date is confirmed</p>
+          </div>
+
           <div class="form-group">
             <label for="voterName">Your Name *</label>
             <input type="text" id="voterName" name="voter_name" placeholder="Enter your name" required>
@@ -520,6 +553,23 @@
       `;
 
       document.getElementById('app').innerHTML = html;
+
+      // Populate location options
+      if (poll.location1 || poll.location2 || poll.location3) {
+        document.getElementById('locationGroup').style.display = 'block';
+        if (poll.location1) {
+          document.getElementById('location1Text').textContent = poll.location1;
+          document.getElementById('location1Option').style.display = 'block';
+        }
+        if (poll.location2) {
+          document.getElementById('location2Text').textContent = poll.location2;
+          document.getElementById('location2Option').style.display = 'block';
+        }
+        if (poll.location3) {
+          document.getElementById('location3Text').textContent = poll.location3;
+          document.getElementById('location3Option').style.display = 'block';
+        }
+      }
 
       const dateOptions = document.querySelectorAll('.date-option');
       dateOptions.forEach(option => {
@@ -628,12 +678,13 @@
       }
 
       const voterName = document.getElementById('voterName').value;
+      const locationChoice = document.querySelector('input[name="location_choice"]:checked')?.value || null;
 
       try {
         const response = await fetch(`${API_BASE}/vote/${pollId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ voter_name: voterName, choices })
+          body: JSON.stringify({ voter_name: voterName, choices, location_choice: locationChoice })
         });
 
         const data = await response.json();

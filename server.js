@@ -104,7 +104,7 @@ app.get('/poll-results', (req, res) => {
 
 app.post('/api/polls', requireAuth, async (req, res) => {
   try {
-    const { title, description, duration, expected, date1, date2, date3, time1, time2, time3, timer_minutes, about_section, participation_section, important_section, faq_link, faq_title } = req.body;
+    const { title, description, duration, expected, date1, date2, date3, time1, time2, time3, timer_minutes, about_section, participation_section, important_section, faq_link, faq_title, location1, location2, location3 } = req.body;
 
     // Validate dates
     if (new Date(date1) >= new Date(date2) || new Date(date2) >= new Date(date3)) {
@@ -121,10 +121,10 @@ app.post('/api/polls', requireAuth, async (req, res) => {
 
     const pool = getPool();
     await pool.query(
-      `INSERT INTO polls (id, admin_token, title, description, duration, expected, date1, time1, date2, time2, date3, time3, timer_end, about_section, participation_section, important_section, faq_link, faq_title)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)`,
+      `INSERT INTO polls (id, admin_token, title, description, duration, expected, date1, time1, date2, time2, date3, time3, timer_end, about_section, participation_section, important_section, faq_link, faq_title, location1, location2, location3)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
       [pollId, adminToken, title, description || 'Join us for an exciting event...', duration, expected || 8,
-       date1, time1 || null, date2, time2 || null, date3, time3 || null, timerEnd, about_section || null, participation_section || null, important_section || null, faq_link || null, faq_title || 'Read the FAQs']
+       date1, time1 || null, date2, time2 || null, date3, time3 || null, timerEnd, about_section || null, participation_section || null, important_section || null, faq_link || null, faq_title || 'Read the FAQs', location1 || null, location2 || null, location3 || null]
     );
 
     const origin = `${req.protocol}://${req.get('host')}`;
@@ -276,6 +276,9 @@ app.get('/api/vote/:pollId', async (req, res) => {
       important_section: poll.important_section,
       faq_link: poll.faq_link,
       faq_title: poll.faq_title,
+      location1: poll.location1,
+      location2: poll.location2,
+      location3: poll.location3,
       counts,
       previews
     });
@@ -288,7 +291,7 @@ app.get('/api/vote/:pollId', async (req, res) => {
 app.post('/api/vote/:pollId', async (req, res) => {
   try {
     const { pollId } = req.params;
-    const { voter_name, choices } = req.body;
+    const { voter_name, choices, location_choice } = req.body;
 
     if (!Array.isArray(choices) || choices.length === 0) {
       return res.status(400).json({ error: 'At least one choice is required' });
@@ -312,8 +315,8 @@ app.post('/api/vote/:pollId', async (req, res) => {
 
     for (const choice of choices) {
       await pool.query(
-        'INSERT INTO votes (poll_id, voter_name, choice) VALUES ($1, $2, $3)',
-        [pollId, voter_name || 'Anonymous', choice]
+        'INSERT INTO votes (poll_id, voter_name, choice, location_choice) VALUES ($1, $2, $3, $4)',
+        [pollId, voter_name || 'Anonymous', choice, location_choice || null]
       );
     }
 
