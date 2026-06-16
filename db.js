@@ -22,7 +22,9 @@ console.log('Final connection string format:', connectionString?.substring(0, 30
 
 const pool = new Pool({
   connectionString,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  connectionTimeoutMillis: 5000,
+  idleTimeoutMillis: 30000
 });
 
 export async function initializeDatabase() {
