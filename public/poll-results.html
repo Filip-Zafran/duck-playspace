@@ -224,6 +224,27 @@
       margin-top: 10px;
     }
 
+    .backup-disclaimer {
+      background: #fff3cd;
+      border: 2px solid #ffc107;
+      padding: 18px;
+      border-radius: 8px;
+      margin-bottom: 25px;
+      color: #856404;
+      font-weight: 600;
+      font-size: 15px;
+      line-height: 1.6;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .backup-disclaimer::before {
+      content: "⚠️";
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
     @media (max-width: 600px) {
       .container {
         padding: 25px;
@@ -292,12 +313,20 @@
         </div>
       ` : '';
 
+      const disclaimerHtml = poll.counts.none > 0 ? `
+        <div class="backup-disclaimer">
+          We see that some participants can't join, we are now contacting others from our backup list - please have some patience.
+        </div>
+      ` : '';
+
       const html = `
         <h1>${poll.title}</h1>
         <p class="description">${poll.description}</p>
         <p class="duration">Duration: ${poll.duration}</p>
         <p class="duration">Expected Attendees: ${poll.expected}</p>
         ${timerHtml}
+
+        ${disclaimerHtml}
 
         <div class="summary">
           <div class="summary-stat">
