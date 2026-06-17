@@ -211,6 +211,29 @@ app.get('/api/polls/:id', async (req, res) => {
   }
 });
 
+app.get('/api/polls/:id/votes', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = getPool();
+
+    const pollResult = await pool.query('SELECT * FROM polls WHERE id = $1', [id]);
+    if (pollResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Poll not found' });
+    }
+
+    const votesResult = await pool.query(
+      `SELECT voter_name, choice, location_choice, submitted_at FROM votes WHERE poll_id = $1
+       ORDER BY submitted_at DESC`,
+      [id]
+    );
+
+    res.json({ votes: votesResult.rows });
+  } catch (error) {
+    console.error('Error fetching poll votes:', error);
+    res.status(500).json({ error: 'Failed to fetch votes' });
+  }
+});
+
 app.delete('/api/polls/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;

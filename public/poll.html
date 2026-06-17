@@ -480,6 +480,50 @@
     .modal-actions .btn-close:hover {
       background: #7f8c8d;
     }
+
+    .votes-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      background: white;
+    }
+
+    .votes-table th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .votes-table td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .votes-table tr:hover {
+      background: #f8f9fa;
+    }
+
+    .vote-choice {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-right: 4px;
+      margin-bottom: 4px;
+    }
+
+    .vote-choice.date1 { background: #d1ecf1; color: #0c5460; }
+    .vote-choice.date2 { background: #d4edda; color: #155724; }
+    .vote-choice.date3 { background: #f8d7da; color: #721c24; }
+    .vote-choice.none { background: #e2e3e5; color: #383d41; }
+
+    .votes-modal {
+      max-height: 80vh;
+      overflow-y: auto;
+    }
   </style>
 </head>
 <body>
@@ -645,7 +689,7 @@
           <h3>Payment Information</h3>
           <div class="form-group">
             <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; border-left: 4px solid #667eea;">
-              <p style="margin: 0; color: #333; line-height: 1.6;">Please send Payment to before the timer elapses.<br><strong>paypal.me/fichozee</strong></p>
+              <p style="margin: 0; color: #333; line-height: 1.6;">Please send Payment (5 EU) to <strong>paypal.me/fichozee</strong>< before the timer elapses.<br>/p>
             </div>
           </div>
 
@@ -754,6 +798,7 @@
               </td>
               <td>
                 <div class="poll-actions">
+                  <button onclick="showDetailedVotes('${poll.id}')">View Votes</button>
                   <button onclick="window.open('/poll-vote?token=${poll.id}', '_blank')">Vote</button>
                   <button onclick="window.open('/poll-results?token=${poll.id}', '_blank')">Results</button>
                   <button class="danger" onclick="deletePoll('${poll.id}')">Delete</button>
@@ -791,6 +836,65 @@
         }
       } catch (error) {
         showMessage('Error deleting poll: ' + error.message, 'error');
+      }
+    }
+
+    async function showDetailedVotes(pollId) {
+      try {
+        const response = await fetch(`${API_BASE}/polls/${pollId}/votes`);
+        if (!response.ok) {
+          throw new Error('Failed to load votes');
+        }
+
+        const data = await response.json();
+        const votes = data.votes;
+
+        let votesHtml = `
+          <h2>Detailed Votes</h2>
+          <table class="votes-table">
+            <thead>
+              <tr>
+                <th>Voter Name</th>
+                <th>Date Choices</th>
+                <th>Location Choice</th>
+                <th>Submitted</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        votes.forEach(vote => {
+          const submittedDate = new Date(vote.submitted_at).toLocaleString();
+          const choiceLabel = {
+            'date1': 'Option 1',
+            'date2': 'Option 2',
+            'date3': 'Option 3',
+            'none': "Can't make it"
+          };
+
+          votesHtml += `
+            <tr>
+              <td>${vote.voter_name || 'Anonymous'}</td>
+              <td><span class="vote-choice ${vote.choice}">${choiceLabel[vote.choice] || vote.choice}</span></td>
+              <td>${vote.location_choice || '—'}</td>
+              <td>${submittedDate}</td>
+            </tr>
+          `;
+        });
+
+        votesHtml += `
+            </tbody>
+          </table>
+        `;
+
+        document.getElementById('modalEventDetails').innerHTML = '';
+        document.querySelector('.modal-link-section').style.display = 'none';
+        document.querySelector('.modal-actions').innerHTML = '<button class="btn-close" onclick="closeModal()">Close</button>';
+        document.querySelector('.modal h2').textContent = 'Detailed Votes';
+        document.querySelector('.modal').innerHTML = votesHtml + '<div style="margin-top: 20px;"><button class="btn-close" onclick="closeModal()" style="width: auto; background: #95a5a6;">Close</button></div>';
+        document.getElementById('successModal').classList.remove('hidden');
+      } catch (error) {
+        showMessage('Error loading votes: ' + error.message, 'error');
       }
     }
 
