@@ -445,6 +445,55 @@
       font-weight: 600;
       font-size: 14px;
     }
+
+    .collapsible-section.participation .collapsible-header {
+      background: #dc3545;
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 20px;
+    }
+
+    .collapsible-section.participation .collapsible-header:hover {
+      background: #c82333;
+    }
+
+    .collapsible-section.participation .collapsible-content {
+      background: #ffebee;
+      font-size: 16px;
+      line-height: 1.8;
+      padding: 25px;
+    }
+
+    .collapsible-section.participation .collapsible-content p {
+      margin: 0 0 15px 0;
+      color: #333;
+    }
+
+    .collapsible-section.participation .collapsible-content a {
+      color: #dc3545;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    .collapsible-section.participation .collapsible-content a:hover {
+      text-decoration: none;
+    }
+
+    .faq-link {
+      display: inline-block;
+      color: #6a1b9a;
+      text-decoration: underline;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .faq-link:hover {
+      background: rgba(156, 39, 176, 0.1);
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
@@ -481,9 +530,9 @@
       }
     }
 
-    function buildCollapsibleSection(title, content, sectionId) {
+    function buildCollapsibleSection(title, content, sectionId, customClass = '') {
       return `
-        <div class="collapsible-section">
+        <div class="collapsible-section ${customClass}">
           <div class="collapsible-header collapsed" onclick="toggleCollapsible('${sectionId}')">
             <span>${title}</span>
           </div>
@@ -523,14 +572,16 @@
       if (poll.participation_section) {
         collapsibleHtml += buildCollapsibleSection(
           '5. Confirm your participation',
-          `<p>${poll.participation_section}</p>`,
-          'participation-section'
+          `<p>${poll.participation_section}</p>
+           <p style="margin-top: 20px; font-size: 18px; font-weight: 600;">Please send Payment to before the timer elapses.<br><strong>paypal.me/fichozee</strong></p>`,
+          'participation-section',
+          'participation'
         );
       }
 
       if (poll.about_section) {
         collapsibleHtml += buildCollapsibleSection(
-          '6. What is this group is about?',
+          '6. Group dynamic',
           `<p>${poll.about_section}</p>`,
           'about-section'
         );
@@ -547,7 +598,7 @@
       if (poll.faq_link) {
         collapsibleHtml += buildCollapsibleSection(
           '8. FAQ',
-          `<p>You can check our FAQs here: <br><a href="${poll.faq_link}" target="_blank">${poll.faq_title}</a></p>`,
+          `<p>You can check our FAQs here: <br><a class="faq-link" href="${poll.faq_link}" target="_blank">${poll.faq_title}</a></p>`,
           'faq-section'
         );
       }
