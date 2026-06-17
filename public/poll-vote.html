@@ -446,38 +446,55 @@
       font-size: 14px;
     }
 
-    .collapsible-section.participation .collapsible-header {
-      background: #dc3545;
-      color: white;
-      font-size: 18px;
-      font-weight: 700;
+    .payment-section {
+      background: #f8f9fa;
       padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
     }
 
-    .collapsible-section.participation .collapsible-header:hover {
-      background: #c82333;
-    }
-
-    .collapsible-section.participation .collapsible-content {
-      background: #ffebee;
-      font-size: 16px;
-      line-height: 1.8;
-      padding: 25px;
-    }
-
-    .collapsible-section.participation .collapsible-content p {
-      margin: 0 0 15px 0;
+    .payment-text {
+      font-size: 14px;
       color: #333;
+      line-height: 1.6;
+      margin-bottom: 10px;
     }
 
-    .collapsible-section.participation .collapsible-content a {
-      color: #dc3545;
+    .payment-text a {
+      color: #667eea;
       font-weight: 600;
       text-decoration: underline;
     }
 
-    .collapsible-section.participation .collapsible-content a:hover {
+    .payment-text a:hover {
       text-decoration: none;
+    }
+
+    .payment-subtext {
+      font-size: 12px;
+      color: #666;
+      font-style: italic;
+      margin-top: 8px;
+    }
+
+    .participation-header {
+      font-size: 18px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .collapsible-section.group-dynamic .collapsible-header {
+      background: #e3f2fd;
+      color: #1565c0;
+      font-weight: 600;
+      border-left: 4px solid #2196f3;
+    }
+
+    .collapsible-section.group-dynamic .collapsible-header:hover {
+      background: #bbdefb;
     }
 
     .faq-link {
@@ -569,29 +586,12 @@
       // Build collapsible sections
       let collapsibleHtml = '';
 
-      if (poll.participation_section) {
-        collapsibleHtml += buildCollapsibleSection(
-          '5. Confirm your participation',
-          `<p>${poll.participation_section}</p>
-           <p style="margin-top: 20px; font-size: 18px; font-weight: 600;">Please send Payment to before the timer elapses.<br><strong>paypal.me/fichozee</strong></p>`,
-          'participation-section',
-          'participation'
-        );
-      }
-
       if (poll.about_section) {
         collapsibleHtml += buildCollapsibleSection(
-          '6. Group dynamic',
+          '7. Group dynamic',
           `<p>${poll.about_section}</p>`,
-          'about-section'
-        );
-      }
-
-      if (poll.important_section) {
-        collapsibleHtml += buildCollapsibleSection(
-          '7. Important',
-          `<p>${poll.important_section}</p>`,
-          'important-section'
+          'about-section',
+          'group-dynamic'
         );
       }
 
@@ -602,6 +602,30 @@
           'faq-section'
         );
       }
+
+      // Build participation section as static text (not collapsible)
+      let participationHtml = '';
+      if (poll.participation_section) {
+        participationHtml = `
+          <div class="payment-section">
+            <div class="participation-header">5. Confirm your participation</div>
+            <p style="color: #333; margin-bottom: 15px;">${poll.participation_section}</p>
+          </div>
+        `;
+      }
+
+      // Build payment section as static text
+      const paymentHtml = `
+        <div class="payment-section">
+          <div class="payment-text">
+            Pay 5 EU to our Paypal (<a href="https://paypal.me/fichozee" target="_blank">paypal.me/fichozee</a>)
+          </div>
+          <div class="payment-subtext">
+            Friend and Family<br>
+            Do it before the timer elapses ;)
+          </div>
+        </div>
+      `;
 
       // Build location options HTML
       let locationHtml = '';
@@ -702,14 +726,18 @@
 
           ${locationHtml}
 
+          ${participationHtml}
+
+          ${paymentHtml}
+
+          ${timerHtml}
+
           ${collapsibleHtml}
 
           <div class="form-group">
             <label for="voterName">9. Your Name *</label>
             <input type="text" id="voterName" name="voter_name" placeholder="Enter your name" required>
           </div>
-
-          ${timerHtml}
 
           <div class="button-group">
             <button type="submit" class="submit" ${votingEnded ? 'disabled' : ''}>Submit Vote</button>
@@ -718,6 +746,10 @@
         </form>
 
         ${previewHtml}
+
+        <div style="margin-top: 40px; text-align: center;">
+          <img src="images/Zen-Duck.png" alt="Zen Duck" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
+        </div>
       `;
 
       document.getElementById('app').innerHTML = html;
