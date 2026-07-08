@@ -614,15 +614,17 @@
         `;
       }
 
-      // Build payment section as static text
+      // Build payment section with timer
       const paymentHtml = `
         <div class="payment-section">
           <div class="payment-text">
-            Pay 5 EU to our Paypal (<a href="https://paypal.me/fichozee" target="_blank">paypal.me/fichozee</a>)
+            To confirm your participation, Paypal us 5 EU till <a href="https://paypal.me/fichozee" target="_blank" style="font-weight: 600; text-decoration: underline;">paypal.me/fichozee</a>
+          </div>
+          <div id="paymentTimer" style="font-size: 18px; font-weight: 600; color: #667eea; margin-top: 8px;">
+            [Timer will appear here]
           </div>
           <div class="payment-subtext">
-            Friend and Family<br>
-            Do it before the timer elapses ;)
+            For questions please contact us at: <a href="mailto:duckdatingapps@gmail.com" style="color: #667eea;">duckdatingapps@gmail.com</a>
           </div>
         </div>
       `;
@@ -792,10 +794,18 @@
         const timerDisplay = document.getElementById('timerDisplay');
         timerDisplay.textContent = `Voting ends in ${hours}h ${minutes}m ${seconds}s`;
 
+        const paymentTimer = document.getElementById('paymentTimer');
+        if (paymentTimer) {
+          paymentTimer.textContent = `${hours}h ${minutes}m ${seconds}s`;
+        }
+
         if (hours < 1) {
           timerDisplay.style.background = '#f8d7da';
           timerDisplay.style.borderColor = '#f5c6cb';
           timerDisplay.style.color = '#721c24';
+          if (paymentTimer) {
+            paymentTimer.style.color = '#dc3545';
+          }
         }
       }
 
