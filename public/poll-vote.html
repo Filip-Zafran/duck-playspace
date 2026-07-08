@@ -627,51 +627,6 @@
         </div>
       `;
 
-      // Build location options HTML
-      let locationHtml = '';
-      const hasLocations = poll.location1 || poll.location2 || poll.location3;
-      if (hasLocations) {
-        locationHtml = `
-          <div class="form-group">
-            <label>4. Select your preferred location (priority):</label>
-            <p style="color: #999; font-size: 13px; margin-bottom: 15px; font-style: italic;">Rank in order of preference</p>
-        `;
-
-        let priority = 1;
-        if (poll.location1) {
-          locationHtml += `
-            <div class="priority-option" data-choice="location1">
-              <input type="radio" id="location1" name="location_choice" value="location1">
-              <label for="location1" class="priority-label">${poll.location1}</label>
-              <div class="priority-number">${priority}</div>
-            </div>
-          `;
-          priority++;
-        }
-        if (poll.location2) {
-          locationHtml += `
-            <div class="priority-option" data-choice="location2">
-              <input type="radio" id="location2" name="location_choice" value="location2">
-              <label for="location2" class="priority-label">${poll.location2}</label>
-              <div class="priority-number">${priority}</div>
-            </div>
-          `;
-          priority++;
-        }
-        if (poll.location3) {
-          locationHtml += `
-            <div class="priority-option" data-choice="location3">
-              <input type="radio" id="location3" name="location_choice" value="location3">
-              <label for="location3" class="priority-label">${poll.location3}</label>
-              <div class="priority-number">${priority}</div>
-            </div>
-          `;
-        }
-        locationHtml += `
-            <p style="color: #999; font-size: 13px; margin-top: 10px; font-style: italic;">Note: location will be shared once a date is confirmed</p>
-          </div>
-        `;
-      }
 
       const html = `
         <h1>1. ${poll.title}</h1>
@@ -724,8 +679,6 @@
             </div>
           </div>
 
-          ${locationHtml}
-
           ${participationHtml}
 
           ${paymentHtml}
@@ -770,26 +723,6 @@
         checkbox.addEventListener('change', () => {
           option.classList.toggle('selected');
           handleChoiceChange(checkbox);
-        });
-      });
-
-      // Handle priority options
-      const priorityOptions = document.querySelectorAll('.priority-option');
-      priorityOptions.forEach(option => {
-        option.addEventListener('click', (e) => {
-          if (e.target.tagName === 'INPUT') return;
-          const radio = option.querySelector('input[type="radio"]');
-          radio.checked = true;
-          option.classList.add('selected');
-          priorityOptions.forEach(opt => {
-            if (opt !== option) opt.classList.remove('selected');
-          });
-        });
-
-        const radio = option.querySelector('input[type="radio"]');
-        radio.addEventListener('change', () => {
-          priorityOptions.forEach(opt => opt.classList.remove('selected'));
-          option.classList.add('selected');
         });
       });
 
@@ -881,13 +814,12 @@
       }
 
       const voterName = document.getElementById('voterName').value;
-      const locationChoice = document.querySelector('input[name="location_choice"]:checked')?.value || null;
 
       try {
         const response = await fetch(`${API_BASE}/vote/${pollId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ voter_name: voterName, choices, location_choice: locationChoice })
+          body: JSON.stringify({ voter_name: voterName, choices })
         });
 
         const data = await response.json();
