@@ -111,6 +111,14 @@
       background: #d8c7ff;
     }
 
+    .card-important {
+      background: #f0f0f0;
+    }
+
+    .card-cannot-attend {
+      background: #ffb07c;
+    }
+
     .date-option {
       background: white;
       border: 3px solid #171717;
@@ -476,6 +484,26 @@
                 </div>
               </div>
             ` : ''}
+
+            <!-- Important Card -->
+            <div class="card card-important">
+              <div class="collapsible" onclick="toggleCollapsible('important')">
+                <h2 style="margin: 0;">⚠️ Important</h2>
+              </div>
+              <div class="collapsible-content hidden" id="important">
+                <p>This is the current group composition. It may change slightly if somebody cancels and we need to find a suitable replacement.</p>
+              </div>
+            </div>
+
+            <!-- If You Cannot Attend Card -->
+            <div class="card card-cannot-attend">
+              <div class="collapsible" onclick="toggleCollapsible('cannot-attend')">
+                <h2 style="margin: 0;">📵 If you cannot attend</h2>
+              </div>
+              <div class="collapsible-content hidden" id="cannot-attend">
+                <p>Please let us know as soon as possible so we can offer the place to someone else.</p>
+              </div>
+            </div>
 
             <!-- Name Input -->
             <div class="form-group">
