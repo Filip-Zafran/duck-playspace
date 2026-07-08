@@ -642,6 +642,11 @@
             <small style="color: #666;">Default: 1440 (24 hours)</small>
           </div>
 
+          <div class="form-group">
+            <label for="location">Meeting Location *</label>
+            <input type="text" id="location" name="location" placeholder="e.g., Bar in Mitte" required>
+          </div>
+
           <h3>Additional Sections</h3>
 
           <div class="form-group">
@@ -650,8 +655,8 @@
           </div>
 
           <div class="form-group">
-            <label for="participation_section">Cancellation Policy</label>
-            <textarea id="participation_section" name="participation_section" placeholder="Enter cancellation policy details..."></textarea>
+            <label for="participation_section">Current Group Setup</label>
+            <textarea id="participation_section" name="participation_section" placeholder="Describe the current group composition..."></textarea>
           </div>
 
           <div class="form-group">
@@ -722,6 +727,7 @@
         description: document.getElementById('description').value,
         duration: document.getElementById('duration').value,
         expected: parseInt(document.getElementById('expected').value) || 8,
+        location: document.getElementById('location').value,
         date1: document.getElementById('date1').value,
         time1: document.getElementById('time1').value || null,
         date2: document.getElementById('date2').value,

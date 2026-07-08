@@ -431,6 +431,17 @@
               </div>
             </div>
 
+            <!-- Meeting Details Card -->
+            <div class="card" style="background: #8ff0c4;">
+              <h2>📍 Meeting details</h2>
+              <p style="margin: 8px 0;">
+                <strong>Event:</strong> ${poll.title}
+              </p>
+              <p style="margin: 8px 0;">
+                <strong>Location:</strong> ${poll.location || 'TBD'}
+              </p>
+            </div>
+
             <!-- Payment Card -->
             ${timerHtml}
 
@@ -448,13 +459,13 @@
               <p>For questions contact: <a href="mailto:duckdatingapps@gmail.com" style="color: #ff5b92; text-decoration: underline;">duckdatingapps@gmail.com</a></p>
             </div>
 
-            <!-- Cancellation Policy Card -->
+            <!-- Current Group Setup Card -->
             ${poll.participation_section ? `
-              <div class="card card-cancellation">
-                <div class="collapsible" onclick="toggleCollapsible('cancellation')">
-                  <h2 style="margin: 0;">📋 Cancellation Policy</h2>
+              <div class="card card-group">
+                <div class="collapsible" onclick="toggleCollapsible('groupsetup')">
+                  <h2 style="margin: 0;">👥 Current group setup</h2>
                 </div>
-                <div class="collapsible-content" id="cancellation">
+                <div class="collapsible-content hidden" id="groupsetup">
                   <p>${poll.participation_section}</p>
                 </div>
               </div>
@@ -495,16 +506,6 @@
               </div>
             </div>
 
-            <!-- If You Cannot Attend Card -->
-            <div class="card card-cannot-attend">
-              <div class="collapsible" onclick="toggleCollapsible('cannot-attend')">
-                <h2 style="margin: 0;">📵 If you cannot attend</h2>
-              </div>
-              <div class="collapsible-content hidden" id="cannot-attend">
-                <p>Please let us know as soon as possible so we can offer the place to someone else.</p>
-              </div>
-            </div>
-
             <!-- Name Input -->
             <div class="form-group">
               <label for="voterName">Your Name *</label>
@@ -521,6 +522,12 @@
           <!-- Footer Image -->
           <div class="footer-image">
             <img src="images/Zen-Duck.png" alt="Zen Duck" style="border-radius: 12px; border: 3px solid #171717;">
+          </div>
+
+          <!-- If You Cannot Attend - Fixed at Bottom -->
+          <div class="card card-cannot-attend" style="margin-top: 24px;">
+            <h2 style="margin: 0 0 12px 0;">📵 If you cannot attend</h2>
+            <p>Please let us know as soon as possible so we can offer the place to someone else.</p>
           </div>
         </div>
       `;

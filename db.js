@@ -60,9 +60,7 @@ export async function initializeDatabase() {
       { column: 'important_section', type: 'TEXT' },
       { column: 'faq_link', type: 'VARCHAR(500)' },
       { column: 'faq_title', type: 'VARCHAR(255)' },
-      { column: 'location1', type: 'VARCHAR(255)' },
-      { column: 'location2', type: 'VARCHAR(255)' },
-      { column: 'location3', type: 'VARCHAR(255)' }
+      { column: 'location', type: 'VARCHAR(255)' }
     ];
 
     for (const { column, type } of columnChecks) {

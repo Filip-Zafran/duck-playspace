@@ -109,7 +109,7 @@ app.get('/poll-results', (req, res) => {
 
 app.post('/api/polls', requireAuth, async (req, res) => {
   try {
-    const { title, description, duration, expected, date1, date2, date3, time1, time2, time3, timer_minutes, about_section, participation_section, important_section, faq_link, faq_title, location1, location2, location3 } = req.body;
+    const { title, description, duration, expected, location, date1, date2, date3, time1, time2, time3, timer_minutes, about_section, participation_section, important_section, faq_link, faq_title } = req.body;
 
     // Validate dates
     if (new Date(date1) >= new Date(date2) || new Date(date2) >= new Date(date3)) {
@@ -126,10 +126,10 @@ app.post('/api/polls', requireAuth, async (req, res) => {
 
     const pool = getPool();
     await pool.query(
-      `INSERT INTO polls (id, admin_token, title, description, duration, expected, date1, time1, date2, time2, date3, time3, timer_end, about_section, participation_section, important_section, faq_link, faq_title, location1, location2, location3)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)`,
-      [pollId, adminToken, title, description || 'Join us for an exciting event...', duration, expected || 8,
-       date1, time1 || null, date2, time2 || null, date3, time3 || null, timerEnd, about_section || null, participation_section || null, important_section || null, faq_link || null, faq_title || 'Read the FAQs', location1 || null, location2 || null, location3 || null]
+      `INSERT INTO polls (id, admin_token, title, description, duration, expected, location, date1, time1, date2, time2, date3, time3, timer_end, about_section, participation_section, important_section, faq_link, faq_title)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+      [pollId, adminToken, title, description || 'Join us for an exciting event...', duration, expected || 8, location || null,
+       date1, time1 || null, date2, time2 || null, date3, time3 || null, timerEnd, about_section || null, participation_section || null, important_section || null, faq_link || null, faq_title || 'Read the FAQs']
     );
 
     const origin = `${req.protocol}://${req.get('host')}`;
