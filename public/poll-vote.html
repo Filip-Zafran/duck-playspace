@@ -301,7 +301,7 @@
     }
 
     .footer-image img {
-      max-width: 280px;
+      max-width: 320px;
       height: auto;
     }
 
@@ -477,10 +477,10 @@
             <!-- FAQ Card -->
             ${poll.faq_link ? `
               <div class="card card-faq">
-                <div class="collapsible" onclick="toggleCollapsible('faq')">
+                <div class="collapsible collapsed" onclick="toggleCollapsible('faq')">
                   <h2 style="margin: 0;">Questions?</h2>
                 </div>
-                <div class="collapsible-content" id="faq">
+                <div class="collapsible-content hidden" id="faq">
                   <p>You can check our FAQs here:</p>
                   <a href="${poll.faq_link}" target="_blank" class="payment-link" style="display: inline-block;">Read the FAQs</a>
                 </div>
@@ -518,7 +518,7 @@
 
           <!-- Footer Image -->
           <div class="footer-image">
-            <img src="images/Zen-Duck.png" alt="Zen Duck" style="max-width: 280px; border-radius: 12px; border: 3px solid #171717;">
+            <img src="images/Zen-Duck.png" alt="Zen Duck" style="max-width: 320px; border-radius: 12px; border: 3px solid #171717;">
           </div>
 
           <!-- If You Cannot Attend - Fixed at Bottom -->
