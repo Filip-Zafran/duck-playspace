@@ -393,7 +393,7 @@
           <form id="voteForm">
             <!-- Dates Card -->
             <div class="card card-dates">
-              <h2>📅 Select your availability</h2>
+              <h2>Select your availability</h2>
               <p style="margin-bottom: 16px;">You can select multiple dates</p>
 
               <div class="date-option" data-choice="date1">
@@ -426,14 +426,14 @@
                   <span class="date-value">Can't make any of these dates</span>
                 </label>
                 <div class="backup-message" id="backupMessage">
-                  👋 No worries, we will invite someone from the backup list
+                  No worries, we will invite someone from the backup list
                 </div>
               </div>
             </div>
 
             <!-- Meeting Details Card -->
             <div class="card" style="background: #8ff0c4;">
-              <h2>📍 Meeting details</h2>
+              <h2>Meeting details</h2>
               <p style="margin: 8px 0;">
                 <strong>Event:</strong> ${poll.title}
               </p>
@@ -452,7 +452,7 @@
             ${timerHtml}
 
             <div class="card card-payment">
-              <h2>💰 Confirm your participation</h2>
+              <h2>Confirm your participation</h2>
               <p>To confirm your spot, please send the <strong>5€ participation fee</strong> via PayPal.</p>
               <div style="text-align: center;">
                 <a href="https://paypal.me/fichozee" class="payment-link">Pay 5€ via PayPal</a>
@@ -465,7 +465,7 @@
             ${poll.participation_section ? `
               <div class="card card-group">
                 <div class="collapsible" onclick="toggleCollapsible('groupsetup')">
-                  <h2 style="margin: 0;">👥 Current group setup</h2>
+                  <h2 style="margin: 0;">Current group setup</h2>
                 </div>
                 <div class="collapsible-content hidden" id="groupsetup">
                   <p>${poll.participation_section}</p>
@@ -478,7 +478,7 @@
             ${poll.faq_link ? `
               <div class="card card-faq">
                 <div class="collapsible" onclick="toggleCollapsible('faq')">
-                  <h2 style="margin: 0;">❓ Questions?</h2>
+                  <h2 style="margin: 0;">Questions?</h2>
                 </div>
                 <div class="collapsible-content" id="faq">
                   <p>You can check our FAQs here:</p>
@@ -490,7 +490,7 @@
             <!-- Important Card -->
             <div class="card card-important">
               <div class="collapsible" onclick="toggleCollapsible('important')">
-                <h2 style="margin: 0;">⚠️ Important</h2>
+                <h2 style="margin: 0;">Important</h2>
               </div>
               <div class="collapsible-content hidden" id="important">
                 <p>This is the current group composition. It may change slightly if somebody cancels and we need to find a suitable replacement.</p>
@@ -523,7 +523,7 @@
 
           <!-- If You Cannot Attend - Fixed at Bottom -->
           <div class="card card-cannot-attend" style="margin-top: 24px;">
-            <h2 style="margin: 0 0 12px 0;">📵 If you cannot attend</h2>
+            <h2 style="margin: 0 0 12px 0;">If you cannot attend</h2>
             <p>Please let us know as soon as possible so we can offer the place to someone else.</p>
           </div>
         </div>
