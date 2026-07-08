@@ -38,6 +38,11 @@ function requireAuth(req, res, next) {
   next();
 }
 
+// Keep-alive ping endpoint (prevents Render.com free tier spin-down)
+app.get('/ping', (req, res) => {
+  res.json({ status: 'alive', timestamp: new Date().toISOString() });
+});
+
 // ===== Original Auth Routes =====
 
 app.get('/', (req, res) => {

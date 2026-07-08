@@ -74,6 +74,21 @@
         console.error('Logout failed:', err);
       }
     });
+
+    // Keep-alive ping to prevent Render.com free tier spin-down
+    function startKeepAlive() {
+      setInterval(() => {
+        const randomDelay = Math.random() * 60000 + 60000; // Random 1-2 minutes
+        setTimeout(() => {
+          fetch('/ping').catch(err => console.log('Ping failed (expected if offline):', err));
+        }, randomDelay);
+      }, 120000); // Check every 2 minutes
+
+      // Initial ping
+      fetch('/ping').catch(err => console.log('Initial ping failed (expected if offline):', err));
+    }
+
+    startKeepAlive();
   </script>
 </body>
 </html>
