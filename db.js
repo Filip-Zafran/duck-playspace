@@ -83,19 +83,27 @@ export async function initializeDatabase() {
         id SERIAL PRIMARY KEY,
         poll_id VARCHAR(36) REFERENCES polls(id) ON DELETE CASCADE,
         voter_name VARCHAR(255),
+        voter_email VARCHAR(255),
         choice VARCHAR(50),
         location_choice VARCHAR(255),
         submitted_at TIMESTAMP DEFAULT NOW()
       )
     `);
 
-    // Add location_choice column if it doesn't exist
-    try {
-      await pool.query(`ALTER TABLE votes ADD COLUMN location_choice VARCHAR(255)`);
-      console.log('Added location_choice column to votes table');
-    } catch (err) {
-      if (!err.message.includes('already exists')) {
-        console.log(`location_choice column already exists or other error: ${err.message}`);
+    // Add missing columns if they don't exist
+    const voteColumnChecks = [
+      { column: 'location_choice', type: 'VARCHAR(255)' },
+      { column: 'voter_email', type: 'VARCHAR(255)' }
+    ];
+
+    for (const { column, type } of voteColumnChecks) {
+      try {
+        await pool.query(`ALTER TABLE votes ADD COLUMN ${column} ${type}`);
+        console.log(`Added ${column} column to votes table`);
+      } catch (err) {
+        if (!err.message.includes('already exists')) {
+          console.log(`${column} column already exists or other error: ${err.message}`);
+        }
       }
     }
 

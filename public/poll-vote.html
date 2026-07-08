@@ -301,7 +301,7 @@
     }
 
     .footer-image img {
-      max-width: 120px;
+      max-width: 280px;
       height: auto;
     }
 
@@ -454,10 +454,6 @@
             <div class="card card-payment">
               <h2>💰 Confirm your participation</h2>
               <p>To confirm your spot, please send the <strong>5€ participation fee</strong> via PayPal.</p>
-              <div id="paymentTimer" style="text-align: center;">
-                <div style="font-size: 12px; color: #171717; margin-bottom: 8px;">Time remaining:</div>
-                <div style="font-size: 24px; font-weight: 700; color: #171717;">--:--:--</div>
-              </div>
               <div style="text-align: center;">
                 <a href="https://paypal.me/fichozee" class="payment-link">Pay 5€ via PayPal</a>
               </div>
@@ -477,17 +473,6 @@
               </div>
             ` : ''}
 
-            <!-- Group Dynamic Card -->
-            ${poll.about_section ? `
-              <div class="card card-group">
-                <div class="collapsible" onclick="toggleCollapsible('group')">
-                  <h2 style="margin: 0;">👥 Group dynamic</h2>
-                </div>
-                <div class="collapsible-content" id="group">
-                  <p>${poll.about_section}</p>
-                </div>
-              </div>
-            ` : ''}
 
             <!-- FAQ Card -->
             ${poll.faq_link ? `
@@ -518,6 +503,12 @@
               <input type="text" id="voterName" name="voter_name" placeholder="Enter your name" required>
             </div>
 
+            <!-- Email Input -->
+            <div class="form-group">
+              <label for="voterEmail">Your e-mail *</label>
+              <input type="text" id="voterEmail" name="voter_email" placeholder="Enter your email" required>
+            </div>
+
             <!-- Buttons -->
             <div class="button-group">
               <button type="submit" class="btn-submit" ${votingEnded ? 'disabled' : ''}>Submit Vote</button>
@@ -527,7 +518,7 @@
 
           <!-- Footer Image -->
           <div class="footer-image">
-            <img src="images/Zen-Duck.png" alt="Zen Duck" style="border-radius: 12px; border: 3px solid #171717;">
+            <img src="images/Zen-Duck.png" alt="Zen Duck" style="max-width: 280px; border-radius: 12px; border: 3px solid #171717;">
           </div>
 
           <!-- If You Cannot Attend - Fixed at Bottom -->
@@ -659,12 +650,13 @@
       }
 
       const voterName = document.getElementById('voterName').value;
+      const voterEmail = document.getElementById('voterEmail').value;
 
       try {
         const response = await fetch(`${API_BASE}/vote/${pollId}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ voter_name: voterName, choices })
+          body: JSON.stringify({ voter_name: voterName, voter_email: voterEmail, choices })
         });
 
         const data = await response.json();

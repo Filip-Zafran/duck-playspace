@@ -227,7 +227,7 @@ app.get('/api/polls/:id/votes', requireAuth, async (req, res) => {
     }
 
     const votesResult = await pool.query(
-      `SELECT voter_name, choice, location_choice, submitted_at FROM votes WHERE poll_id = $1
+      `SELECT voter_name, voter_email, choice, location_choice, submitted_at FROM votes WHERE poll_id = $1
        ORDER BY submitted_at DESC`,
       [id]
     );
@@ -319,7 +319,7 @@ app.get('/api/vote/:pollId', async (req, res) => {
 app.post('/api/vote/:pollId', async (req, res) => {
   try {
     const { pollId } = req.params;
-    const { voter_name, choices, location_choice } = req.body;
+    const { voter_name, voter_email, choices, location_choice } = req.body;
 
     if (!Array.isArray(choices) || choices.length === 0) {
       return res.status(400).json({ error: 'At least one choice is required' });
@@ -343,8 +343,8 @@ app.post('/api/vote/:pollId', async (req, res) => {
 
     for (const choice of choices) {
       await pool.query(
-        'INSERT INTO votes (poll_id, voter_name, choice, location_choice) VALUES ($1, $2, $3, $4)',
-        [pollId, voter_name || 'Anonymous', choice, location_choice || null]
+        'INSERT INTO votes (poll_id, voter_name, voter_email, choice, location_choice) VALUES ($1, $2, $3, $4, $5)',
+        [pollId, voter_name || 'Anonymous', voter_email || null, choice, location_choice || null]
       );
     }
 
