@@ -351,6 +351,7 @@
     async function loadPoll() {
       const params = new URLSearchParams(window.location.search);
       pollId = params.get('token');
+      const preselect = params.get('preselect');
 
       if (!pollId) {
         document.getElementById('app').innerHTML = '<div class="error">Poll ID not provided</div>';
@@ -366,6 +367,18 @@
         const poll = await response.json();
         renderPoll(poll);
         startTimer(poll.timer_end);
+
+        // Auto-select option if preselect parameter is provided
+        if (preselect) {
+          setTimeout(() => {
+            const checkbox = document.getElementById(preselect);
+            if (checkbox) {
+              checkbox.checked = true;
+              checkbox.closest('.date-option').classList.add('selected');
+              handleChoiceChange(checkbox);
+            }
+          }, 100);
+        }
       } catch (error) {
         document.getElementById('app').innerHTML = `<div class="error">${error.message}</div>`;
       }
