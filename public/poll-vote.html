@@ -12,126 +12,151 @@
     }
 
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f5f5f5;
       min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
 
     .container {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      max-width: 600px;
-      width: 100%;
-      padding: 40px;
+      max-width: 640px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 3px solid #171717;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 8px 8px 0 #171717;
+    }
+
+    .header {
+      background: #ffd84d;
+      padding: 24px;
+      text-align: center;
+      border-bottom: 3px solid #171717;
+    }
+
+    .header img {
+      max-width: 180px;
+      height: auto;
+      margin-bottom: 12px;
     }
 
     h1 {
-      color: #333;
-      margin-bottom: 10px;
+      font-size: 28px;
+      line-height: 1.2;
+      margin-bottom: 8px;
+      color: #171717;
     }
 
-    .description {
-      color: #666;
-      margin-bottom: 20px;
+    .header-subtitle {
+      font-size: 16px;
+      color: #171717;
+      margin-bottom: 0;
+    }
+
+    .content {
+      padding: 24px;
+    }
+
+    .intro {
+      font-size: 16px;
       line-height: 1.6;
-    }
-
-    .duration {
-      color: #667eea;
-      font-size: 18px;
-      font-weight: 700;
       margin-bottom: 20px;
-      background: #f0f4ff;
-      padding: 15px;
-      border-radius: 8px;
-      border-left: 4px solid #667eea;
+      color: #171717;
     }
 
-    .timer {
-      background: #fff3cd;
-      border: 1px solid #ffc107;
-      padding: 12px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-      text-align: center;
-      font-weight: 600;
-      color: #856404;
+    .card {
+      border: 3px solid #171717;
+      border-radius: 18px;
+      padding: 18px;
+      margin: 22px 0;
+      box-shadow: 5px 8px 0 #171717;
     }
 
-    .timer.expired {
-      background: #f8d7da;
-      border-color: #f5c6cb;
-      color: #721c24;
+    .card h2 {
+      font-size: 22px;
+      margin-top: 0;
+      margin-bottom: 12px;
+      color: #171717;
     }
 
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #666;
+    .card p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #171717;
+      margin-bottom: 12px;
     }
 
-    .error {
-      background: #f8d7da;
-      color: #721c24;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
+    .card p:last-child {
+      margin-bottom: 0;
+    }
+
+    .card-dates {
+      background: #b9f3ff;
+    }
+
+    .card-payment {
+      background: #ffe66d;
+    }
+
+    .card-cancellation {
+      background: #ffb07c;
+    }
+
+    .card-group {
+      background: #ff9bd2;
+    }
+
+    .card-faq {
+      background: #d8c7ff;
     }
 
     .date-option {
-      border: 2px solid #ddd;
+      background: white;
+      border: 3px solid #171717;
       padding: 15px;
-      border-radius: 8px;
-      margin-bottom: 15px;
+      border-radius: 12px;
+      margin-bottom: 12px;
       cursor: pointer;
       transition: all 0.3s;
+      display: flex;
+      align-items: center;
     }
 
     .date-option:hover {
-      border-color: #667eea;
-      background: #f8f9ff;
+      background: #f0f0f0;
     }
 
     .date-option.selected {
-      border-color: #667eea;
-      background: #f0f4ff;
+      background: #e3f2fd;
+      border-color: #2196f3;
     }
 
     .date-option input[type="checkbox"] {
-      margin-right: 12px;
       width: 18px;
       height: 18px;
+      margin-right: 12px;
       cursor: pointer;
-      accent-color: #667eea;
+      accent-color: #171717;
     }
 
     .date-option label {
+      flex: 1;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      font-size: 16px;
       font-weight: 500;
-      color: #333;
-    }
-
-    .date-text {
-      display: flex;
-      flex-direction: column;
+      color: #171717;
     }
 
     .date-value {
-      font-weight: 600;
-      color: #667eea;
+      font-weight: 700;
+      color: #171717;
     }
 
     .time-value {
       font-size: 14px;
-      color: #999;
+      color: #666;
+      display: block;
+      margin-top: 4px;
     }
 
     .form-group {
@@ -140,123 +165,157 @@
 
     label {
       display: block;
-      margin-bottom: 8px;
-      color: #333;
       font-weight: 600;
+      color: #171717;
+      margin-bottom: 8px;
+      font-size: 16px;
     }
 
     input[type="text"] {
       width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 14px;
+      padding: 12px;
+      border: 3px solid #171717;
+      border-radius: 12px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      background: #f0f0f0;
     }
 
     .button-group {
       display: flex;
-      gap: 10px;
-      margin-top: 30px;
+      gap: 12px;
+      margin-top: 24px;
+      margin-bottom: 24px;
     }
 
     button {
       flex: 1;
-      padding: 12px 20px;
-      border: none;
-      border-radius: 5px;
+      padding: 14px 24px;
+      border: 3px solid #171717;
+      border-radius: 14px;
       font-size: 16px;
-      font-weight: 600;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.3s;
+      transition: all 0.3s;
     }
 
-    button.submit {
-      background: #667eea;
+    .btn-submit {
+      background: #171717;
       color: white;
     }
 
-    button.submit:hover:not(:disabled) {
-      background: #764ba2;
+    .btn-submit:hover:not(:disabled) {
+      background: #333;
     }
 
-    button.submit:disabled {
+    .btn-submit:disabled {
       background: #ccc;
       cursor: not-allowed;
     }
 
-    button.results {
+    .btn-results {
       background: #95a5a6;
       color: white;
     }
 
-    button.results:hover {
+    .btn-results:hover {
       background: #7f8c8d;
+    }
+
+    .payment-timer {
+      font-size: 24px;
+      font-weight: 700;
+      color: #171717;
+      margin: 16px 0;
+    }
+
+    .payment-link {
+      display: inline-block;
+      background: #171717;
+      color: white;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 2px solid #171717;
+      margin: 12px 0;
+    }
+
+    .collapsible {
+      cursor: pointer;
+      font-weight: 700;
+      color: #171717;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .collapsible::after {
+      content: "▼";
+      font-size: 12px;
+      transition: transform 0.3s;
+    }
+
+    .collapsible.collapsed::after {
+      transform: rotate(-90deg);
+    }
+
+    .collapsible-content {
+      max-height: 1000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      margin-top: 12px;
+    }
+
+    .collapsible-content.hidden {
+      max-height: 0;
+      margin-top: 0;
     }
 
     .success-message {
       background: #d4edda;
       color: #155724;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .footer-image {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .footer-image img {
+      max-width: 120px;
+      height: auto;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
       padding: 15px;
-      border-radius: 5px;
+      border-radius: 12px;
       margin-bottom: 20px;
     }
 
-    .vote-preview {
-      background: #f8f9fa;
-      padding: 15px;
-      border-radius: 5px;
-      margin-top: 20px;
-    }
-
-    .vote-preview h3 {
-      color: #333;
-      margin-bottom: 10px;
-      font-size: 14px;
-    }
-
-    .voter-initials {
-      display: inline-block;
-      width: 32px;
-      height: 32px;
-      background: #667eea;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 12px;
-      margin-right: 8px;
-      margin-bottom: 8px;
-    }
-
-    .voter-initials.date1 { background: #3498db; }
-    .voter-initials.date2 { background: #2ecc71; }
-    .voter-initials.date3 { background: #e74c3c; }
-    .voter-initials.none { background: #95a5a6; }
-
-    .results-link {
+    .loading {
       text-align: center;
-      margin-top: 20px;
-      padding: 20px;
-      background: #f8f9fa;
-      border-radius: 5px;
-    }
-
-    .results-link a {
-      color: #667eea;
-      text-decoration: none;
-      font-weight: 600;
-    }
-
-    .results-link a:hover {
-      text-decoration: underline;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
     }
 
     .backup-message {
       background: #e8f4ff;
       border-left: 4px solid #667eea;
-      padding: 12px 15px;
+      padding: 12px;
       border-radius: 5px;
       margin-top: 10px;
       display: none;
@@ -267,249 +326,6 @@
 
     .backup-message.active {
       display: block;
-      animation: slideDown 0.3s ease;
-    }
-
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .info-sections {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-
-    .info-bubble {
-      padding: 20px;
-      border-radius: 8px;
-      border-left: 4px solid;
-    }
-
-    .info-bubble h3 {
-      margin: 0 0 12px 0;
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .info-bubble p {
-      margin: 0;
-      line-height: 1.6;
-      font-size: 14px;
-    }
-
-    .info-bubble a {
-      color: inherit;
-      font-weight: 600;
-      transition: opacity 0.2s;
-    }
-
-    .info-bubble a:hover {
-      opacity: 0.8;
-    }
-
-    .info-bubble.about {
-      background: #e3f2fd;
-      border-left-color: #2196f3;
-      color: #1565c0;
-    }
-
-    .info-bubble.participation {
-      background: #e8f5e9;
-      border-left-color: #4caf50;
-      color: #2e7d32;
-    }
-
-    .info-bubble.participation a {
-      color: #1565c0;
-      text-decoration: none;
-    }
-
-    .info-bubble.important {
-      background: #fff3e0;
-      border-left-color: #ff9800;
-      color: #e65100;
-    }
-
-    .info-bubble.faq {
-      background: #f3e5f5;
-      border-left-color: #9c27b0;
-      color: #6a1b9a;
-    }
-
-    .info-bubble.faq a {
-      color: #6a1b9a;
-      text-decoration: underline;
-    }
-
-    .collapsible-section {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      margin-bottom: 20px;
-      overflow: hidden;
-    }
-
-    .collapsible-header {
-      padding: 15px;
-      background: #f8f9fa;
-      cursor: pointer;
-      font-weight: 600;
-      color: #333;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      user-select: none;
-      transition: background 0.3s;
-    }
-
-    .collapsible-header:hover {
-      background: #f0f1f3;
-    }
-
-    .collapsible-header::after {
-      content: "▼";
-      transition: transform 0.3s;
-      font-size: 12px;
-    }
-
-    .collapsible-header.collapsed::after {
-      transform: rotate(-90deg);
-    }
-
-    .collapsible-content {
-      padding: 20px;
-      background: white;
-      max-height: 1000px;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-
-    .collapsible-content.hidden {
-      max-height: 0;
-      padding: 0 20px;
-    }
-
-    .priority-option {
-      display: flex;
-      align-items: center;
-      padding: 15px;
-      border: 2px solid #ddd;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .priority-option:hover {
-      border-color: #667eea;
-      background: #f8f9ff;
-    }
-
-    .priority-option.selected {
-      border-color: #667eea;
-      background: #f0f4ff;
-    }
-
-    .priority-option input[type="radio"] {
-      margin-right: 12px;
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      accent-color: #667eea;
-    }
-
-    .priority-label {
-      flex: 1;
-      cursor: pointer;
-      font-weight: 500;
-      color: #333;
-    }
-
-    .priority-number {
-      background: #667eea;
-      color: white;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    .payment-section {
-      background: #f8f9fa;
-      padding: 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
-    }
-
-    .payment-text {
-      font-size: 14px;
-      color: #333;
-      line-height: 1.6;
-      margin-bottom: 10px;
-    }
-
-    .payment-text a {
-      color: #667eea;
-      font-weight: 600;
-      text-decoration: underline;
-    }
-
-    .payment-text a:hover {
-      text-decoration: none;
-    }
-
-    .payment-subtext {
-      font-size: 12px;
-      color: #666;
-      font-style: italic;
-      margin-top: 8px;
-    }
-
-    .participation-header {
-      font-size: 18px;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 3px solid #667eea;
-    }
-
-    .collapsible-section.group-dynamic .collapsible-header {
-      background: #e3f2fd;
-      color: #1565c0;
-      font-weight: 600;
-      border-left: 4px solid #2196f3;
-    }
-
-    .collapsible-section.group-dynamic .collapsible-header:hover {
-      background: #bbdefb;
-    }
-
-    .faq-link {
-      display: inline-block;
-      color: #6a1b9a;
-      text-decoration: underline;
-      font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    .faq-link:hover {
-      background: rgba(156, 39, 176, 0.1);
-      text-decoration: none;
     }
   </style>
 </head>
@@ -547,174 +363,152 @@
       }
     }
 
-    function buildCollapsibleSection(title, content, sectionId, customClass = '') {
-      return `
-        <div class="collapsible-section ${customClass}">
-          <div class="collapsible-header collapsed" onclick="toggleCollapsible('${sectionId}')">
-            <span>${title}</span>
-          </div>
-          <div class="collapsible-content hidden" id="${sectionId}">
-            ${content}
-          </div>
-        </div>
-      `;
-    }
-
-    function toggleCollapsible(sectionId) {
-      const header = document.querySelector(`#${sectionId}`).previousElementSibling;
-      const content = document.getElementById(sectionId);
-      header.classList.toggle('collapsed');
-      content.classList.toggle('hidden');
-    }
-
     function renderPoll(poll) {
       const timerHtml = poll.timer_end ? `
-        <div class="timer" id="timerDisplay">
-          Calculating time...
+        <div id="timerDisplay" class="card card-payment" style="text-align: center;">
+          <div style="font-size: 14px; color: #171717; margin-bottom: 8px;">Time remaining to confirm</div>
+          <div style="font-size: 28px; font-weight: 700; color: #171717;">Calculating...</div>
         </div>
       ` : '';
-
-      const previewHtml = poll.previews && poll.previews.length > 0 ? `
-        <div class="vote-preview">
-          <h3>Recent Votes</h3>
-          ${poll.previews.map(v => `
-            <span class="voter-initials ${v.choice}">${v.initials}</span>
-          `).join('')}
-        </div>
-      ` : '';
-
-      // Build collapsible sections
-      let collapsibleHtml = '';
-
-      if (poll.participation_section) {
-        collapsibleHtml += buildCollapsibleSection(
-          '5. Cancellation Policy',
-          `<p>${poll.participation_section}</p>`,
-          'participation-section'
-        );
-      }
-
-      if (poll.about_section) {
-        collapsibleHtml += buildCollapsibleSection(
-          '6. Group dynamic',
-          `<p>${poll.about_section}</p>`,
-          'about-section',
-          'group-dynamic'
-        );
-      }
-
-      if (poll.faq_link) {
-        collapsibleHtml += buildCollapsibleSection(
-          '7. FAQ',
-          `<p>You can check our FAQs here: <br><a class="faq-link" href="${poll.faq_link}" target="_blank">${poll.faq_title}</a></p>`,
-          'faq-section'
-        );
-      }
-
-      // Build payment section with timer
-      const paymentHtml = `
-        <div class="payment-section">
-          <div class="payment-text">
-            To confirm your participation, Paypal us 5 EU till <a href="https://paypal.me/fichozee" target="_blank" style="font-weight: 600; text-decoration: underline;">paypal.me/fichozee</a>
-          </div>
-          <div id="paymentTimer" style="font-size: 18px; font-weight: 600; color: #667eea; margin-top: 8px;">
-            [Timer will appear here]
-          </div>
-          <div class="payment-subtext">
-            For questions please contact us at: <a href="mailto:duckdatingapps@gmail.com" style="color: #667eea;">duckdatingapps@gmail.com</a>
-          </div>
-        </div>
-      `;
-
 
       const html = `
-        <h1>1. ${poll.title}</h1>
-        <p class="description">2. ${poll.description}</p>
+        <div class="header">
+          <img src="images/DDA-logo.png" alt="Duck Dating Apps logo">
+          <h1>${poll.title}</h1>
+          <div class="header-subtitle">${poll.description}</div>
+        </div>
 
-        <form id="voteForm">
-          <div class="form-group">
-            <label>3. Select your availability (you can select multiple dates):</label>
+        <div class="content">
+          <p class="intro">Hi everyone,</p>
+          <p class="intro">Great news! We have an event coming up. Here are the details:</p>
 
-            <div class="date-option" data-choice="date1">
-              <input type="checkbox" id="date1" name="choice" value="date1">
-              <label for="date1">
-                <div class="date-text">
+          <form id="voteForm">
+            <!-- Dates Card -->
+            <div class="card card-dates">
+              <h2>📅 Select your availability</h2>
+              <p style="margin-bottom: 16px;">You can select multiple dates</p>
+
+              <div class="date-option" data-choice="date1">
+                <input type="checkbox" id="date1" name="choice" value="date1">
+                <label for="date1">
                   <span class="date-value">${formatDate(poll.date1)}</span>
                   ${poll.time1 ? `<span class="time-value">${poll.time1}</span>` : ''}
-                </div>
-              </label>
-            </div>
+                </label>
+              </div>
 
-            <div class="date-option" data-choice="date2">
-              <input type="checkbox" id="date2" name="choice" value="date2">
-              <label for="date2">
-                <div class="date-text">
+              <div class="date-option" data-choice="date2">
+                <input type="checkbox" id="date2" name="choice" value="date2">
+                <label for="date2">
                   <span class="date-value">${formatDate(poll.date2)}</span>
                   ${poll.time2 ? `<span class="time-value">${poll.time2}</span>` : ''}
-                </div>
-              </label>
-            </div>
+                </label>
+              </div>
 
-            <div class="date-option" data-choice="date3">
-              <input type="checkbox" id="date3" name="choice" value="date3">
-              <label for="date3">
-                <div class="date-text">
+              <div class="date-option" data-choice="date3">
+                <input type="checkbox" id="date3" name="choice" value="date3">
+                <label for="date3">
                   <span class="date-value">${formatDate(poll.date3)}</span>
                   ${poll.time3 ? `<span class="time-value">${poll.time3}</span>` : ''}
-                </div>
-              </label>
-            </div>
+                </label>
+              </div>
 
-            <div class="date-option" data-choice="none">
-              <input type="checkbox" id="none" name="choice" value="none">
-              <label for="none">
-                <div class="date-text">
+              <div class="date-option" data-choice="none">
+                <input type="checkbox" id="none" name="choice" value="none">
+                <label for="none">
                   <span class="date-value">Can't make any of these dates</span>
+                </label>
+                <div class="backup-message" id="backupMessage">
+                  👋 No worries, we will invite someone from the backup list
                 </div>
-              </label>
-              <div class="backup-message" id="backupMessage">
-                👋 No worries, we will invite someone from the backup list
               </div>
             </div>
+
+            <!-- Payment Card -->
+            ${timerHtml}
+
+            <div class="card card-payment">
+              <h2>💰 Confirm your participation</h2>
+              <p>To confirm your spot, please send the <strong>5€ participation fee</strong> via PayPal.</p>
+              <div id="paymentTimer" style="text-align: center;">
+                <div style="font-size: 12px; color: #171717; margin-bottom: 8px;">Time remaining:</div>
+                <div style="font-size: 24px; font-weight: 700; color: #171717;">--:--:--</div>
+              </div>
+              <div style="text-align: center;">
+                <a href="https://paypal.me/fichozee" class="payment-link">Pay 5€ via PayPal</a>
+              </div>
+              <p>Please select <strong>Friends & Family</strong>.</p>
+              <p>For questions contact: <a href="mailto:duckdatingapps@gmail.com" style="color: #ff5b92; text-decoration: underline;">duckdatingapps@gmail.com</a></p>
+            </div>
+
+            <!-- Cancellation Policy Card -->
+            ${poll.participation_section ? `
+              <div class="card card-cancellation">
+                <div class="collapsible" onclick="toggleCollapsible('cancellation')">
+                  <h2 style="margin: 0;">📋 Cancellation Policy</h2>
+                </div>
+                <div class="collapsible-content" id="cancellation">
+                  <p>${poll.participation_section}</p>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Group Dynamic Card -->
+            ${poll.about_section ? `
+              <div class="card card-group">
+                <div class="collapsible" onclick="toggleCollapsible('group')">
+                  <h2 style="margin: 0;">👥 Group dynamic</h2>
+                </div>
+                <div class="collapsible-content" id="group">
+                  <p>${poll.about_section}</p>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- FAQ Card -->
+            ${poll.faq_link ? `
+              <div class="card card-faq">
+                <div class="collapsible" onclick="toggleCollapsible('faq')">
+                  <h2 style="margin: 0;">❓ Questions?</h2>
+                </div>
+                <div class="collapsible-content" id="faq">
+                  <p>You can check our FAQs here:</p>
+                  <a href="${poll.faq_link}" target="_blank" class="payment-link" style="display: inline-block;">Read the FAQs</a>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Name Input -->
+            <div class="form-group">
+              <label for="voterName">Your Name *</label>
+              <input type="text" id="voterName" name="voter_name" placeholder="Enter your name" required>
+            </div>
+
+            <!-- Buttons -->
+            <div class="button-group">
+              <button type="submit" class="btn-submit" ${votingEnded ? 'disabled' : ''}>Submit Vote</button>
+              <button type="button" class="btn-results" onclick="window.location.href='/poll-results?token=${pollId}'">View Results</button>
+            </div>
+          </form>
+
+          <!-- Footer Image -->
+          <div class="footer-image">
+            <img src="images/Zen-Duck.png" alt="Zen Duck" style="border-radius: 12px; border: 3px solid #171717;">
           </div>
-
-          ${participationHtml}
-
-          ${paymentHtml}
-
-          ${timerHtml}
-
-          ${collapsibleHtml}
-
-          <div class="form-group">
-            <label for="voterName">8. Your Name *</label>
-            <input type="text" id="voterName" name="voter_name" placeholder="Enter your name" required>
-          </div>
-
-          <div class="button-group">
-            <button type="submit" class="submit" ${votingEnded ? 'disabled' : ''}>Submit Vote</button>
-            <button type="button" class="results" onclick="window.location.href='/poll-results?token=${pollId}'">View Results</button>
-          </div>
-        </form>
-
-        ${previewHtml}
-
-        <div style="margin-top: 40px; text-align: center;">
-          <img src="images/Zen-Duck.png" alt="Zen Duck" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);">
         </div>
       `;
 
       document.getElementById('app').innerHTML = html;
+      setupEventListeners();
+    }
 
+    function setupEventListeners() {
       const dateOptions = document.querySelectorAll('.date-option[data-choice^="date"]');
       dateOptions.forEach(option => {
         option.addEventListener('click', (e) => {
           if (e.target.tagName === 'INPUT') return;
-
           const checkbox = option.querySelector('input[type="checkbox"]');
           checkbox.checked = !checkbox.checked;
           option.classList.toggle('selected');
-
           handleChoiceChange(checkbox);
         });
 
@@ -733,7 +527,6 @@
       const dateCheckboxes = Array.from(document.querySelectorAll('input[value="date1"], input[value="date2"], input[value="date3"]'));
 
       if (changedCheckbox.value === 'none') {
-        // If "Can't make any" is checked, uncheck all dates
         if (changedCheckbox.checked) {
           dateCheckboxes.forEach(cb => {
             if (cb.checked) {
@@ -744,7 +537,6 @@
         }
         toggleBackupMessage(changedCheckbox.checked);
       } else {
-        // If a date is checked, uncheck "Can't make any"
         if (changedCheckbox.checked && noneCheckbox.checked) {
           noneCheckbox.checked = false;
           noneCheckbox.closest('.date-option').classList.remove('selected');
@@ -762,6 +554,13 @@
       }
     }
 
+    function toggleCollapsible(sectionId) {
+      const content = document.getElementById(sectionId);
+      const header = content.previousElementSibling;
+      header.classList.toggle('collapsed');
+      content.classList.toggle('hidden');
+    }
+
     function formatDate(dateStr) {
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
@@ -776,9 +575,8 @@
         const diff = end - now;
 
         if (diff <= 0) {
-          document.getElementById('timerDisplay').textContent = 'Voting has ended';
-          document.getElementById('timerDisplay').classList.add('expired');
-          document.querySelector('.submit').disabled = true;
+          document.getElementById('timerDisplay').innerHTML = '<div style="font-size: 18px; color: #721c24; font-weight: 700;">Voting has ended</div>';
+          document.querySelector('.btn-submit').disabled = true;
           votingEnded = true;
           clearInterval(timerInterval);
           return;
@@ -789,20 +587,19 @@
         const seconds = Math.floor((diff % 60000) / 1000);
 
         const timerDisplay = document.getElementById('timerDisplay');
-        timerDisplay.textContent = `Voting ends in ${hours}h ${minutes}m ${seconds}s`;
+        if (timerDisplay) {
+          timerDisplay.innerHTML = `
+            <div style="font-size: 14px; color: #171717; margin-bottom: 8px;">Time remaining to confirm</div>
+            <div style="font-size: 28px; font-weight: 700; color: #171717;">${hours}h ${minutes}m ${seconds}s</div>
+          `;
+        }
 
         const paymentTimer = document.getElementById('paymentTimer');
         if (paymentTimer) {
-          paymentTimer.textContent = `${hours}h ${minutes}m ${seconds}s`;
-        }
-
-        if (hours < 1) {
-          timerDisplay.style.background = '#f8d7da';
-          timerDisplay.style.borderColor = '#f5c6cb';
-          timerDisplay.style.color = '#721c24';
-          if (paymentTimer) {
-            paymentTimer.style.color = '#dc3545';
-          }
+          paymentTimer.innerHTML = `
+            <div style="font-size: 12px; color: #171717; margin-bottom: 8px;">Time remaining:</div>
+            <div style="font-size: 24px; font-weight: 700; color: ${hours < 1 ? '#dc3545' : '#171717'};">${hours}h ${minutes}m ${seconds}s</div>
+          `;
         }
       }
 
@@ -832,16 +629,18 @@
         const data = await response.json();
 
         if (response.ok) {
-          const successHtml = `
-            <div class="success-message">
-              Vote recorded successfully!
+          document.getElementById('app').innerHTML = `
+            <div class="header">
+              <h1>✅ Vote recorded!</h1>
+              <div class="header-subtitle">Thank you for voting</div>
             </div>
-            <div class="results-link">
-              <p>Thank you for voting!</p>
-              <a href="/poll-results?token=${pollId}">View Results →</a>
+            <div class="content">
+              <p class="intro">Your vote has been submitted successfully.</p>
+              <div class="button-group">
+                <button class="btn-results" onclick="window.location.href='/poll-results?token=${pollId}'">View Results</button>
+              </div>
             </div>
           `;
-          document.getElementById('app').innerHTML = successHtml;
         } else {
           alert(data.error || 'Failed to submit vote');
         }
