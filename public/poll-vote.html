@@ -586,9 +586,17 @@
       // Build collapsible sections
       let collapsibleHtml = '';
 
+      if (poll.participation_section) {
+        collapsibleHtml += buildCollapsibleSection(
+          '5. Cancellation Policy',
+          `<p>${poll.participation_section}</p>`,
+          'participation-section'
+        );
+      }
+
       if (poll.about_section) {
         collapsibleHtml += buildCollapsibleSection(
-          '7. Group dynamic',
+          '6. Group dynamic',
           `<p>${poll.about_section}</p>`,
           'about-section',
           'group-dynamic'
@@ -597,21 +605,10 @@
 
       if (poll.faq_link) {
         collapsibleHtml += buildCollapsibleSection(
-          '8. FAQ',
+          '7. FAQ',
           `<p>You can check our FAQs here: <br><a class="faq-link" href="${poll.faq_link}" target="_blank">${poll.faq_title}</a></p>`,
           'faq-section'
         );
-      }
-
-      // Build participation section as static text (not collapsible)
-      let participationHtml = '';
-      if (poll.participation_section) {
-        participationHtml = `
-          <div class="payment-section">
-            <div class="participation-header">5. Confirm your participation</div>
-            <p style="color: #333; margin-bottom: 15px;">${poll.participation_section}</p>
-          </div>
-        `;
       }
 
       // Build payment section with timer
@@ -690,7 +687,7 @@
           ${collapsibleHtml}
 
           <div class="form-group">
-            <label for="voterName">9. Your Name *</label>
+            <label for="voterName">8. Your Name *</label>
             <input type="text" id="voterName" name="voter_name" placeholder="Enter your name" required>
           </div>
 
