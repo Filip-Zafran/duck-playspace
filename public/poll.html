@@ -562,7 +562,8 @@
     <div class="error-message" id="errorMsg"></div>
 
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('create')">Create Poll</button>
+      <button class="tab active" onclick="switchTab('create')">New Poll</button>
+      <button class="tab" onclick="switchTab('saved')">Saved Polls</button>
       <button class="tab" onclick="switchTab('manage')">Manage Polls</button>
     </div>
 
@@ -675,9 +676,18 @@
             </div>
           </div>
 
-          <button type="submit" style="margin-top: 20px;">Create Poll</button>
+          <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button type="submit">Create Poll</button>
+            <button type="button" onclick="saveDraft()" style="background: #95a5a6;">Save Draft</button>
+          </div>
         </form>
       </div>
+    </div>
+
+    <!-- Saved Polls Tab -->
+    <div id="saved" class="tab-content">
+      <h2>Saved Polls</h2>
+      <div id="savedPollsList"></div>
     </div>
 
     <!-- Manage Polls Tab -->
@@ -696,7 +706,9 @@
       document.getElementById(tabName).classList.add('active');
       event.target.classList.add('active');
 
-      if (tabName === 'manage') {
+      if (tabName === 'saved') {
+        loadSavedPolls();
+      } else if (tabName === 'manage') {
         loadPolls();
       }
     }
@@ -952,6 +964,144 @@
       loadPolls();
       switchTab('manage');
       closeModal();
+    }
+
+    function saveDraft() {
+      const title = document.getElementById('title').value;
+      if (!title) {
+        showMessage('Please enter a poll title', 'error');
+        return;
+      }
+
+      const formData = {
+        id: Date.now().toString(),
+        title: title,
+        description: document.getElementById('description').value,
+        duration: document.getElementById('duration').value,
+        expected: document.getElementById('expected').value,
+        date1: document.getElementById('date1').value,
+        time1: document.getElementById('time1').value,
+        date2: document.getElementById('date2').value,
+        time2: document.getElementById('time2').value,
+        date3: document.getElementById('date3').value,
+        time3: document.getElementById('time3').value,
+        timer_minutes: document.getElementById('timer_minutes').value,
+        about_section: document.getElementById('about_section').value,
+        participation_section: document.getElementById('participation_section').value,
+        important_section: document.getElementById('important_section').value,
+        faq_title: document.getElementById('faq_title').value,
+        faq_link: document.getElementById('faq_link').value,
+        createdAt: new Date().toLocaleString()
+      };
+
+      const savedPolls = JSON.parse(localStorage.getItem('savedPolls') || '[]');
+      savedPolls.push(formData);
+      localStorage.setItem('savedPolls', JSON.stringify(savedPolls));
+
+      showMessage('Poll saved as draft!', 'success');
+      document.getElementById('pollForm').reset();
+    }
+
+    function loadSavedPolls() {
+      const savedPolls = JSON.parse(localStorage.getItem('savedPolls') || '[]');
+      const savedPollsList = document.getElementById('savedPollsList');
+
+      if (savedPolls.length === 0) {
+        savedPollsList.innerHTML = '<div class="no-polls">No saved polls</div>';
+        return;
+      }
+
+      let html = '<table class="polls-table"><thead><tr><th>Title</th><th>Created</th><th>Actions</th></tr></thead><tbody>';
+
+      savedPolls.forEach(poll => {
+        html += `
+          <tr>
+            <td>${poll.title}</td>
+            <td>${poll.createdAt}</td>
+            <td>
+              <div class="poll-actions">
+                <button onclick="editSavedPoll('${poll.id}')">Edit</button>
+                <button onclick="sendSavedPoll('${poll.id}')" style="background: #27ae60;">Send</button>
+                <button class="danger" onclick="deleteSavedPoll('${poll.id}')">Delete</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += '</tbody></table>';
+      savedPollsList.innerHTML = html;
+    }
+
+    function editSavedPoll(draftId) {
+      const savedPolls = JSON.parse(localStorage.getItem('savedPolls') || '[]');
+      const poll = savedPolls.find(p => p.id === draftId);
+
+      if (!poll) {
+        showMessage('Draft not found', 'error');
+        return;
+      }
+
+      document.getElementById('title').value = poll.title;
+      document.getElementById('description').value = poll.description;
+      document.getElementById('duration').value = poll.duration;
+      document.getElementById('expected').value = poll.expected;
+      document.getElementById('date1').value = poll.date1;
+      document.getElementById('time1').value = poll.time1;
+      document.getElementById('date2').value = poll.date2;
+      document.getElementById('time2').value = poll.time2;
+      document.getElementById('date3').value = poll.date3;
+      document.getElementById('time3').value = poll.time3;
+      document.getElementById('timer_minutes').value = poll.timer_minutes;
+      document.getElementById('about_section').value = poll.about_section;
+      document.getElementById('participation_section').value = poll.participation_section;
+      document.getElementById('important_section').value = poll.important_section;
+      document.getElementById('faq_title').value = poll.faq_title;
+      document.getElementById('faq_link').value = poll.faq_link;
+
+      switchTab('create');
+      showMessage('Draft loaded. Edit and create the poll when ready', 'success');
+    }
+
+    function sendSavedPoll(draftId) {
+      const savedPolls = JSON.parse(localStorage.getItem('savedPolls') || '[]');
+      const poll = savedPolls.find(p => p.id === draftId);
+
+      if (!poll) {
+        showMessage('Draft not found', 'error');
+        return;
+      }
+
+      document.getElementById('title').value = poll.title;
+      document.getElementById('description').value = poll.description;
+      document.getElementById('duration').value = poll.duration;
+      document.getElementById('expected').value = poll.expected;
+      document.getElementById('date1').value = poll.date1;
+      document.getElementById('time1').value = poll.time1;
+      document.getElementById('date2').value = poll.date2;
+      document.getElementById('time2').value = poll.time2;
+      document.getElementById('date3').value = poll.date3;
+      document.getElementById('time3').value = poll.time3;
+      document.getElementById('timer_minutes').value = poll.timer_minutes;
+      document.getElementById('about_section').value = poll.about_section;
+      document.getElementById('participation_section').value = poll.participation_section;
+      document.getElementById('important_section').value = poll.important_section;
+      document.getElementById('faq_title').value = poll.faq_title;
+      document.getElementById('faq_link').value = poll.faq_link;
+
+      switchTab('create');
+      document.getElementById('pollForm').dispatchEvent(new Event('submit'));
+    }
+
+    function deleteSavedPoll(draftId) {
+      if (!confirm('Delete this draft?')) return;
+
+      let savedPolls = JSON.parse(localStorage.getItem('savedPolls') || '[]');
+      savedPolls = savedPolls.filter(p => p.id !== draftId);
+      localStorage.setItem('savedPolls', JSON.stringify(savedPolls));
+
+      showMessage('Draft deleted', 'success');
+      loadSavedPolls();
     }
   </script>
     </div>
