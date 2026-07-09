@@ -299,14 +299,12 @@ app.get('/api/vote/:pollId', async (req, res) => {
       date3: poll.date3,
       time3: poll.time3,
       timer_end: poll.timer_end,
+      location: poll.location,
       about_section: poll.about_section,
       participation_section: poll.participation_section,
       important_section: poll.important_section,
       faq_link: poll.faq_link,
       faq_title: poll.faq_title,
-      location1: poll.location1,
-      location2: poll.location2,
-      location3: poll.location3,
       counts,
       previews
     });

@@ -959,14 +959,17 @@
       document.getElementById('modalEventDetails').innerHTML = eventDetails;
       document.getElementById('votingLinkDisplay').textContent = pollData.vote_url;
 
+      // Get Important section
+      const importantSection = document.getElementById('important_section').value;
+
       // Generate email template
-      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, aboutSection, date1Str, date2Str, date3Str, formatDate);
+      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Str, date2Str, date3Str, formatDate);
       document.getElementById('emailTemplate').textContent = emailTemplate;
 
       document.getElementById('successModal').classList.remove('hidden');
     }
 
-    function generateEmailTemplate(pollData, title, description, duration, aboutSection, date1Str, date2Str, date3Str, formatDate) {
+    function generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Str, date2Str, date3Str, formatDate) {
       const pollId = pollData.id;
       const baseUrl = window.location.origin;
 
@@ -1060,6 +1063,13 @@
           <a href="${date3Link}" class="date-button">${date3Formatted}</a>
         </div>
       </div>
+
+      ${importantSection ? `
+      <div class="card" style="background: #f0f0f0; border-left: 4px solid #ff9800;">
+        <h2 style="color: #333;">Important</h2>
+        <p>${importantSection}</p>
+      </div>
+      ` : ''}
 
       ${pollData.timer_end ? `
       <div class="timer-section">
