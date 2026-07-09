@@ -979,6 +979,7 @@
       const date1Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date1`;
       const date2Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date2`;
       const date3Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date3`;
+      const noneLink = `${baseUrl}/poll-vote?token=${pollId}&preselect=none`;
 
       // Calculate deadline time for display
       let deadlineDisplay = '';
@@ -1059,6 +1060,9 @@
         </div>
         <div class="date-button-wrapper">
           <a href="${date3Link}" class="date-button">${date3Formatted}</a>
+        </div>
+        <div class="date-button-wrapper">
+          <a href="${noneLink}" class="date-button" style="background: #ff9800;">I can't make it this month</a>
         </div>
       </div>
 
