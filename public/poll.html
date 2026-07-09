@@ -762,8 +762,8 @@
         const data = await response.json();
 
         if (response.ok) {
+          showSuccessModal(data, formData);
           document.getElementById('pollForm').reset();
-          showSuccessModal(data);
         } else {
           showMessage(data.error || 'Failed to create poll', 'error');
         }
@@ -921,15 +921,15 @@
       }
     }
 
-    function showSuccessModal(pollData) {
-      const date1Str = document.getElementById('date1').value;
-      const date2Str = document.getElementById('date2').value;
-      const date3Str = document.getElementById('date3').value;
-      const title = document.getElementById('title').value;
-      const description = document.getElementById('description').value;
-      const aboutSection = document.getElementById('about_section').value;
-      const duration = document.getElementById('duration').value;
-      const importantSection = document.getElementById('important_section').value;
+    function showSuccessModal(pollData, formData) {
+      const date1Str = formData.date1;
+      const date2Str = formData.date2;
+      const date3Str = formData.date3;
+      const title = formData.title;
+      const description = formData.description;
+      const aboutSection = formData.about_section;
+      const duration = formData.duration;
+      const importantSection = formData.important_section;
 
       const formatDate = (dateStr) => {
         if (!dateStr) return 'Not specified';
