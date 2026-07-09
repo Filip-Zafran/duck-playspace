@@ -510,16 +510,14 @@
             ` : ''}
 
             <!-- Important Card -->
-            ${poll.important_section ? `
-              <div class="card card-important">
-                <div class="collapsible collapsed" onclick="toggleCollapsible('important')">
-                  <h2 style="margin: 0;">Important</h2>
-                </div>
-                <div class="collapsible-content hidden" id="important">
-                  <p>${poll.important_section}</p>
-                </div>
+            <div class="card card-important">
+              <div class="collapsible collapsed" onclick="toggleCollapsible('important')">
+                <h2 style="margin: 0;">Important</h2>
               </div>
-            ` : ''}
+              <div class="collapsible-content hidden" id="important">
+                <p>${poll.important_section || 'Please review important information about this event before confirming your participation.'}</p>
+              </div>
+            </div>
 
             <!-- Cancellation Policy Card -->
             <div class="card card-cancellation">
