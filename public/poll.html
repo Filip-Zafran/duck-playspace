@@ -929,6 +929,7 @@
       const description = document.getElementById('description').value;
       const aboutSection = document.getElementById('about_section').value;
       const duration = document.getElementById('duration').value;
+      const importantSection = document.getElementById('important_section').value;
 
       const formatDate = (dateStr) => {
         if (!dateStr) return 'Not specified';
@@ -936,6 +937,11 @@
         if (isNaN(date.getTime())) return 'Invalid date';
         return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
       };
+
+      // Format dates for use in email
+      const date1Formatted = formatDate(date1Str);
+      const date2Formatted = formatDate(date2Str);
+      const date3Formatted = formatDate(date3Str);
 
       const eventDetails = `
         <div class="modal-detail-item">
@@ -949,9 +955,9 @@
         <div class="modal-detail-item">
           <div class="modal-detail-label">Date Options</div>
           <div class="modal-detail-value">
-            ${formatDate(date1Str)}<br>
-            ${formatDate(date2Str)}<br>
-            ${formatDate(date3Str)}
+            ${date1Formatted}<br>
+            ${date2Formatted}<br>
+            ${date3Formatted}
           </div>
         </div>
       `;
@@ -959,28 +965,20 @@
       document.getElementById('modalEventDetails').innerHTML = eventDetails;
       document.getElementById('votingLinkDisplay').textContent = pollData.vote_url;
 
-      // Get Important section
-      const importantSection = document.getElementById('important_section').value;
-
-      // Generate email template
-      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Str, date2Str, date3Str, formatDate);
+      // Generate email template with pre-formatted values
+      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted);
       document.getElementById('emailTemplate').textContent = emailTemplate;
 
       document.getElementById('successModal').classList.remove('hidden');
     }
 
-    function generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Str, date2Str, date3Str, formatDate) {
+    function generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted) {
       const pollId = pollData.id;
       const baseUrl = window.location.origin;
 
       const date1Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date1`;
       const date2Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date2`;
       const date3Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date3`;
-
-      // Pre-format dates so they render properly in email
-      const date1Formatted = formatDate(date1Str);
-      const date2Formatted = formatDate(date2Str);
-      const date3Formatted = formatDate(date3Str);
 
       // Calculate deadline time for display
       let deadlineDisplay = '';
@@ -1100,14 +1098,17 @@
     function copyEmailTemplate() {
       const emailText = document.getElementById('emailTemplate').textContent;
       navigator.clipboard.writeText(emailText).then(() => {
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = 'Copied!';
-        setTimeout(() => {
-          btn.textContent = originalText;
-        }, 2000);
-      }).catch(() => {
-        alert('Failed to copy email template');
+        const btn = document.querySelector('button[onclick="copyEmailTemplate()"]');
+        if (btn) {
+          const originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        }
+      }).catch((err) => {
+        console.error('Failed to copy:', err);
+        alert('Failed to copy email template. Try manually selecting and copying.');
       });
     }
 
