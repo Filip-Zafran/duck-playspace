@@ -960,19 +960,24 @@
       document.getElementById('votingLinkDisplay').textContent = pollData.vote_url;
 
       // Generate email template
-      const emailTemplate = generateEmailTemplate(pollData, title, description, aboutSection, date1Str, date2Str, date3Str, formatDate);
+      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, aboutSection, date1Str, date2Str, date3Str, formatDate);
       document.getElementById('emailTemplate').textContent = emailTemplate;
 
       document.getElementById('successModal').classList.remove('hidden');
     }
 
-    function generateEmailTemplate(pollData, title, description, aboutSection, date1Str, date2Str, date3Str, formatDate) {
+    function generateEmailTemplate(pollData, title, description, duration, aboutSection, date1Str, date2Str, date3Str, formatDate) {
       const pollId = pollData.id;
       const baseUrl = window.location.origin;
 
       const date1Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date1`;
       const date2Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date2`;
       const date3Link = `${baseUrl}/poll-vote?token=${pollId}&preselect=date3`;
+
+      // Pre-format dates so they render properly in email
+      const date1Formatted = formatDate(date1Str);
+      const date2Formatted = formatDate(date2Str);
+      const date3Formatted = formatDate(date3Str);
 
       // Calculate deadline time for display
       let deadlineDisplay = '';
@@ -1046,13 +1051,13 @@
         <h2>Select Your Availability</h2>
         <p>Click on the date that works best for you:</p>
         <div class="date-button-wrapper">
-          <a href="${date1Link}" class="date-button">${formatDate(date1Str)}</a>
+          <a href="${date1Link}" class="date-button">${date1Formatted}</a>
         </div>
         <div class="date-button-wrapper">
-          <a href="${date2Link}" class="date-button">${formatDate(date2Str)}</a>
+          <a href="${date2Link}" class="date-button">${date2Formatted}</a>
         </div>
         <div class="date-button-wrapper">
-          <a href="${date3Link}" class="date-button">${formatDate(date3Str)}</a>
+          <a href="${date3Link}" class="date-button">${date3Formatted}</a>
         </div>
       </div>
 
