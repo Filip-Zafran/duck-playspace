@@ -458,8 +458,17 @@
               </p>
               <p style="margin: 8px 0;">
                 <strong>Location:</strong> ${poll.location || 'TBD'}
+                ${poll.location ? '<div style="font-size: 12px; color: #555; margin-top: 4px; font-style: italic;">Exact bar location will be revealed to confirmed participants</div>' : ''}
               </p>
             </div>
+
+            <!-- What This Group Is About -->
+            ${poll.about_section ? `
+              <div class="card" style="background: #d8c7ff;">
+                <h2>What this group is about</h2>
+                <p>${poll.about_section}</p>
+              </div>
+            ` : ''}
 
             <!-- Payment Card -->
             ${timerHtml}
@@ -501,12 +510,24 @@
             ` : ''}
 
             <!-- Important Card -->
-            <div class="card card-important">
-              <div class="collapsible" onclick="toggleCollapsible('important')">
-                <h2 style="margin: 0;">Important</h2>
+            ${poll.important_section ? `
+              <div class="card card-important">
+                <div class="collapsible collapsed" onclick="toggleCollapsible('important')">
+                  <h2 style="margin: 0;">Important</h2>
+                </div>
+                <div class="collapsible-content hidden" id="important">
+                  <p>${poll.important_section}</p>
+                </div>
               </div>
-              <div class="collapsible-content hidden" id="important">
-                <p>This is the current group composition. It may change slightly if somebody cancels and we need to find a suitable replacement.</p>
+            ` : ''}
+
+            <!-- Cancellation Policy Card -->
+            <div class="card card-cancellation">
+              <div class="collapsible collapsed" onclick="toggleCollapsible('cancellation')">
+                <h2 style="margin: 0;">Cancellation Policy</h2>
+              </div>
+              <div class="collapsible-content hidden" id="cancellation">
+                <p>No refunds</p>
               </div>
             </div>
 
