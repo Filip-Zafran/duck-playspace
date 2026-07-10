@@ -6,30 +6,201 @@
   <title>Dashboard - Duck Playspace</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .dashboard-container {
-      max-width: 1200px;
-      margin: 30px auto;
-      padding: 30px;
+    .dashboard-wrapper {
+      padding: 20px;
     }
 
-    .coming-soon {
-      background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-      border: 2px solid #667eea;
+    .filters-section {
+      background: white;
+      padding: 20px;
       border-radius: 10px;
-      padding: 60px 30px;
-      text-align: center;
-    }
-
-    .coming-soon h2 {
-      color: #667eea;
-      font-size: 32px;
       margin-bottom: 20px;
+      border: 1px solid #ddd;
     }
 
-    .coming-soon p {
+    .filters-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #667eea;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 5px;
       color: #666;
-      font-size: 18px;
-      line-height: 1.6;
+    }
+
+    .filter-group select,
+    .filter-group input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+
+    .reset-filters {
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      align-self: flex-end;
+    }
+
+    .reset-filters:hover {
+      background: #764ba2;
+    }
+
+    .data-stats {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+
+    .stat {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .stat-value {
+      color: #667eea;
+      font-weight: 700;
+    }
+
+    .table-wrapper {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      background: white;
+      border-top: 2px solid #667eea;
+      border-bottom: 2px solid #667eea;
+      overflow-x: auto;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .dashboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .dashboard-table th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      min-width: 120px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .dashboard-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+      min-width: 120px;
+    }
+
+    .dashboard-table tr:hover {
+      background: #f9f9f9;
+    }
+
+    .row-not-staying {
+      background-color: #ffcdd2 !important;
+    }
+
+    .row-man {
+      background-color: #e3f2fd;
+    }
+
+    .row-woman {
+      background-color: #fce4ec;
+    }
+
+    .row-nonbinary {
+      background-color: #f3e5f5;
+    }
+
+    .row-other {
+      background-color: #fff3e0;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+      font-size: 16px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .legend {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-color {
+      width: 30px;
+      height: 20px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
     }
   </style>
 </head>
@@ -57,11 +228,69 @@
       </nav>
 
       <main class="content">
-        <div class="dashboard-container">
-          <div class="coming-soon">
-            <h2>Dashboard</h2>
-            <p>Filters, functionalities, and automations coming soon!</p>
-            <p style="font-size: 14px; color: #999; margin-top: 20px;">Start by uploading data in the "Upload Data" section to see analytics here.</p>
+        <div class="dashboard-wrapper">
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+          </div>
+
+          <div id="dashboardContent" style="display: none;">
+            <!-- Legend -->
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background: #e3f2fd;"></div>
+                <span>Man</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #fce4ec;"></div>
+                <span>Woman</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #f3e5f5;"></div>
+                <span>Non-binary</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #fff3e0;"></div>
+                <span>Other</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #ffcdd2;"></div>
+                <span>NOT Staying in Berlin (Red)</span>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-section">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="filters-title">Filters</div>
+                <button class="reset-filters" onclick="resetFilters()">Reset All</button>
+              </div>
+              <div class="filters-grid" id="filtersContainer"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="data-stats">
+              <div class="stat">
+                <span class="stat-label">Total Records:</span>
+                <span class="stat-value" id="totalRecords">0</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Filtered:</span>
+                <span class="stat-value" id="filteredRecords">0</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Not Staying:</span>
+                <span class="stat-value" id="notStayingCount">0</span>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrapper">
+              <table class="dashboard-table" id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
@@ -69,6 +298,141 @@
   </div>
 
   <script>
+    let allData = [];
+    let filteredData = [];
+    const filters = {};
+
+    async function loadDashboard() {
+      try {
+        const response = await fetch('/api/dashboard-data');
+        allData = await response.json();
+        filteredData = [...allData];
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+
+        createFilters();
+        displayData();
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      }
+    }
+
+    function createFilters() {
+      const columns = allData.length > 0 ? Object.keys(allData[0]) : [];
+      const filterContainer = document.getElementById('filtersContainer');
+      filterContainer.innerHTML = '';
+
+      // Key columns to filter
+      const filterColumns = ['Gender', 'Sexuality', 'Attracted To', 'Staying In Berlin', 'Berlin Bezirk', 'Age', 'Main Intention'];
+
+      filterColumns.forEach(col => {
+        if (columns.includes(col)) {
+          const uniqueValues = [...new Set(allData.map(d => d[col]).filter(Boolean))].sort();
+
+          const group = document.createElement('div');
+          group.className = 'filter-group';
+
+          const label = document.createElement('label');
+          label.textContent = col;
+          group.appendChild(label);
+
+          const select = document.createElement('select');
+          select.innerHTML = `<option value="">All</option>`;
+          uniqueValues.forEach(val => {
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = val;
+            select.appendChild(option);
+          });
+
+          select.addEventListener('change', (e) => {
+            filters[col] = e.target.value;
+            applyFilters();
+          });
+
+          group.appendChild(select);
+          filterContainer.appendChild(group);
+        }
+      });
+    }
+
+    function applyFilters() {
+      filteredData = allData.filter(row => {
+        return Object.entries(filters).every(([col, value]) => {
+          return !value || row[col] == value;
+        });
+      });
+
+      displayData();
+    }
+
+    function displayData() {
+      const tableHead = document.getElementById('tableHead');
+      const tableBody = document.getElementById('tableBody');
+      tableHead.innerHTML = '';
+      tableBody.innerHTML = '';
+
+      if (filteredData.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="100" style="text-align: center; padding: 20px;">No data found</td></tr>';
+        updateStats();
+        return;
+      }
+
+      // Create headers (show key columns first)
+      const columns = Object.keys(filteredData[0]);
+      const headerRow = document.createElement('tr');
+      columns.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        headerRow.appendChild(th);
+      });
+      tableHead.appendChild(headerRow);
+
+      // Create rows with color coding
+      filteredData.forEach(row => {
+        const tr = document.createElement('tr');
+        const gender = row['Gender'] || '';
+        const stayingInBerlin = row['Staying In Berlin'] || '';
+
+        // Apply color based on gender
+        if (gender === 'Man') tr.className = 'row-man';
+        else if (gender === 'Woman') tr.className = 'row-woman';
+        else if (gender === 'Non-binary') tr.className = 'row-nonbinary';
+        else tr.className = 'row-other';
+
+        // RED if not staying in Berlin
+        if (stayingInBerlin === 'No') {
+          tr.className = 'row-not-staying';
+        }
+
+        columns.forEach(col => {
+          const td = document.createElement('td');
+          td.textContent = row[col] || '';
+          tr.appendChild(td);
+        });
+
+        tableBody.appendChild(tr);
+      });
+
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('totalRecords').textContent = allData.length;
+      document.getElementById('filteredRecords').textContent = filteredData.length;
+      const notStaying = filteredData.filter(r => r['Staying In Berlin'] === 'No').length;
+      document.getElementById('notStayingCount').textContent = notStaying;
+    }
+
+    function resetFilters() {
+      Object.keys(filters).forEach(key => delete filters[key]);
+      document.querySelectorAll('.filter-group select').forEach(select => {
+        select.value = '';
+      });
+      applyFilters();
+    }
+
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       try {
         const response = await fetch('/logout', { method: 'POST' });
@@ -80,6 +444,9 @@
         console.error('Logout failed:', err);
       }
     });
+
+    // Load data on page load
+    loadDashboard();
   </script>
 </body>
 </html>

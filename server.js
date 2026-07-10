@@ -535,6 +535,55 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
   }
 });
 
+// ===== API: Dashboard =====
+app.get('/api/dashboard-data', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const tableName = 'imported_data';
+
+    // Get all data from imported_data table
+    const result = await pool.query(`
+      SELECT data FROM ${tableName} ORDER BY imported_at DESC
+    `);
+
+    // Parse JSON data and add computed fields
+    const data = result.rows.map(row => {
+      const parsed = JSON.parse(row.data);
+
+      // Compute Sexuality from Gender and Attracted To
+      const gender = parsed['Gender'] || '';
+      const attractedTo = parsed['Attracted To'] || '';
+      let sexuality = '';
+
+      if (gender === 'Man' && attractedTo.includes('Woman')) {
+        sexuality = 'Straight';
+      } else if (gender === 'Man' && attractedTo.includes('Man')) {
+        sexuality = 'Gay';
+      } else if (gender === 'Woman' && attractedTo.includes('Man')) {
+        sexuality = 'Straight';
+      } else if (gender === 'Woman' && attractedTo.includes('Woman')) {
+        sexuality = 'Lesbian';
+      } else if (attractedTo.includes('Woman') && attractedTo.includes('Man')) {
+        sexuality = 'Bi/Pan';
+      } else if (attractedTo.includes('Non-binary') || attractedTo.includes('Other')) {
+        sexuality = 'Queer';
+      } else {
+        sexuality = 'Other';
+      }
+
+      return {
+        ...parsed,
+        Sexuality: sexuality
+      };
+    });
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
+    res.status(500).json({ error: 'Failed to fetch data' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
