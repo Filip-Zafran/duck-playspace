@@ -558,7 +558,17 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     });
   } catch (error) {
     console.error('Error uploading data:', error);
-    res.status(500).json({ error: `Failed to upload data: ${error.message}` });
+    const errorMessage = error && error.message ? error.message : String(error);
+    console.error('Error message:', errorMessage);
+    console.error('Error type:', typeof error);
+    console.error('Error toString:', error.toString());
+
+    try {
+      res.status(500).json({ error: `Failed to upload data: ${errorMessage}` });
+    } catch (jsonError) {
+      console.error('Failed to send JSON response:', jsonError);
+      res.status(500).send(`Failed to upload data: ${errorMessage}`);
+    }
   }
 });
 
