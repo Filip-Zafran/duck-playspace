@@ -5,6 +5,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import multer from 'multer';
+import XLSX from 'xlsx';
 import { initializeDatabase, getPool } from './db.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -104,6 +106,25 @@ app.get('/poll-vote', (req, res) => {
 app.get('/poll-results', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'poll-results.html'));
 });
+
+app.get('/upload-data', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'upload-data.html'));
+  }
+});
+
+app.get('/dashboard', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+  }
+});
+
+// ===== File Upload Config =====
+const upload = multer({ storage: multer.memoryStorage() });
 
 // ===== API: Polls =====
 
@@ -350,6 +371,101 @@ app.post('/api/vote/:pollId', async (req, res) => {
   } catch (error) {
     console.error('Error recording vote:', error);
     res.status(500).json({ error: 'Failed to record vote' });
+  }
+});
+
+// ===== API: Upload Data =====
+app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file provided' });
+    }
+
+    // Parse Excel file
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    if (data.length === 0) {
+      return res.status(400).json({ error: 'No data found in Excel file' });
+    }
+
+    const pool = getPool();
+
+    // Create table dynamically based on first row columns
+    const columns = Object.keys(data[0]);
+    const columnDefs = columns.map(col => `"${col}" VARCHAR(255)`).join(', ');
+
+    // Create table if it doesn't exist
+    const tableName = 'imported_data';
+    try {
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS ${tableName} (
+          id SERIAL PRIMARY KEY,
+          ${columnDefs},
+          imported_at TIMESTAMP DEFAULT NOW(),
+          data_hash VARCHAR(64) UNIQUE
+        )
+      `);
+    } catch (err) {
+      console.log(`Table might already exist: ${err.message}`);
+    }
+
+    // Insert data with duplicate checking
+    let importedRows = 0;
+    let skippedRows = 0;
+
+    for (const row of data) {
+      try {
+        // Create a hash of the row data to check for duplicates
+        const rowString = JSON.stringify(row);
+        const dataHash = crypto.createHash('sha256').update(rowString).digest('hex');
+
+        // Check if this data already exists
+        const checkResult = await pool.query(
+          `SELECT id FROM ${tableName} WHERE data_hash = $1`,
+          [dataHash]
+        );
+
+        if (checkResult.rows.length === 0) {
+          // Insert new row
+          const colNames = Object.keys(row).map(c => `"${c}"`).join(', ');
+          const placeholders = Object.keys(row).map((_, i) => `$${i + 1}`).join(', ');
+          const values = Object.values(row);
+
+          await pool.query(
+            `INSERT INTO ${tableName} (${colNames}, data_hash) VALUES (${placeholders}, $${values.length + 1})`,
+            [...values, dataHash]
+          );
+          importedRows++;
+        } else {
+          skippedRows++;
+        }
+      } catch (err) {
+        console.error(`Error inserting row: ${err.message}`);
+        skippedRows++;
+      }
+    }
+
+    // Get preview of first 5 rows
+    const previewResult = await pool.query(`
+      SELECT * FROM ${tableName} ORDER BY imported_at DESC LIMIT 5
+    `);
+
+    const preview = previewResult.rows;
+    const columns_response = Object.keys(data[0]);
+
+    res.json({
+      importedRows,
+      skippedRows,
+      totalRows: data.length,
+      preview,
+      columns: columns_response
+    });
+  } catch (error) {
+    console.error('Error uploading data:', error);
+    res.status(500).json({ error: `Failed to upload data: ${error.message}` });
   }
 });
 

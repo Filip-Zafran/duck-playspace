@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Data - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .upload-container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 10px;
+      border: 2px solid #667eea;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .upload-area {
+      border: 3px dashed #667eea;
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      background: #f8f9ff;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 20px;
+    }
+
+    .upload-area:hover {
+      background: #f0f3ff;
+      border-color: #764ba2;
+    }
+
+    .upload-area.dragover {
+      background: #e8f0ff;
+      border-color: #764ba2;
+      transform: scale(1.02);
+    }
+
+    .upload-area p {
+      margin: 10px 0;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .upload-area small {
+      display: block;
+      color: #999;
+      margin-top: 10px;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    .file-info {
+      background: #f0f3ff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    .file-info.show {
+      display: block;
+    }
+
+    .file-name {
+      font-weight: 600;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+
+    .upload-btn {
+      width: 100%;
+      padding: 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+    }
+
+    .upload-btn:hover {
+      background: #764ba2;
+    }
+
+    .upload-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .status-message {
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      display: none;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .status-message.show {
+      display: block;
+    }
+
+    .status-message.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status-message.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .data-preview {
+      margin-top: 30px;
+      display: none;
+    }
+
+    .data-preview.show {
+      display: block;
+    }
+
+    .data-preview h3 {
+      color: #667eea;
+      margin-bottom: 15px;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+
+    .data-table th {
+      background: #667eea;
+      color: white;
+      padding: 10px;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    .data-table td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .data-table tr:hover {
+      background: #f8f9ff;
+    }
+
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+    }
+
+    .loading.show {
+      display: block;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-bg grid-bg"></div>
+
+    <div class="container">
+      <header class="header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
+            <h1>Duck Playspace</h1>
+          </div>
+          <div class="header-subtitle">Data Management</div>
+        </div>
+        <button id="logoutBtn" class="btn btn-logout">Logout</button>
+      </header>
+
+      <nav class="navbar">
+        <a href="/home" class="nav-link">Home</a>
+        <a href="/poll" class="nav-link">Polls</a>
+        <a href="/upload-data" class="nav-link active">Upload Data</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
+      </nav>
+
+      <main class="content">
+        <div class="upload-container">
+          <h2>Upload Data</h2>
+          <p>Upload an Excel file (.xlsx or .xls) to import data. New uploads will be added without creating duplicates.</p>
+
+          <div class="upload-area" id="uploadArea">
+            <p>📁 Drag and drop your Excel file here</p>
+            <p>or</p>
+            <p><strong>Click to select a file</strong></p>
+            <small>Supported formats: .xlsx, .xls</small>
+            <input type="file" id="fileInput" accept=".xlsx,.xls" />
+          </div>
+
+          <div class="file-info" id="fileInfo">
+            <div class="file-name" id="fileName"></div>
+            <button class="upload-btn" id="uploadBtn">Upload File</button>
+          </div>
+
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing your file...</p>
+          </div>
+
+          <div class="status-message" id="statusMessage"></div>
+
+          <div class="data-preview" id="dataPreview">
+            <h3>Data Preview</h3>
+            <p id="previewInfo"></p>
+            <table class="data-table" id="dataTable">
+              <thead id="tableHead"></thead>
+              <tbody id="tableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const fileInfo = document.getElementById('fileInfo');
+    const fileName = document.getElementById('fileName');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const loading = document.getElementById('loading');
+    const statusMessage = document.getElementById('statusMessage');
+    const dataPreview = document.getElementById('dataPreview');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    let selectedFile = null;
+
+    // Upload area click
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFileSelect(files[0]);
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFileSelect(e.target.files[0]);
+      }
+    });
+
+    function handleFileSelect(file) {
+      if (!file.name.match(/\.(xlsx|xls)$/)) {
+        showStatus('Please select a valid Excel file (.xlsx or .xls)', 'error');
+        return;
+      }
+
+      selectedFile = file;
+      fileName.textContent = `Selected: ${file.name}`;
+      fileInfo.classList.add('show');
+    }
+
+    // Upload button
+    uploadBtn.addEventListener('click', async () => {
+      if (!selectedFile) {
+        showStatus('Please select a file', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      loading.classList.add('show');
+      uploadBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/upload-data', {
+          method: 'POST',
+          body: formData
+        });
+
+        const data = await response.json();
+
+        loading.classList.remove('show');
+
+        if (response.ok) {
+          showStatus(`✅ Success! Imported ${data.importedRows} rows. Skipped ${data.skippedRows} duplicates.`, 'success');
+          displayDataPreview(data.preview, data.columns);
+          fileInfo.classList.remove('show');
+          fileInput.value = '';
+          selectedFile = null;
+        } else {
+          showStatus(`Error: ${data.error || 'Failed to upload file'}`, 'error');
+        }
+      } catch (error) {
+        loading.classList.remove('show');
+        showStatus(`Error: ${error.message}`, 'error');
+      }
+
+      uploadBtn.disabled = false;
+    });
+
+    function showStatus(message, type) {
+      statusMessage.textContent = message;
+      statusMessage.className = `status-message show ${type}`;
+      setTimeout(() => {
+        statusMessage.classList.remove('show');
+      }, 5000);
+    }
+
+    function displayDataPreview(previewData, columns) {
+      const previewInfo = document.getElementById('previewInfo');
+      previewInfo.textContent = `First ${previewData.length} rows of imported data:`;
+
+      const tableHead = document.getElementById('tableHead');
+      const tableBody = document.getElementById('tableBody');
+
+      // Clear existing content
+      tableHead.innerHTML = '';
+      tableBody.innerHTML = '';
+
+      // Create headers
+      const headerRow = document.createElement('tr');
+      columns.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        headerRow.appendChild(th);
+      });
+      tableHead.appendChild(headerRow);
+
+      // Create rows
+      previewData.forEach(row => {
+        const tr = document.createElement('tr');
+        columns.forEach(col => {
+          const td = document.createElement('td');
+          td.textContent = row[col] || '';
+          tr.appendChild(td);
+        });
+        tableBody.appendChild(tr);
+      });
+
+      dataPreview.classList.add('show');
+    }
+
+    // Logout
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/logout', { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    });
+  </script>
+</body>
+</html>
