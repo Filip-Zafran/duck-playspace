@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data & Filters - Duck Playspace</title>
+  <title>Data - Duck Playspace</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     .dashboard-wrapper {
@@ -362,7 +362,7 @@
         <a href="/home" class="nav-link">Home</a>
         <a href="/poll" class="nav-link">Polls</a>
         <a href="/upload-data" class="nav-link">Upload Data</a>
-        <a href="/data-filters" class="nav-link active">Data & Filters</a>
+        <a href="/data-filters" class="nav-link active">Data</a>
         <a href="/groups" class="nav-link">Groups</a>
       </nav>
 
@@ -521,8 +521,15 @@
         return;
       }
 
-      // Create headers (show key columns first)
-      const columns = Object.keys(filteredData[0]);
+      // Define column order
+      const priorityColumns = ['Name', 'Gender', 'Sexuality', 'Age', 'Age Preference Min', 'Age Preference Max', 'Email', 'Bio'];
+      const allColumns = Object.keys(filteredData[0]);
+
+      // Get priority columns that exist in data, then add remaining columns
+      const orderedColumns = priorityColumns.filter(col => allColumns.includes(col));
+      const remainingColumns = allColumns.filter(col => !priorityColumns.includes(col));
+      const columns = [...orderedColumns, ...remainingColumns];
+
       const headerRow = document.createElement('tr');
 
       // Add number column header
