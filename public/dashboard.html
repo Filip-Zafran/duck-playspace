@@ -245,6 +245,101 @@
       border-radius: 4px;
       border: 1px solid #ddd;
     }
+
+    .dashboard-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .dashboard-tab {
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .dashboard-tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .dashboard-tab:hover {
+      color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .groups-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+    }
+
+    .group-card {
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .group-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .gender-subgroup {
+      margin-bottom: 15px;
+    }
+
+    .gender-subgroup-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+      padding-left: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .person-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 10px;
+      padding: 8px;
+      background: #f9f9f9;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    .person-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .person-age {
+      color: #666;
+    }
+
+    .person-pref {
+      color: #999;
+    }
   </style>
 </head>
 <body>
@@ -278,7 +373,15 @@
           </div>
 
           <div id="dashboardContent" style="display: none;">
-            <!-- Legend -->
+            <!-- Tab Navigation -->
+            <div class="dashboard-tabs">
+              <button class="dashboard-tab active" onclick="switchTab('data-filters')">DAta & Filters</button>
+              <button class="dashboard-tab" onclick="switchTab('groups')">Groups</button>
+            </div>
+
+            <!-- Data & Filters Tab -->
+            <div id="data-filters" class="tab-content active">
+              <!-- Legend -->
             <div class="legend">
               <div class="legend-item">
                 <div class="legend-color" style="background: #e3f2fd;"></div>
@@ -337,6 +440,16 @@
                 <tbody id="tableBody"></tbody>
               </table>
             </div>
+            </div>
+            <!-- End Data & Filters Tab -->
+
+            <!-- Groups Tab -->
+            <div id="groups" class="tab-content">
+              <div class="groups-container" id="groupsContainer">
+                <p>Loading groups...</p>
+              </div>
+            </div>
+            <!-- End Groups Tab -->
           </div>
         </div>
       </main>
@@ -501,6 +614,128 @@
         console.error('Logout failed:', err);
       }
     });
+
+    // Tab switching
+    function switchTab(tabName) {
+      // Hide all tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      document.querySelectorAll('.dashboard-tab').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      // Show selected tab
+      document.getElementById(tabName).classList.add('active');
+      event.target.classList.add('active');
+
+      // Load groups if switching to groups tab
+      if (tabName === 'groups') {
+        displayGroups();
+      }
+    }
+
+    // Categorize people into groups
+    function categorizeGroups() {
+      const groups = {
+        'Mono Long-Term': [],
+        'Mono Casual': [],
+        'Poly/ENM Long-Term': [],
+        'Poly/ENM Casual': [],
+        'Friends': [],
+        'LGBTQ+': []
+      };
+
+      allData.forEach(person => {
+        const mainIntention = person['Main Intention'] || '';
+        const relationshipType = person['Relationship Type'] || '';
+        const lookingFor = person['Looking For'] || '';
+        const gender = person['Gender'] || '';
+        const sexuality = person['Sexuality'] || '';
+
+        // Determine which groups the person belongs to
+        const mono = relationshipType.toLowerCase().includes('mono') || mainIntention.toLowerCase().includes('mono');
+        const poly = relationshipType.toLowerCase().includes('poly') || relationshipType.toLowerCase().includes('enm') || mainIntention.toLowerCase().includes('poly');
+        const longTerm = lookingFor.toLowerCase().includes('long') || mainIntention.toLowerCase().includes('long');
+        const casual = lookingFor.toLowerCase().includes('casual') || mainIntention.toLowerCase().includes('casual');
+        const friendsOnly = lookingFor.toLowerCase().includes('friend') || mainIntention.toLowerCase().includes('friend');
+        const lgbtq = gender !== 'Man' && gender !== 'Woman' && gender !== '' || sexuality.toLowerCase().includes('gay') || sexuality.toLowerCase().includes('lesbian') || sexuality.toLowerCase().includes('bi');
+
+        if (mono && longTerm) groups['Mono Long-Term'].push(person);
+        if (mono && casual) groups['Mono Casual'].push(person);
+        if (poly && longTerm) groups['Poly/ENM Long-Term'].push(person);
+        if (poly && casual) groups['Poly/ENM Casual'].push(person);
+        if (friendsOnly) groups['Friends'].push(person);
+        if (lgbtq) groups['LGBTQ+'].push(person);
+      });
+
+      return groups;
+    }
+
+    // Display groups with gender subgroups
+    function displayGroups() {
+      const groups = categorizeGroups();
+      const container = document.getElementById('groupsContainer');
+      container.innerHTML = '';
+
+      Object.entries(groups).forEach(([groupName, people]) => {
+        const card = document.createElement('div');
+        card.className = 'group-card';
+
+        const title = document.createElement('div');
+        title.className = 'group-title';
+        title.textContent = `${groupName} (${people.length})`;
+        card.appendChild(title);
+
+        // Group by gender
+        const byGender = {};
+        people.forEach(person => {
+          const gender = person['Gender'] || 'Not Specified';
+          if (!byGender[gender]) byGender[gender] = [];
+          byGender[gender].push(person);
+        });
+
+        // Display each gender group sorted by age
+        Object.entries(byGender).forEach(([gender, genderPeople]) => {
+          const genderTitle = document.createElement('div');
+          genderTitle.className = 'gender-subgroup-title';
+          genderTitle.textContent = `${gender}`;
+          card.appendChild(genderTitle);
+
+          const subgroup = document.createElement('div');
+          subgroup.className = 'gender-subgroup';
+
+          // Sort by age ascending
+          genderPeople.sort((a, b) => {
+            const ageA = parseInt(a['Age'] || 0);
+            const ageB = parseInt(b['Age'] || 0);
+            return ageA - ageB;
+          });
+
+          genderPeople.forEach(person => {
+            const row = document.createElement('div');
+            row.className = 'person-row';
+
+            const name = person['Name'] || person['Email'] || 'Unknown';
+            const age = person['Age'] || '?';
+            const prefMin = person['Age Preference Min'] || '?';
+            const prefMax = person['Age Preference Max'] || '?';
+
+            row.innerHTML = `
+              <div class="person-name">${name}</div>
+              <div class="person-age">${age} yrs</div>
+              <div class="person-pref">${prefMin}-${prefMax}</div>
+            `;
+
+            subgroup.appendChild(row);
+          });
+
+          card.appendChild(subgroup);
+        });
+
+        container.appendChild(card);
+      });
+    }
 
     // Sync scroll between top scrollbar and table
     function setupScrollSync() {
