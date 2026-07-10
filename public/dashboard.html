@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data & Filters - Duck Playspace</title>
+  <title>DAta & Filters - Duck Playspace</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     .dashboard-wrapper {
@@ -98,11 +98,42 @@
       font-weight: 700;
     }
 
+    .scrollbar-top {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      overflow-x: scroll;
+      overflow-y: hidden;
+      height: 15px;
+      background: white;
+      border-top: 2px solid #667eea;
+    }
+
+    .scrollbar-top-inner {
+      width: 100%;
+      height: 1px;
+    }
+
+    .scrollbar-top::-webkit-scrollbar {
+      height: 12px;
+    }
+
+    .scrollbar-top::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .scrollbar-top::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 6px;
+    }
+
+    .scrollbar-top::-webkit-scrollbar-thumb:hover {
+      background: #764ba2;
+    }
+
     .table-wrapper {
       width: 100vw;
       margin-left: calc(-50vw + 50%);
       background: white;
-      border-top: 2px solid #667eea;
       border-bottom: 2px solid #667eea;
       overflow-x: auto;
       max-height: 70vh;
@@ -297,7 +328,10 @@
             </div>
 
             <!-- Table -->
-            <div class="table-wrapper">
+            <div class="scrollbar-top" id="scrollbarTop">
+              <div class="scrollbar-top-inner"></div>
+            </div>
+            <div class="table-wrapper" id="tableWrapper">
               <table class="dashboard-table" id="dataTable">
                 <thead id="tableHead"></thead>
                 <tbody id="tableBody"></tbody>
@@ -468,8 +502,31 @@
       }
     });
 
+    // Sync scroll between top scrollbar and table
+    function setupScrollSync() {
+      const scrollbarTop = document.getElementById('scrollbarTop');
+      const tableWrapper = document.getElementById('tableWrapper');
+
+      if (!scrollbarTop || !tableWrapper) return;
+
+      scrollbarTop.addEventListener('scroll', () => {
+        tableWrapper.scrollLeft = scrollbarTop.scrollLeft;
+      });
+
+      tableWrapper.addEventListener('scroll', () => {
+        scrollbarTop.scrollLeft = tableWrapper.scrollLeft;
+      });
+
+      // Set initial scrollbar width
+      setTimeout(() => {
+        const tableWidth = document.querySelector('.dashboard-table').scrollWidth;
+        document.querySelector('.scrollbar-top-inner').style.width = tableWidth + 'px';
+      }, 100);
+    }
+
     // Load data on page load
     loadDashboard();
+    setTimeout(setupScrollSync, 500);
   </script>
 </body>
 </html>
