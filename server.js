@@ -410,27 +410,43 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     const totalRowsInSheet = rowMatch ? parseInt(rowMatch[0]) : 0;
     console.log(`Total rows in sheet: ${totalRowsInSheet}`);
 
-    // Read all rows as array of arrays first
-    const arrayData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-    console.log(`Array data length: ${arrayData.length}`);
+    // Alternative: Read cells directly from worksheet
+    function readAllRows(ws) {
+      const result = [];
+      if (!ws['!ref']) return result;
 
-    // Get headers from first row
-    const headers = arrayData[0];
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      console.log(`Decoded range: ${JSON.stringify(range)}`);
 
-    // Convert array format to objects, including empty rows
-    const data = [];
-    for (let i = 1; i < arrayData.length; i++) {
-      const row = arrayData[i];
-      if (row && row.length > 0) {
-        const obj = {};
-        headers.forEach((header, idx) => {
-          obj[header] = row[idx] !== undefined ? row[idx] : '';
-        });
-        data.push(obj);
+      // Get headers from first row
+      const headers = [];
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const cell = ws[XLSX.utils.encode_cell({ r: 0, c: C })];
+        headers.push(cell ? cell.v : '');
       }
+
+      // Read all data rows
+      for (let R = 1; R <= range.e.r; R++) {
+        const row = {};
+        let hasData = false;
+
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+          const value = cell ? cell.v : '';
+          row[headers[C - range.s.c]] = value !== undefined ? value : '';
+          if (value !== undefined && value !== '') hasData = true;
+        }
+
+        if (hasData) {
+          result.push(row);
+        }
+      }
+
+      return result;
     }
 
-    console.log(`Excel file parsed: Found ${data.length} rows (converted from array)`);
+    const data = readAllRows(worksheet);
+    console.log(`Excel file parsed: Found ${data.length} data rows from direct cell reading`);
 
     if (!data || data.length === 0) {
       return res.status(400).json({ error: `No data found in Excel file. Sheet has ${totalRowsInSheet} rows but no valid data` });
