@@ -322,7 +322,8 @@
         loading.classList.remove('show');
 
         if (response.ok) {
-          showStatus(`✅ Success! Imported ${data.importedRows} rows. Skipped ${data.skippedRows} duplicates.`, 'success');
+          const message = `✅ Success! Total rows in file: ${data.totalRows} | Imported: ${data.importedRows} | Skipped (duplicates): ${data.skippedRows}`;
+          showStatus(message, 'success');
           displayDataPreview(data.preview, data.columns);
           fileInfo.classList.remove('show');
           fileInput.value = '';

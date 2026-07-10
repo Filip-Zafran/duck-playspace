@@ -382,10 +382,19 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     }
 
     // Parse Excel file
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(req.file.buffer, {
+      type: 'buffer',
+      defval: '' // Use empty string for empty cells
+    });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const data = XLSX.utils.sheet_to_json(worksheet);
+
+    // Read all rows including empty cells
+    const data = XLSX.utils.sheet_to_json(worksheet, {
+      defval: '' // Default value for empty cells
+    });
+
+    console.log(`Excel file parsed: Found ${data.length} rows`);
 
     if (data.length === 0) {
       return res.status(400).json({ error: 'No data found in Excel file' });
@@ -448,20 +457,23 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
       }
     }
 
-    // Get preview of first 5 rows
+    // Get preview of imported rows (max 10)
     const previewResult = await pool.query(`
-      SELECT * FROM ${tableName} ORDER BY imported_at DESC LIMIT 5
+      SELECT * FROM ${tableName} ORDER BY imported_at DESC LIMIT 10
     `);
 
     const preview = previewResult.rows;
     const columns_response = Object.keys(data[0]);
+
+    console.log(`Import complete: ${importedRows} imported, ${skippedRows} skipped, ${data.length} total`);
 
     res.json({
       importedRows,
       skippedRows,
       totalRows: data.length,
       preview,
-      columns: columns_response
+      columns: columns_response,
+      message: `Successfully imported ${importedRows} rows and skipped ${skippedRows} duplicates`
     });
   } catch (error) {
     console.error('Error uploading data:', error);
