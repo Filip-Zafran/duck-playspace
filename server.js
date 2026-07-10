@@ -422,7 +422,7 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
       const headers = [];
       for (let C = range.s.c; C <= range.e.c; C++) {
         const cell = ws[XLSX.utils.encode_cell({ r: 0, c: C })];
-        headers.push(cell ? cell.v : '');
+        headers.push(cell ? String(cell.v) : '');
       }
 
       // Read all data rows
@@ -432,9 +432,10 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
 
         for (let C = range.s.c; C <= range.e.c; C++) {
           const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
-          const value = cell ? cell.v : '';
-          row[headers[C - range.s.c]] = value !== undefined ? value : '';
-          if (value !== undefined && value !== '') hasData = true;
+          // Convert all values to strings to ensure JSON serializable
+          const value = cell ? String(cell.v) : '';
+          row[headers[C - range.s.c]] = value;
+          if (value !== undefined && value !== '' && value !== 'undefined') hasData = true;
         }
 
         if (hasData) {
