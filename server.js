@@ -455,8 +455,6 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     const pool = getPool();
     const tableName = 'imported_data';
 
-    const pool = getPool();
-
     // Check if table exists and has correct schema
     const checkTable = await pool.query(`
       SELECT EXISTS (
