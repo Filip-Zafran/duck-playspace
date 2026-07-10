@@ -605,8 +605,8 @@
 
             const name = person['Name'] || person['Email'] || 'Unknown';
             const age = person['Age'] || '?';
-            const prefMin = person['Age Preference Min'] || '?';
-            const prefMax = person['Age Preference Max'] || '?';
+            const prefMin = person['Preferred Age Min'] || person['Age Preference Min'] || '?';
+            const prefMax = person['Preferred Age Max'] || person['Age Preference Max'] || '?';
             const genderValue = person['Gender'] || '?';
             const sexuality = person['Sexuality'] || '?';
             const bio = person['Bio'] || '';
