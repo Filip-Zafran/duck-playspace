@@ -401,31 +401,33 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     }
 
     const pool = getPool();
-
-    // Create table dynamically based on first row columns
-    const columns = Object.keys(data[0]);
-    const columnDefs = columns.map(col => `"${col}" VARCHAR(255)`).join(', ');
-
-    // Create table if it doesn't exist
     const tableName = 'imported_data';
+
+    // Create a flexible table that stores JSON data
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS ${tableName} (
           id SERIAL PRIMARY KEY,
-          ${columnDefs},
-          imported_at TIMESTAMP DEFAULT NOW(),
-          data_hash VARCHAR(64) UNIQUE
+          data JSONB NOT NULL,
+          data_hash VARCHAR(64) UNIQUE NOT NULL,
+          imported_at TIMESTAMP DEFAULT NOW()
         )
       `);
+      console.log('Table created or already exists');
     } catch (err) {
-      console.log(`Table might already exist: ${err.message}`);
+      console.error(`Error creating table: ${err.message}`);
+      return res.status(500).json({ error: `Failed to create table: ${err.message}` });
     }
 
     // Insert data with duplicate checking
     let importedRows = 0;
     let skippedRows = 0;
+    let errorRows = 0;
 
-    for (const row of data) {
+    console.log(`Starting to import ${data.length} rows...`);
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
       try {
         // Create a hash of the row data to check for duplicates
         const rowString = JSON.stringify(row);
@@ -438,34 +440,34 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
         );
 
         if (checkResult.rows.length === 0) {
-          // Insert new row
-          const colNames = Object.keys(row).map(c => `"${c}"`).join(', ');
-          const placeholders = Object.keys(row).map((_, i) => `$${i + 1}`).join(', ');
-          const values = Object.values(row);
-
+          // Insert new row as JSON
           await pool.query(
-            `INSERT INTO ${tableName} (${colNames}, data_hash) VALUES (${placeholders}, $${values.length + 1})`,
-            [...values, dataHash]
+            `INSERT INTO ${tableName} (data, data_hash) VALUES ($1, $2)`,
+            [JSON.stringify(row), dataHash]
           );
           importedRows++;
+          if ((i + 1) % 100 === 0) {
+            console.log(`Processed ${i + 1} rows, imported ${importedRows}...`);
+          }
         } else {
           skippedRows++;
         }
       } catch (err) {
-        console.error(`Error inserting row: ${err.message}`);
-        skippedRows++;
+        console.error(`Error inserting row ${i + 1}: ${err.message}`);
+        errorRows++;
       }
     }
 
+    console.log(`Import complete: ${importedRows} imported, ${skippedRows} skipped, ${errorRows} errors out of ${data.length} total`);
+
     // Get preview of imported rows (max 10)
     const previewResult = await pool.query(`
-      SELECT * FROM ${tableName} ORDER BY imported_at DESC LIMIT 10
+      SELECT data FROM ${tableName} ORDER BY imported_at DESC LIMIT 10
     `);
 
-    const preview = previewResult.rows;
+    // Convert JSON data back to objects for preview
+    const preview = previewResult.rows.map(row => JSON.parse(row.data));
     const columns_response = Object.keys(data[0]);
-
-    console.log(`Import complete: ${importedRows} imported, ${skippedRows} skipped, ${data.length} total`);
 
     res.json({
       importedRows,
