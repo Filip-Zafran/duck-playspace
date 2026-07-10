@@ -323,7 +323,7 @@
 
     .person-row {
       display: grid;
-      grid-template-columns: 1.5fr 0.8fr 1fr 1fr 2fr 1.5fr;
+      grid-template-columns: 1.8fr 0.6fr 0.8fr 1fr 1.5fr 1.5fr;
       gap: 10px;
       padding: 10px;
       background: #f9f9f9;
@@ -338,6 +338,11 @@
       color: #333;
     }
 
+    .person-pref-age {
+      color: #999;
+      font-size: 11px;
+    }
+
     .person-gender {
       color: #666;
     }
@@ -347,11 +352,17 @@
     }
 
     .person-bio {
-      color: #666;
+      color: #0066cc;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 200px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .person-bio:hover {
+      color: #004499;
     }
 
     .person-email {
@@ -359,6 +370,59 @@
       text-decoration: none;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 600px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .modal-close {
+      color: #667eea;
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      line-height: 20px;
+    }
+
+    .modal-close:hover {
+      color: #764ba2;
+    }
+
+    .modal-bio-text {
+      font-size: 13px;
+      color: #333;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
   </style>
 </head>
@@ -521,6 +585,8 @@
 
             const name = person['Name'] || person['Email'] || 'Unknown';
             const age = person['Age'] || '?';
+            const prefMin = person['Age Preference Min'] || '?';
+            const prefMax = person['Age Preference Max'] || '?';
             const genderValue = person['Gender'] || '?';
             const sexuality = person['Sexuality'] || '?';
             const bio = person['Bio'] || '';
@@ -528,9 +594,10 @@
 
             row.innerHTML = `
               <div class="person-name">${name} (${age})</div>
+              <div class="person-pref-age">${prefMin}-${prefMax}</div>
               <div class="person-gender">${genderValue}</div>
               <div class="person-sexuality">${sexuality}</div>
-              <div class="person-bio" title="${bio}">${bio || '-'}</div>
+              <div class="person-bio" onclick="openBioModal('${name}', '${bio.replace(/'/g, "\\'")}')">${bio.substring(0, 50) || '-'}${bio.length > 50 ? '...' : ''}</div>
               <div class="person-email">${email}</div>
             `;
 
@@ -544,8 +611,39 @@
       });
     }
 
+    // Bio Modal functionality
+    function openBioModal(name, bio) {
+      const modal = document.getElementById('bioModal');
+      const bioText = document.getElementById('bioText');
+      const modalHeader = document.getElementById('modalHeader');
+      modalHeader.textContent = `${name}'s Bio`;
+      bioText.textContent = bio;
+      modal.style.display = 'block';
+    }
+
+    function closeBioModal() {
+      const modal = document.getElementById('bioModal');
+      modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+      const modal = document.getElementById('bioModal');
+      if (event.target === modal) {
+        modal.style.display = 'none';
+      }
+    }
+
     // Load data on page load
     loadDashboard();
   </script>
+
+  <!-- Bio Modal -->
+  <div id="bioModal" class="modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeBioModal()">&times;</span>
+      <div class="modal-header" id="modalHeader">Bio</div>
+      <div class="modal-bio-text" id="bioText"></div>
+    </div>
+  </div>
 </body>
 </html>
