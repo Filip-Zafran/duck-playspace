@@ -513,10 +513,16 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
         );
 
         if (checkResult.rows.length === 0) {
-          // Insert new row as JSON
+          // Insert new row as JSON with custom replacer to handle any objects
+          const jsonStr = JSON.stringify(row, (key, value) => {
+            if (value === null || value === undefined) return '';
+            if (typeof value === 'object') return String(value);
+            return value;
+          });
+
           await pool.query(
             `INSERT INTO ${tableName} (data, data_hash) VALUES ($1, $2)`,
-            [JSON.stringify(row), dataHash]
+            [jsonStr, dataHash]
           );
           importedRows++;
           if ((i + 1) % 100 === 0) {
