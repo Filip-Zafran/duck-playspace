@@ -133,24 +133,55 @@
       margin-bottom: 15px;
     }
 
+    .table-wrapper {
+      max-height: 500px;
+      overflow: auto;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .table-wrapper::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 4px;
+    }
+
+    .table-wrapper::-webkit-scrollbar-thumb:hover {
+      background: #764ba2;
+    }
+
     .data-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
       font-size: 14px;
     }
 
     .data-table th {
       background: #667eea;
       color: white;
-      padding: 10px;
+      padding: 12px;
       text-align: left;
       font-weight: 600;
+      min-width: 100px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
 
     .data-table td {
-      padding: 10px;
+      padding: 10px 12px;
       border-bottom: 1px solid #ddd;
+      min-width: 100px;
+      white-space: nowrap;
     }
 
     .data-table tr:hover {
@@ -235,10 +266,12 @@
           <div class="data-preview" id="dataPreview">
             <h3>Data Preview</h3>
             <p id="previewInfo"></p>
-            <table class="data-table" id="dataTable">
-              <thead id="tableHead"></thead>
-              <tbody id="tableBody"></tbody>
-            </table>
+            <div class="table-wrapper">
+              <table class="data-table" id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
