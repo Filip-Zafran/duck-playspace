@@ -283,9 +283,10 @@
     }
 
     .groups-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: 20px;
+      width: 100%;
     }
 
     .group-card {
@@ -293,6 +294,7 @@
       border: 2px solid #667eea;
       border-radius: 10px;
       padding: 20px;
+      width: 100%;
     }
 
     .group-title {
@@ -319,13 +321,14 @@
 
     .person-row {
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 1.5fr 0.8fr 1fr 1fr 2fr 1.5fr;
       gap: 10px;
-      padding: 8px;
+      padding: 10px;
       background: #f9f9f9;
       border-radius: 5px;
       margin-bottom: 5px;
       font-size: 12px;
+      border-bottom: 1px solid #eee;
     }
 
     .person-name {
@@ -333,12 +336,27 @@
       color: #333;
     }
 
-    .person-age {
+    .person-gender {
       color: #666;
     }
 
-    .person-pref {
-      color: #999;
+    .person-sexuality {
+      color: #666;
+    }
+
+    .person-bio {
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .person-email {
+      color: #0066cc;
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   </style>
 </head>
@@ -501,13 +519,17 @@
 
             const name = person['Name'] || person['Email'] || 'Unknown';
             const age = person['Age'] || '?';
-            const prefMin = person['Age Preference Min'] || '?';
-            const prefMax = person['Age Preference Max'] || '?';
+            const genderValue = person['Gender'] || '?';
+            const sexuality = person['Sexuality'] || '?';
+            const bio = person['Bio'] || '';
+            const email = person['Email'] || '?';
 
             row.innerHTML = `
-              <div class="person-name">${name}</div>
-              <div class="person-age">${age} yrs</div>
-              <div class="person-pref">${prefMin}-${prefMax}</div>
+              <div class="person-name">${name} (${age})</div>
+              <div class="person-gender">${genderValue}</div>
+              <div class="person-sexuality">${sexuality}</div>
+              <div class="person-bio" title="${bio}">${bio || '-'}</div>
+              <div class="person-email">${email}</div>
             `;
 
             subgroup.appendChild(row);
