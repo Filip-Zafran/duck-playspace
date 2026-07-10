@@ -323,14 +323,34 @@
 
     .person-row {
       display: grid;
-      grid-template-columns: 1.8fr 0.6fr 0.8fr 1fr 1.5fr 1.5fr;
-      gap: 10px;
+      grid-template-columns: 1.5fr 0.6fr 0.7fr 0.9fr 1.2fr 1.2fr 1fr 1fr 1.2fr;
+      gap: 8px;
       padding: 10px;
       background: #f9f9f9;
       border-radius: 5px;
       margin-bottom: 5px;
-      font-size: 12px;
+      font-size: 11px;
       border-bottom: 1px solid #eee;
+    }
+
+    .row-man {
+      background-color: #e3f2fd !important;
+    }
+
+    .row-woman {
+      background-color: #fce4ec !important;
+    }
+
+    .row-nonbinary {
+      background-color: #f3e5f5 !important;
+    }
+
+    .row-other {
+      background-color: #fff3e0 !important;
+    }
+
+    .row-not-staying {
+      background-color: #e0e0e0 !important;
     }
 
     .person-name {
@@ -591,6 +611,22 @@
             const sexuality = person['Sexuality'] || '?';
             const bio = person['Bio'] || '';
             const email = person['Email'] || '?';
+            const venuePreferences = person['Venue Preferences'] || '?';
+            const relationshipStyle = person['Relationship Style'] || '?';
+            const mainIntention = person['Main Intention'] || '?';
+            const stayingInBerlin = person['Staying In Berlin'] || '';
+
+            // Apply color coding based on gender
+            if (genderValue === 'Man') row.classList.add('row-man');
+            else if (genderValue === 'Woman') row.classList.add('row-woman');
+            else if (genderValue === 'Non-binary') row.classList.add('row-nonbinary');
+            else row.classList.add('row-other');
+
+            // Override with grey if not staying in Berlin
+            if (stayingInBerlin === 'No') {
+              row.classList.remove('row-man', 'row-woman', 'row-nonbinary', 'row-other');
+              row.classList.add('row-not-staying');
+            }
 
             row.innerHTML = `
               <div class="person-name">${name} (${age})</div>
@@ -599,6 +635,9 @@
               <div class="person-sexuality">${sexuality}</div>
               <div class="person-bio" onclick="openBioModal('${name}', '${bio.replace(/'/g, "\\'")}')">${bio.substring(0, 50) || '-'}${bio.length > 50 ? '...' : ''}</div>
               <div class="person-email">${email}</div>
+              <div>${venuePreferences}</div>
+              <div>${relationshipStyle}</div>
+              <div>${mainIntention}</div>
             `;
 
             subgroup.appendChild(row);
