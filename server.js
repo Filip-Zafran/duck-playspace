@@ -377,6 +377,7 @@ app.post('/api/vote/:pollId', async (req, res) => {
 // ===== API: Upload Data =====
 app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res) => {
   try {
+    console.log('1. File received');
     if (!req.file) {
       return res.status(400).json({ error: 'No file provided' });
     }
@@ -447,6 +448,7 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     }
 
     const data = readAllRows(worksheet);
+    console.log('2. Excel parsed:', data.length, 'rows');
     console.log(`Excel file parsed: Found ${data.length} data rows from direct cell reading`);
 
     if (!data || data.length === 0) {
@@ -455,6 +457,7 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
 
     const pool = getPool();
     const tableName = 'imported_data';
+    console.log('3. About to check table');
 
     // Check if table exists and has correct schema
     const checkTable = await pool.query(`
@@ -477,6 +480,7 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     }
 
     // Create fresh table with JSONB storage
+    console.log('4. About to create table');
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS ${tableName} (
@@ -497,6 +501,7 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     let skippedRows = 0;
     let errorRows = 0;
 
+    console.log('5. About to insert first row');
     console.log(`Starting to import ${data.length} rows...`);
 
     for (let i = 0; i < data.length; i++) {
