@@ -577,9 +577,9 @@ app.get('/api/dashboard-data', requireAuth, async (req, res) => {
     const pool = getPool();
     const tableName = 'imported_data';
 
-    // Get all data from imported_data table
+    // Get all data from imported_data table in import order
     const result = await pool.query(`
-      SELECT data FROM ${tableName} ORDER BY imported_at DESC
+      SELECT data FROM ${tableName} ORDER BY imported_at ASC
     `);
 
     // JSONB columns return as objects, not strings
