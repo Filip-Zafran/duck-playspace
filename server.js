@@ -518,12 +518,10 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
         );
 
         if (checkResult.rows.length === 0) {
-          // Insert new row as JSON (all values already converted to strings in readAllRows)
-          const jsonStr = JSON.stringify(row);
-
+          // Insert new row as JSONB (PostgreSQL handles JSON encoding/decoding)
           await pool.query(
             `INSERT INTO ${tableName} (data, data_hash) VALUES ($1, $2)`,
-            [jsonStr, dataHash]
+            [JSON.stringify(row), dataHash]
           );
           importedRows++;
           if ((i + 1) % 100 === 0) {
@@ -545,8 +543,8 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
       SELECT data FROM ${tableName} ORDER BY imported_at DESC LIMIT 10
     `);
 
-    // Convert JSON data back to objects for preview
-    const preview = previewResult.rows.map(row => JSON.parse(row.data));
+    // JSONB columns return as objects, not strings - no need to parse
+    const preview = previewResult.rows.map(row => row.data);
     const columns_response = Object.keys(data[0]);
 
     res.json({
@@ -584,9 +582,9 @@ app.get('/api/dashboard-data', requireAuth, async (req, res) => {
       SELECT data FROM ${tableName} ORDER BY imported_at DESC
     `);
 
-    // Parse JSON data and add computed fields
+    // JSONB columns return as objects, not strings
     const data = result.rows.map(row => {
-      const parsed = JSON.parse(row.data);
+      const parsed = row.data;
 
       // Compute Sexuality from Gender and Attracted To
       const gender = parsed['Gender'] || '';
