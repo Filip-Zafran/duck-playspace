@@ -317,8 +317,32 @@
       font-weight: 600;
       color: #333;
       margin-bottom: 10px;
-      padding-left: 10px;
+      padding: 8px 10px;
       border-left: 4px solid #667eea;
+      cursor: pointer;
+      background: #f0f3ff;
+      border-radius: 4px;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .gender-subgroup-title:hover {
+      background: #e8f0ff;
+    }
+
+    .gender-subgroup-toggle {
+      display: inline-block;
+      transition: transform 0.3s;
+    }
+
+    .gender-subgroup-toggle.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .gender-subgroup.collapsed {
+      display: none;
     }
 
     .person-row {
@@ -592,11 +616,26 @@
         Object.entries(byGender).forEach(([gender, genderPeople]) => {
           const genderTitle = document.createElement('div');
           genderTitle.className = 'gender-subgroup-title';
-          genderTitle.textContent = `${gender}`;
+
+          const toggle = document.createElement('span');
+          toggle.className = 'gender-subgroup-toggle';
+          toggle.textContent = '▼';
+
+          const titleText = document.createElement('span');
+          titleText.textContent = `${gender} (${genderPeople.length})`;
+
+          genderTitle.appendChild(toggle);
+          genderTitle.appendChild(titleText);
           card.appendChild(genderTitle);
 
           const subgroup = document.createElement('div');
           subgroup.className = 'gender-subgroup';
+
+          // Add click handler to toggle subgroup
+          genderTitle.addEventListener('click', () => {
+            subgroup.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+          });
 
           // Sort by age ascending
           genderPeople.sort((a, b) => {
