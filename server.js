@@ -381,23 +381,59 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
       return res.status(400).json({ error: 'No file provided' });
     }
 
-    // Parse Excel file
+    // Parse Excel file with all rows
+    console.log(`Parsing file: ${req.file.originalname}`);
+
     const workbook = XLSX.read(req.file.buffer, {
       type: 'buffer',
-      defval: '' // Use empty string for empty cells
+      defval: '',
+      raw: false
     });
+
     const sheetName = workbook.SheetNames[0];
+    console.log(`Sheet name: ${sheetName}`);
+
     const worksheet = workbook.Sheets[sheetName];
+    console.log(`Worksheet range: ${worksheet['!ref']}`);
 
-    // Read all rows including empty cells
-    const data = XLSX.utils.sheet_to_json(worksheet, {
-      defval: '' // Default value for empty cells
-    });
+    // Ensure we read ALL rows by explicitly setting range
+    let range = worksheet['!ref'];
+    if (!range) {
+      console.error('No range found in worksheet');
+      return res.status(400).json({ error: 'Unable to determine worksheet range' });
+    }
 
-    console.log(`Excel file parsed: Found ${data.length} rows`);
+    // Extract row count from range (e.g., "A1:Z1000" -> 1000)
+    const rangeParts = range.split(':');
+    const endCell = rangeParts[1];
+    const rowMatch = endCell.match(/\d+/);
+    const totalRowsInSheet = rowMatch ? parseInt(rowMatch[0]) : 0;
+    console.log(`Total rows in sheet: ${totalRowsInSheet}`);
 
-    if (data.length === 0) {
-      return res.status(400).json({ error: 'No data found in Excel file' });
+    // Read all rows as array of arrays first
+    const arrayData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    console.log(`Array data length: ${arrayData.length}`);
+
+    // Get headers from first row
+    const headers = arrayData[0];
+
+    // Convert array format to objects, including empty rows
+    const data = [];
+    for (let i = 1; i < arrayData.length; i++) {
+      const row = arrayData[i];
+      if (row && row.length > 0) {
+        const obj = {};
+        headers.forEach((header, idx) => {
+          obj[header] = row[idx] !== undefined ? row[idx] : '';
+        });
+        data.push(obj);
+      }
+    }
+
+    console.log(`Excel file parsed: Found ${data.length} rows (converted from array)`);
+
+    if (!data || data.length === 0) {
+      return res.status(400).json({ error: `No data found in Excel file. Sheet has ${totalRowsInSheet} rows but no valid data` });
     }
 
     const pool = getPool();
