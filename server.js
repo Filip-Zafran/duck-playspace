@@ -455,7 +455,29 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
     const pool = getPool();
     const tableName = 'imported_data';
 
-    // Create a flexible table that stores JSON data
+    const pool = getPool();
+
+    // Check if table exists and has correct schema
+    const checkTable = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = $1
+      );
+    `, [tableName]);
+
+    const tableExists = checkTable.rows[0].exists;
+
+    // If table exists, drop it to recreate with correct schema
+    if (tableExists) {
+      try {
+        await pool.query(`DROP TABLE IF EXISTS ${tableName} CASCADE;`);
+        console.log('Dropped old table schema');
+      } catch (err) {
+        console.error(`Error dropping table: ${err.message}`);
+      }
+    }
+
+    // Create fresh table with JSONB storage
     try {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS ${tableName} (
@@ -465,7 +487,7 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
           imported_at TIMESTAMP DEFAULT NOW()
         )
       `);
-      console.log('Table created or already exists');
+      console.log('Table created with correct JSONB schema');
     } catch (err) {
       console.error(`Error creating table: ${err.message}`);
       return res.status(500).json({ error: `Failed to create table: ${err.message}` });
