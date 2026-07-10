@@ -364,6 +364,11 @@
           fileInfo.classList.remove('show');
           fileInput.value = '';
           selectedFile = null;
+
+          // Redirect to Data page after 2 seconds to show the new data
+          setTimeout(() => {
+            window.location.href = '/data-filters';
+          }, 2000);
         } else {
           showStatus(`Error: ${data.error || 'Failed to upload file'}`, 'error');
         }
