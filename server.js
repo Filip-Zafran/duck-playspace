@@ -139,6 +139,14 @@ app.get('/groups', (req, res) => {
   }
 });
 
+app.get('/dates', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'dates.html'));
+  }
+});
+
 // ===== File Upload Config =====
 const upload = multer({ storage: multer.memoryStorage() });
 

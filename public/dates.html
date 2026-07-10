@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dates - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dashboard-wrapper {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      padding: 20px;
+    }
+
+    .dates-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .date-card {
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .date-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .date-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .date-status {
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+    }
+
+    .status-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .status-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .status-value {
+      color: #667eea;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .date-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .btn-copy-emails {
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .btn-copy-emails:hover {
+      background: #764ba2;
+    }
+
+    .venue-stats {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+    }
+
+    .venue-stat {
+      text-align: center;
+    }
+
+    .venue-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+
+    .venue-bar {
+      height: 30px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 5px;
+    }
+
+    .venue-fill {
+      height: 100%;
+      background: #667eea;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .venue-count {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .person-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .person-card {
+      background: #f9f9f9;
+      padding: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      position: relative;
+    }
+
+    .person-card.age-mismatch {
+      border-left-color: #ff6b6b;
+      background: #ffe0e0;
+    }
+
+    .person-info {
+      flex: 1;
+    }
+
+    .person-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .person-details {
+      color: #666;
+      font-size: 11px;
+      margin-top: 4px;
+    }
+
+    .person-choices {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-choice {
+      padding: 4px 8px;
+      border: 1px solid #667eea;
+      background: white;
+      color: #667eea;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .btn-choice.active {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-choice.backup.active {
+      background: #ffa500;
+      border-color: #ffa500;
+      color: white;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+      font-size: 16px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .no-dates {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-bg grid-bg"></div>
+
+    <div class="container">
+      <header class="header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
+            <h1>Duck Playspace</h1>
+          </div>
+          <div class="header-subtitle">Event Matching</div>
+        </div>
+        <button id="logoutBtn" class="btn btn-logout">Logout</button>
+      </header>
+
+      <nav class="navbar">
+        <a href="/home" class="nav-link">Home</a>
+        <a href="/poll" class="nav-link">Polls</a>
+        <a href="/upload-data" class="nav-link">Upload Data</a>
+        <a href="/data-filters" class="nav-link">Data</a>
+        <a href="/groups" class="nav-link">Groups</a>
+        <a href="/dates" class="nav-link active">Dates</a>
+      </nav>
+
+      <main class="content">
+        <div class="dashboard-wrapper">
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading dates...</p>
+          </div>
+
+          <div id="datesContent" style="display: none;">
+            <div class="dates-container" id="datesContainer"></div>
+            <div class="no-dates" id="noDates" style="display: none;">
+              No valid dates found. Need minimum 6 women + 6 men for regular groups, or 12 people for LGBTQ+.
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    let allData = [];
+    let dates = {};
+    let selections = {};
+
+    async function loadDates() {
+      try {
+        const response = await fetch('/api/dashboard-data');
+        allData = await response.json();
+
+        generateDates();
+        displayDates();
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('datesContent').style.display = 'block';
+      } catch (err) {
+        console.error('Failed to load dates:', err);
+      }
+    }
+
+    function generateDates() {
+      const dateGroups = {
+        'Mono Long-Term': [],
+        'Mono Casual': [],
+        'Poly/ENM Long-Term': [],
+        'Poly/ENM Casual': [],
+        'Friends': [],
+        'LGBTQ+': []
+      };
+
+      // Categorize people
+      allData.forEach(person => {
+        const relationshipStyle = person['Relationship Style'] || '';
+        const mainIntention = person['Main Intention'] || '';
+        const gender = person['Gender'] || '';
+        const sexuality = person['Sexuality'] || '';
+
+        const isMono = relationshipStyle.toLowerCase().includes('mono');
+        const isPoly = relationshipStyle.toLowerCase().includes('poly') || relationshipStyle.toLowerCase().includes('enm');
+        const isLongTerm = mainIntention.toLowerCase().includes('long');
+        const isCasual = mainIntention.toLowerCase().includes('casual');
+        const isFriends = mainIntention.toLowerCase().includes('friend');
+        const isLGBTQ = gender !== 'Man' && gender !== 'Woman' && gender !== '' || sexuality.toLowerCase().includes('gay') || sexuality.toLowerCase().includes('lesbian') || sexuality.toLowerCase().includes('bi');
+
+        if (isMono && isLongTerm) dateGroups['Mono Long-Term'].push(person);
+        if (isMono && isCasual) dateGroups['Mono Casual'].push(person);
+        if (isPoly && isLongTerm) dateGroups['Poly/ENM Long-Term'].push(person);
+        if (isPoly && isCasual) dateGroups['Poly/ENM Casual'].push(person);
+        if (isFriends) dateGroups['Friends'].push(person);
+        if (isLGBTQ) dateGroups['LGBTQ+'].push(person);
+      });
+
+      // Check which groups qualify as dates
+      Object.entries(dateGroups).forEach(([groupName, people]) => {
+        if (groupName === 'LGBTQ+') {
+          if (people.length >= 12) {
+            dates[groupName] = people;
+          }
+        } else {
+          const womenCount = people.filter(p => p['Gender'] === 'Woman').length;
+          const menCount = people.filter(p => p['Gender'] === 'Man').length;
+          if (womenCount >= 6 && menCount >= 6) {
+            dates[groupName] = people;
+          }
+        }
+      });
+    }
+
+    function displayDates() {
+      const container = document.getElementById('datesContainer');
+      const noDates = document.getElementById('noDates');
+
+      if (Object.keys(dates).length === 0) {
+        noDates.style.display = 'block';
+        return;
+      }
+
+      container.innerHTML = '';
+
+      Object.entries(dates).forEach(([dateName, people]) => {
+        const card = document.createElement('div');
+        card.className = 'date-card';
+
+        const womenCount = people.filter(p => p['Gender'] === 'Woman').length;
+        const menCount = people.filter(p => p['Gender'] === 'Man').length;
+        const totalCount = people.length;
+
+        const headerHTML = `
+          <div class="date-header">
+            <div class="date-title">${dateName}</div>
+            <div class="date-status">
+              <div class="status-item">
+                <span class="status-label">Women</span>
+                <span class="status-value">${womenCount}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Men</span>
+                <span class="status-value">${menCount}</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">Total</span>
+                <span class="status-value">${totalCount}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        const venueStats = getVenueStats(people);
+        const venueHTML = createVenueStatsHTML(venueStats);
+
+        const actionsHTML = `
+          <div class="date-actions">
+            <button class="btn-copy-emails" onclick="copyEmails('${dateName}')">📋 Copy Primary Emails</button>
+          </div>
+        `;
+
+        const peopleHTML = createPeopleCardsHTML(dateName, people);
+
+        card.innerHTML = headerHTML + actionsHTML + venueHTML + peopleHTML;
+        container.appendChild(card);
+      });
+    }
+
+    function getVenueStats(people) {
+      const venues = { 'Bar': 0, 'Café': 0, 'Park': 0, 'Boulder Hall': 0 };
+
+      people.forEach(person => {
+        const prefs = person['Venue Preferences'] || '';
+        Object.keys(venues).forEach(venue => {
+          if (prefs.toLowerCase().includes(venue.toLowerCase())) {
+            venues[venue]++;
+          }
+        });
+      });
+
+      return venues;
+    }
+
+    function createVenueStatsHTML(venues) {
+      const maxVotes = Math.max(...Object.values(venues), 1);
+      let html = '<div class="venue-stats">';
+
+      Object.entries(venues).forEach(([venue, count]) => {
+        const percentage = (count / maxVotes) * 100;
+        html += `
+          <div class="venue-stat">
+            <div class="venue-name">${venue}</div>
+            <div class="venue-bar">
+              <div class="venue-fill" style="width: ${percentage}%">
+                ${count}
+              </div>
+            </div>
+            <div class="venue-count">${count} votes</div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      return html;
+    }
+
+    function createPeopleCardsHTML(dateName, people) {
+      let html = '<div class="person-grid">';
+
+      people.forEach(person => {
+        const name = person['Name'] || person['Email'] || 'Unknown';
+        const age = person['Age'] || '?';
+        const gender = person['Gender'] || '?';
+        const prefMin = person['Preferred Age Min'] || person['Age Preference Min'] || '?';
+        const prefMax = person['Preferred Age Max'] || person['Age Preference Max'] || '?';
+        const email = person['Email'] || '';
+
+        const isAgeMismatch = checkAgeMismatch(person);
+        const mismatchClass = isAgeMismatch ? 'age-mismatch' : '';
+
+        const selectionKey = `${dateName}:${email}`;
+        const currentSelection = selections[selectionKey] || 'none';
+
+        html += `
+          <div class="person-card ${mismatchClass}">
+            <div class="person-info">
+              <div class="person-name">${name}</div>
+              <div class="person-details">
+                ${gender}, ${age} yrs | Prefers: ${prefMin}-${prefMax}
+                ${isAgeMismatch ? '<div style="color: #ff6b6b; font-weight: 600;">⚠️ Age mismatch</div>' : ''}
+              </div>
+            </div>
+            <div class="person-choices">
+              <button class="btn-choice ${currentSelection === 'primary' ? 'active' : ''}" onclick="setSelection('${selectionKey}', 'primary')">Primary</button>
+              <button class="btn-choice backup ${currentSelection === 'backup' ? 'active' : ''}" onclick="setSelection('${selectionKey}', 'backup')">Backup</button>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      return html;
+    }
+
+    function checkAgeMismatch(person) {
+      const age = parseInt(person['Age'] || 0);
+      const prefMin = parseInt(person['Preferred Age Min'] || 0);
+      const prefMax = parseInt(person['Preferred Age Max'] || 0);
+
+      if (prefMin === 0 || prefMax === 0) return false;
+      return age < prefMin || age > prefMax;
+    }
+
+    function setSelection(key, type) {
+      selections[key] = selections[key] === type ? 'none' : type;
+      displayDates();
+    }
+
+    function copyEmails(dateName) {
+      const emails = [];
+      Object.entries(selections).forEach(([key, selection]) => {
+        if (key.startsWith(dateName + ':') && selection === 'primary') {
+          const email = key.split(':')[1];
+          if (email) emails.push(email);
+        }
+      });
+
+      if (emails.length === 0) {
+        alert('No primary choices selected yet.');
+        return;
+      }
+
+      const emailList = emails.join(', ');
+      navigator.clipboard.writeText(emailList).then(() => {
+        alert(`✅ Copied ${emails.length} email(s) to clipboard!`);
+      });
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/logout', { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    });
+
+    loadDates();
+  </script>
+</body>
+</html>
