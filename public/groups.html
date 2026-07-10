@@ -347,7 +347,7 @@
 
     .person-row {
       display: grid;
-      grid-template-columns: 0.4fr 1.5fr 0.6fr 0.7fr 0.9fr 1.2fr 1.2fr 1fr 1fr 1.2fr;
+      grid-template-columns: 0.4fr 1.5fr 0.6fr 0.7fr 0.8fr 0.9fr 1.2fr 1.2fr 1fr 1fr 1.2fr;
       gap: 8px;
       padding: 10px;
       background: #f9f9f9;
@@ -653,6 +653,7 @@
             const prefMin = person['Preferred Age Min'] || person['Age Preference Min'] || '?';
             const prefMax = person['Preferred Age Max'] || person['Age Preference Max'] || '?';
             const genderValue = person['Gender'] || '?';
+            const attractedTo = person['Attracted To'] || '?';
             const sexuality = person['Sexuality'] || '?';
             const bio = person['Bio'] || '';
             const email = person['Email'] || '?';
@@ -678,6 +679,7 @@
               <div class="person-name">${name} (${age})</div>
               <div class="person-pref-age">${prefMin}-${prefMax}</div>
               <div class="person-gender">${genderValue}</div>
+              <div>${attractedTo}</div>
               <div class="person-sexuality">${sexuality}</div>
               <div class="person-bio" onclick="openBioModal('${name}', '${bio.replace(/'/g, "\\'")}')">${bio.substring(0, 50) || '-'}${bio.length > 50 ? '...' : ''}</div>
               <div class="person-email">${email}</div>
