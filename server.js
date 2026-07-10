@@ -123,6 +123,22 @@ app.get('/dashboard', (req, res) => {
   }
 });
 
+app.get('/data-filters', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'data-filters.html'));
+  }
+});
+
+app.get('/groups', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'groups.html'));
+  }
+});
+
 // ===== File Upload Config =====
 const upload = multer({ storage: multer.memoryStorage() });
 

@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAta & Filters - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dashboard-wrapper {
+      padding: 20px;
+    }
+
+    .filters-section {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      border: 1px solid #ddd;
+    }
+
+    .filters-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #667eea;
+    }
+
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter-group label {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #666;
+    }
+
+    .filter-group select,
+    .filter-group input {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+
+    .filter-group select:focus,
+    .filter-group input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+
+    .reset-filters {
+      padding: 8px 16px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      align-self: flex-end;
+    }
+
+    .reset-filters:hover {
+      background: #764ba2;
+    }
+
+    .data-stats {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      font-size: 14px;
+    }
+
+    .stat {
+      display: flex;
+      gap: 8px;
+    }
+
+    .stat-label {
+      font-weight: 600;
+      color: #666;
+    }
+
+    .stat-value {
+      color: #667eea;
+      font-weight: 700;
+    }
+
+    .scrollbar-top {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      overflow-x: scroll;
+      overflow-y: hidden;
+      height: 15px;
+      background: white;
+      border-top: 2px solid #667eea;
+    }
+
+    .scrollbar-top-inner {
+      width: 100%;
+      height: 1px;
+    }
+
+    .scrollbar-top::-webkit-scrollbar {
+      height: 12px;
+    }
+
+    .scrollbar-top::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    .scrollbar-top::-webkit-scrollbar-thumb {
+      background: #667eea;
+      border-radius: 6px;
+    }
+
+    .scrollbar-top::-webkit-scrollbar-thumb:hover {
+      background: #764ba2;
+    }
+
+    .table-wrapper {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      background: white;
+      border-bottom: 2px solid #667eea;
+      overflow-x: auto;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .dashboard-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .dashboard-table th {
+      background: #667eea;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      min-width: 120px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .dashboard-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #eee;
+      min-width: 120px;
+    }
+
+    .dashboard-table td:nth-child(1),
+    .dashboard-table th:nth-child(1) {
+      min-width: 60px;
+      width: 60px;
+    }
+
+    .dashboard-table td:nth-child(3),
+    .dashboard-table th:nth-child(3) {
+      min-width: 50vw;
+      width: 50vw;
+    }
+
+    .dashboard-table tr:hover {
+      background: #f9f9f9;
+    }
+
+    .row-not-staying {
+      background-color: #e0e0e0 !important;
+    }
+
+    .row-man {
+      background-color: #e3f2fd;
+    }
+
+    .row-woman {
+      background-color: #fce4ec;
+    }
+
+    .row-nonbinary {
+      background-color: #f3e5f5;
+    }
+
+    .row-other {
+      background-color: #fff3e0;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #667eea;
+      font-size: 16px;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .legend {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .legend-color {
+      width: 30px;
+      height: 20px;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .dashboard-tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #ddd;
+    }
+
+    .dashboard-tab {
+      padding: 12px 20px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .dashboard-tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .dashboard-tab:hover {
+      color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .groups-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+    }
+
+    .group-card {
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .group-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .gender-subgroup {
+      margin-bottom: 15px;
+    }
+
+    .gender-subgroup-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 10px;
+      padding-left: 10px;
+      border-left: 4px solid #667eea;
+    }
+
+    .person-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 10px;
+      padding: 8px;
+      background: #f9f9f9;
+      border-radius: 5px;
+      margin-bottom: 5px;
+      font-size: 12px;
+    }
+
+    .person-name {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .person-age {
+      color: #666;
+    }
+
+    .person-pref {
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-bg grid-bg"></div>
+
+    <div class="container">
+      <header class="header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
+            <h1>Duck Playspace</h1>
+          </div>
+          <div class="header-subtitle">Analytics & Insights</div>
+        </div>
+        <button id="logoutBtn" class="btn btn-logout">Logout</button>
+      </header>
+
+      <nav class="navbar">
+        <a href="/home" class="nav-link">Home</a>
+        <a href="/poll" class="nav-link">Polls</a>
+        <a href="/upload-data" class="nav-link">Upload Data</a>
+        <a href="/data-filters" class="nav-link active">DAta & Filters</a>
+        <a href="/groups" class="nav-link">Groups</a>
+      </nav>
+
+      <main class="content">
+        <div class="dashboard-wrapper">
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading data...</p>
+          </div>
+
+          <div id="dashboardContent" style="display: none;">
+              <!-- Legend -->
+            <div class="legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background: #e3f2fd;"></div>
+                <span>Man</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #fce4ec;"></div>
+                <span>Woman</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #f3e5f5;"></div>
+                <span>Non-binary</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #fff3e0;"></div>
+                <span>Other</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background: #e0e0e0;"></div>
+                <span>NOT Staying in Berlin (Grey)</span>
+              </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-section">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="filters-title">Filters</div>
+                <button class="reset-filters" onclick="resetFilters()">Reset All</button>
+              </div>
+              <div class="filters-grid" id="filtersContainer"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="data-stats">
+              <div class="stat">
+                <span class="stat-label">Total Records:</span>
+                <span class="stat-value" id="totalRecords">0</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Filtered:</span>
+                <span class="stat-value" id="filteredRecords">0</span>
+              </div>
+              <div class="stat">
+                <span class="stat-label">Not Staying:</span>
+                <span class="stat-value" id="notStayingCount">0</span>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="scrollbar-top" id="scrollbarTop">
+              <div class="scrollbar-top-inner"></div>
+            </div>
+            <div class="table-wrapper" id="tableWrapper">
+              <table class="dashboard-table" id="dataTable">
+                <thead id="tableHead"></thead>
+                <tbody id="tableBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    let allData = [];
+    let filteredData = [];
+    const filters = {};
+
+    async function loadDashboard() {
+      try {
+        const response = await fetch('/api/dashboard-data');
+        allData = await response.json();
+        filteredData = [...allData];
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+
+        createFilters();
+        displayData();
+      } catch (err) {
+        console.error('Failed to load dashboard:', err);
+      }
+    }
+
+    function createFilters() {
+      const columns = allData.length > 0 ? Object.keys(allData[0]) : [];
+      const filterContainer = document.getElementById('filtersContainer');
+      filterContainer.innerHTML = '';
+
+      // Key columns to filter
+      const filterColumns = ['Gender', 'Sexuality', 'Attracted To', 'Staying In Berlin', 'Berlin Bezirk', 'Age', 'Main Intention'];
+
+      filterColumns.forEach(col => {
+        if (columns.includes(col)) {
+          const uniqueValues = [...new Set(allData.map(d => d[col]).filter(Boolean))].sort();
+
+          const group = document.createElement('div');
+          group.className = 'filter-group';
+
+          const label = document.createElement('label');
+          label.textContent = col;
+          group.appendChild(label);
+
+          const select = document.createElement('select');
+          select.innerHTML = `<option value="">All</option>`;
+          uniqueValues.forEach(val => {
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = val;
+            select.appendChild(option);
+          });
+
+          select.addEventListener('change', (e) => {
+            filters[col] = e.target.value;
+            applyFilters();
+          });
+
+          group.appendChild(select);
+          filterContainer.appendChild(group);
+        }
+      });
+    }
+
+    function applyFilters() {
+      filteredData = allData.filter(row => {
+        return Object.entries(filters).every(([col, value]) => {
+          return !value || row[col] == value;
+        });
+      });
+
+      displayData();
+    }
+
+    function displayData() {
+      const tableHead = document.getElementById('tableHead');
+      const tableBody = document.getElementById('tableBody');
+      tableHead.innerHTML = '';
+      tableBody.innerHTML = '';
+
+      if (filteredData.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="100" style="text-align: center; padding: 20px;">No data found</td></tr>';
+        updateStats();
+        return;
+      }
+
+      // Create headers (show key columns first)
+      const columns = Object.keys(filteredData[0]);
+      const headerRow = document.createElement('tr');
+
+      // Add number column header
+      const numTh = document.createElement('th');
+      numTh.textContent = '#';
+      headerRow.appendChild(numTh);
+
+      columns.forEach(col => {
+        const th = document.createElement('th');
+        th.textContent = col;
+        headerRow.appendChild(th);
+      });
+      tableHead.appendChild(headerRow);
+
+      // Create rows with color coding
+      filteredData.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        const gender = row['Gender'] || '';
+        const stayingInBerlin = row['Staying In Berlin'] || '';
+
+        // Apply color based on gender
+        if (gender === 'Man') tr.className = 'row-man';
+        else if (gender === 'Woman') tr.className = 'row-woman';
+        else if (gender === 'Non-binary') tr.className = 'row-nonbinary';
+        else tr.className = 'row-other';
+
+        // RED if not staying in Berlin
+        if (stayingInBerlin === 'No') {
+          tr.className = 'row-not-staying';
+        }
+
+        // Add number column
+        const numTd = document.createElement('td');
+        numTd.textContent = index + 1;
+        tr.appendChild(numTd);
+
+        columns.forEach(col => {
+          const td = document.createElement('td');
+          td.textContent = row[col] || '';
+          tr.appendChild(td);
+        });
+
+        tableBody.appendChild(tr);
+      });
+
+      updateStats();
+    }
+
+    function updateStats() {
+      document.getElementById('totalRecords').textContent = allData.length;
+      document.getElementById('filteredRecords').textContent = filteredData.length;
+      const notStaying = filteredData.filter(r => r['Staying In Berlin'] === 'No').length;
+      document.getElementById('notStayingCount').textContent = notStaying;
+    }
+
+    function resetFilters() {
+      Object.keys(filters).forEach(key => delete filters[key]);
+      document.querySelectorAll('.filter-group select').forEach(select => {
+        select.value = '';
+      });
+      applyFilters();
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/logout', { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    });
+
+// Sync scroll between top scrollbar and table
+    function setupScrollSync() {
+      const scrollbarTop = document.getElementById('scrollbarTop');
+      const tableWrapper = document.getElementById('tableWrapper');
+
+      if (!scrollbarTop || !tableWrapper) return;
+
+      scrollbarTop.addEventListener('scroll', () => {
+        tableWrapper.scrollLeft = scrollbarTop.scrollLeft;
+      });
+
+      tableWrapper.addEventListener('scroll', () => {
+        scrollbarTop.scrollLeft = tableWrapper.scrollLeft;
+      });
+
+      // Set initial scrollbar width
+      setTimeout(() => {
+        const tableWidth = document.querySelector('.dashboard-table').scrollWidth;
+        document.querySelector('.scrollbar-top-inner').style.width = tableWidth + 'px';
+      }, 100);
+    }
+
+    // Load data on page load
+    loadDashboard();
+    setTimeout(setupScrollSync, 500);
+  </script>
+</body>
+</html>
