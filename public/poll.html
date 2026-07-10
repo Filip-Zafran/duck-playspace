@@ -966,13 +966,15 @@
       document.getElementById('votingLinkDisplay').textContent = pollData.vote_url;
 
       // Generate email template with pre-formatted values
-      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted);
+      const expected = formData.expected || 0;
+      const location = formData.location || 'TBD';
+      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted);
       document.getElementById('emailTemplate').textContent = emailTemplate;
 
       document.getElementById('successModal').classList.remove('hidden');
     }
 
-    function generateEmailTemplate(pollData, title, description, duration, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted) {
+    function generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted) {
       const pollId = pollData.id;
       const baseUrl = window.location.origin;
 
@@ -1075,6 +1077,15 @@
         <p style="font-size: 18px; font-weight: 700; color: #333;">${deadlineDisplay}</p>
       </div>
       ` : ''}
+
+      <div class="card" style="background: #8ff0c4;">
+        <h2>Meeting Details</h2>
+        <p style="margin: 8px 0;"><strong>Event:</strong> ${title}</p>
+        <p style="margin: 8px 0;"><strong>Duration:</strong> ${duration || 'TBD'}</p>
+        <p style="margin: 8px 0;"><strong>Expected Attendees:</strong> ${expected || '0'}</p>
+        <p style="margin: 8px 0;"><strong>Location:</strong> ${location || 'TBD'}</p>
+        <p style="margin: 12px 0 0 0; font-size: 12px; color: #555; font-style: italic;">Exact bar location will be revealed to confirmed participants</p>
+      </div>
 
       <div class="footer" style="background: #f9f9f9; margin: 20px -20px -20px -20px; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #e0e0e0;">
         <p>We invite more people with better response rate. Please confirm as soon as possible!</p>
