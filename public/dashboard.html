@@ -133,6 +133,18 @@
       min-width: 120px;
     }
 
+    .dashboard-table td:nth-child(1),
+    .dashboard-table th:nth-child(1) {
+      min-width: 60px;
+      width: 60px;
+    }
+
+    .dashboard-table td:nth-child(3),
+    .dashboard-table th:nth-child(3) {
+      min-width: 50vw;
+      width: 50vw;
+    }
+
     .dashboard-table tr:hover {
       background: #f9f9f9;
     }
@@ -382,6 +394,12 @@
       // Create headers (show key columns first)
       const columns = Object.keys(filteredData[0]);
       const headerRow = document.createElement('tr');
+
+      // Add number column header
+      const numTh = document.createElement('th');
+      numTh.textContent = '#';
+      headerRow.appendChild(numTh);
+
       columns.forEach(col => {
         const th = document.createElement('th');
         th.textContent = col;
@@ -390,7 +408,7 @@
       tableHead.appendChild(headerRow);
 
       // Create rows with color coding
-      filteredData.forEach(row => {
+      filteredData.forEach((row, index) => {
         const tr = document.createElement('tr');
         const gender = row['Gender'] || '';
         const stayingInBerlin = row['Staying In Berlin'] || '';
@@ -405,6 +423,11 @@
         if (stayingInBerlin === 'No') {
           tr.className = 'row-not-staying';
         }
+
+        // Add number column
+        const numTd = document.createElement('td');
+        numTd.textContent = index + 1;
+        tr.appendChild(numTd);
 
         columns.forEach(col => {
           const td = document.createElement('td');
