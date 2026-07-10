@@ -426,26 +426,30 @@
       };
 
       allData.forEach(person => {
+        const relationshipStyle = person['Relationship Style'] || '';
         const mainIntention = person['Main Intention'] || '';
-        const relationshipType = person['Relationship Type'] || '';
-        const lookingFor = person['Looking For'] || '';
         const gender = person['Gender'] || '';
         const sexuality = person['Sexuality'] || '';
 
-        // Determine which groups the person belongs to
-        const mono = relationshipType.toLowerCase().includes('mono') || mainIntention.toLowerCase().includes('mono');
-        const poly = relationshipType.toLowerCase().includes('poly') || relationshipType.toLowerCase().includes('enm') || mainIntention.toLowerCase().includes('poly');
-        const longTerm = lookingFor.toLowerCase().includes('long') || mainIntention.toLowerCase().includes('long');
-        const casual = lookingFor.toLowerCase().includes('casual') || mainIntention.toLowerCase().includes('casual');
-        const friendsOnly = lookingFor.toLowerCase().includes('friend') || mainIntention.toLowerCase().includes('friend');
-        const lgbtq = gender !== 'Man' && gender !== 'Woman' && gender !== '' || sexuality.toLowerCase().includes('gay') || sexuality.toLowerCase().includes('lesbian') || sexuality.toLowerCase().includes('bi');
+        // Determine relationship style
+        const isMono = relationshipStyle.toLowerCase().includes('mono');
+        const isPoly = relationshipStyle.toLowerCase().includes('poly') || relationshipStyle.toLowerCase().includes('enm');
 
-        if (mono && longTerm) groups['Mono Long-Term'].push(person);
-        if (mono && casual) groups['Mono Casual'].push(person);
-        if (poly && longTerm) groups['Poly/ENM Long-Term'].push(person);
-        if (poly && casual) groups['Poly/ENM Casual'].push(person);
-        if (friendsOnly) groups['Friends'].push(person);
-        if (lgbtq) groups['LGBTQ+'].push(person);
+        // Determine main intention
+        const isLongTerm = mainIntention.toLowerCase().includes('long');
+        const isCasual = mainIntention.toLowerCase().includes('casual');
+        const isFriends = mainIntention.toLowerCase().includes('friend');
+
+        // Determine LGBTQ+
+        const isLGBTQ = gender !== 'Man' && gender !== 'Woman' && gender !== '' || sexuality.toLowerCase().includes('gay') || sexuality.toLowerCase().includes('lesbian') || sexuality.toLowerCase().includes('bi');
+
+        // Add to appropriate groups based on combinations
+        if (isMono && isLongTerm) groups['Mono Long-Term'].push(person);
+        if (isMono && isCasual) groups['Mono Casual'].push(person);
+        if (isPoly && isLongTerm) groups['Poly/ENM Long-Term'].push(person);
+        if (isPoly && isCasual) groups['Poly/ENM Casual'].push(person);
+        if (isFriends) groups['Friends'].push(person);
+        if (isLGBTQ) groups['LGBTQ+'].push(person);
       });
 
       return groups;
