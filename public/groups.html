@@ -323,7 +323,7 @@
 
     .person-row {
       display: grid;
-      grid-template-columns: 1.5fr 0.6fr 0.7fr 0.9fr 1.2fr 1.2fr 1fr 1fr 1.2fr;
+      grid-template-columns: 0.4fr 1.5fr 0.6fr 0.7fr 0.9fr 1.2fr 1.2fr 1fr 1fr 1.2fr;
       gap: 8px;
       padding: 10px;
       background: #f9f9f9;
@@ -331,6 +331,12 @@
       margin-bottom: 5px;
       font-size: 11px;
       border-bottom: 1px solid #eee;
+    }
+
+    .person-number {
+      font-weight: 600;
+      color: #999;
+      text-align: center;
     }
 
     .row-man {
@@ -599,7 +605,7 @@
             return ageA - ageB;
           });
 
-          genderPeople.forEach(person => {
+          genderPeople.forEach((person, index) => {
             const row = document.createElement('div');
             row.className = 'person-row';
 
@@ -629,6 +635,7 @@
             }
 
             row.innerHTML = `
+              <div class="person-number">${index + 1}</div>
               <div class="person-name">${name} (${age})</div>
               <div class="person-pref-age">${prefMin}-${prefMax}</div>
               <div class="person-gender">${genderValue}</div>
