@@ -626,10 +626,10 @@
           const age = person['Age'] || '?';
           const prefMin = person['Preferred Age Min'] || person['Age Preference Min'] || '?';
           const prefMax = person['Preferred Age Max'] || person['Age Preference Max'] || '?';
-          const sexuality = person['Sexuality'] || '?';
+          const sexuality = person['Sexuality'] || person['sexuality'] || '?';
           const language = person['Language'] || person['Languages'] || person['language'] || person['languages'] || '?';
-          const mainIntention = person['Main Intention'] || '?';
-          const relationshipStyle = person['Relationship Style'] || '?';
+          const mainIntention = person['Main Intention'] || person['main intention'] || person['Intention'] || person['intention'] || '?';
+          const relationshipStyle = person['Relationship Style'] || person['relationship style'] || person['Relationship'] || person['relationship'] || '?';
           const isAgeMismatch = checkAgeMismatch(person);
           const mismatchClass = isAgeMismatch ? 'age-mismatch' : '';
 
