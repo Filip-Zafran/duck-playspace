@@ -90,44 +90,69 @@
       padding: 15px;
       border-radius: 8px;
       margin-bottom: 15px;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      display: flex;
       gap: 15px;
+      align-items: flex-end;
     }
 
     .venue-stat {
       text-align: center;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
     .venue-name {
       font-weight: 600;
       color: #333;
-      margin-bottom: 8px;
       font-size: 12px;
+      order: 2;
     }
 
     .venue-bar {
-      height: 30px;
+      height: 80px;
       background: #e0e0e0;
       border-radius: 4px;
       overflow: hidden;
-      margin-bottom: 5px;
+      order: 1;
     }
 
     .venue-fill {
       height: 100%;
-      background: #667eea;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       color: white;
-      font-size: 11px;
+      font-size: 12px;
       font-weight: 600;
+      padding-bottom: 4px;
+    }
+
+    .venue-fill.intensity-1 {
+      background: #e0f0ff;
+      color: #0066cc;
+    }
+
+    .venue-fill.intensity-2 {
+      background: #b3d9ff;
+      color: #0052a3;
+    }
+
+    .venue-fill.intensity-3 {
+      background: #4d94ff;
+      color: white;
+    }
+
+    .venue-fill.intensity-4 {
+      background: #0052cc;
+      color: white;
     }
 
     .venue-count {
       font-size: 12px;
       color: #666;
+      order: 3;
     }
 
     .slots-container {
@@ -591,19 +616,26 @@
     }
 
     function createVenueStatsHTML(venues) {
-      const maxVotes = Math.max(...Object.values(venues), 1);
+      // Sort by vote count descending
+      const sortedVenues = Object.entries(venues).sort((a, b) => b[1] - a[1]);
+      const maxVotes = Math.max(...sortedVenues.map(v => v[1]), 1);
+
       let html = '<div class="venue-stats">';
 
-      Object.entries(venues).forEach(([venue, count]) => {
+      sortedVenues.forEach(([venue, count], index) => {
         const percentage = (count / maxVotes) * 100;
+        // Assign intensity: 1st place = intensity-4 (darkest), last = intensity-1 (lightest)
+        const intensityRank = Math.max(1, Math.ceil((sortedVenues.length - index) * 4 / sortedVenues.length));
+        const intensityClass = `intensity-${intensityRank}`;
+
         html += `
           <div class="venue-stat">
-            <div class="venue-name">${venue}</div>
             <div class="venue-bar">
-              <div class="venue-fill" style="width: ${percentage}%">
+              <div class="venue-fill ${intensityClass}" style="height: ${percentage}%">
                 ${count}
               </div>
             </div>
+            <div class="venue-name">${venue}</div>
             <div class="venue-count">${count} votes</div>
           </div>
         `;
