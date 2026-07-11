@@ -644,6 +644,294 @@ app.get('/api/dashboard-data', requireAuth, async (req, res) => {
   }
 });
 
+// ===== Dashboard API Endpoints =====
+
+// Get all events
+app.get('/api/events', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query('SELECT * FROM events ORDER BY date DESC');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Failed to fetch events' });
+  }
+});
+
+// Get event participation
+app.get('/api/events/:eventId/participation', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const { eventId } = req.params;
+    const result = await pool.query('SELECT * FROM event_participation WHERE event_id = $1', [eventId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching participation:', error);
+    res.status(500).json({ error: 'Failed to fetch participation' });
+  }
+});
+
+// Update event participation
+app.put('/api/events/:eventId/participation/:email', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const { eventId, email } = req.params;
+    const { invited, responded, status, attended, paid, amount, freeEntry, referral, notes } = req.body;
+
+    const result = await pool.query(`
+      INSERT INTO event_participation
+      (event_id, email, invited, responded, status, attended, paid, amount, free_entry, referral, notes)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ON CONFLICT (event_id, email) DO UPDATE SET
+        invited = COALESCE($3, invited),
+        responded = COALESCE($4, responded),
+        status = COALESCE($5, status),
+        attended = COALESCE($6, attended),
+        paid = COALESCE($7, paid),
+        amount = COALESCE($8, amount),
+        free_entry = COALESCE($9, free_entry),
+        referral = COALESCE($10, referral),
+        notes = COALESCE($11, notes),
+        updated_at = NOW()
+      RETURNING *
+    `, [eventId, email, invited, responded, status, attended, paid, amount, freeEntry, referral, notes]);
+
+    // Update participant metadata
+    const participantMeta = result.rows[0];
+    if (attended) {
+      await pool.query(`
+        INSERT INTO participant_metadata (email, total_attended, last_event_name)
+        VALUES ($1, 1, $2)
+        ON CONFLICT (email) DO UPDATE SET
+          total_attended = total_attended + 1,
+          last_event_name = $2,
+          updated_at = NOW()
+      `, [email, `Event ${eventId}`]);
+    }
+
+    if (paid && amount) {
+      await pool.query(`
+        UPDATE participant_metadata
+        SET total_paid = total_paid + $1, updated_at = NOW()
+        WHERE email = $2
+      `, [amount, email]);
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating participation:', error);
+    res.status(500).json({ error: 'Failed to update participation' });
+  }
+});
+
+// Get participant metadata
+app.get('/api/participants/:email/metadata', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const { email } = req.params;
+    const result = await pool.query('SELECT * FROM participant_metadata WHERE email = $1', [email]);
+
+    if (result.rows.length === 0) {
+      // Return default metadata if not exists
+      return res.json({
+        email,
+        status: 'Active',
+        tags: [],
+        total_attended: 0,
+        total_paid: 0,
+        reward_tag: null
+      });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching participant metadata:', error);
+    res.status(500).json({ error: 'Failed to fetch metadata' });
+  }
+});
+
+// Update participant metadata
+app.put('/api/participants/:email/metadata', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const { email } = req.params;
+    const { status, phone, tags, internalNotes } = req.body;
+
+    const result = await pool.query(`
+      INSERT INTO participant_metadata (email, status, phone, tags, internal_notes)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (email) DO UPDATE SET
+        status = COALESCE($2, status),
+        phone = COALESCE($3, phone),
+        tags = COALESCE($4, tags),
+        internal_notes = COALESCE($5, internal_notes),
+        updated_at = NOW()
+      RETURNING *
+    `, [email, status, phone, JSON.stringify(tags || []), internalNotes]);
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating participant metadata:', error);
+    res.status(500).json({ error: 'Failed to update metadata' });
+  }
+});
+
+// Calculate and apply rewards
+app.post('/api/participants/:email/calculate-reward', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const { email } = req.params;
+
+    const result = await pool.query(`
+      SELECT total_attended FROM participant_metadata WHERE email = $1
+    `, [email]);
+
+    if (result.rows.length === 0) {
+      return res.json({ reward: null });
+    }
+
+    const attended = result.rows[0].total_attended;
+    let reward = null;
+
+    if (attended >= 5) {
+      reward = 'FREE EVENT';
+    } else if (attended >= 3) {
+      reward = '50% OFF';
+    }
+
+    if (reward) {
+      await pool.query(`
+        UPDATE participant_metadata
+        SET reward_tag = $1, updated_at = NOW()
+        WHERE email = $2
+      `, [reward, email]);
+    }
+
+    res.json({ reward, attended });
+  } catch (error) {
+    console.error('Error calculating reward:', error);
+    res.status(500).json({ error: 'Failed to calculate reward' });
+  }
+});
+
+// Sync Dates page data to Dashboard
+app.post('/api/sync-from-dates', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const { dateName, people, paymentData, availabilityData } = req.body;
+
+    // Create or update event
+    await pool.query(`
+      INSERT INTO events (name, date)
+      VALUES ($1, NOW())
+      ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
+    `, [dateName]);
+
+    const eventResult = await pool.query('SELECT id FROM events WHERE name = $1', [dateName]);
+    const eventId = eventResult.rows[0].id;
+
+    // Update participation for each person
+    for (const person of people) {
+      const email = person.Email || person.email || '';
+      const paid = paymentData?.[email]?.paid || false;
+      const amount = paymentData?.[email]?.amount || 0;
+      const availability = availabilityData?.[email] || '';
+
+      const attended = availability !== 'D';
+      const declined = availability === 'D';
+
+      await pool.query(`
+        INSERT INTO event_participation
+        (event_id, email, invited, responded, status, attended, paid, amount)
+        VALUES ($1, $2, true, $3, $4, $5, $6, $7)
+        ON CONFLICT (event_id, email) DO UPDATE SET
+          invited = true,
+          responded = $3,
+          status = $4,
+          attended = $5,
+          paid = $6,
+          amount = $7,
+          updated_at = NOW()
+      `, [eventId, email, !!availability, declined ? 'declined' : 'accepted', attended, paid, amount]);
+    }
+
+    res.json({ success: true, eventId });
+  } catch (error) {
+    console.error('Error syncing from Dates:', error);
+    res.status(500).json({ error: 'Failed to sync data' });
+  }
+});
+
+// Sync Dashboard data back to Dates page format
+app.get('/api/sync-to-dates/:eventName', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const { eventName } = req.params;
+
+    const result = await pool.query(`
+      SELECT ep.*, e.name, e.date FROM event_participation ep
+      JOIN events e ON ep.event_id = e.id
+      WHERE e.name = $1
+    `, [eventName]);
+
+    const syncData = {
+      dateName: eventName,
+      people: result.rows.map(row => ({
+        Email: row.email,
+        'Staying in Berlin': row.attended ? 'Yes' : 'No'
+      })),
+      paymentData: {},
+      availabilityData: {}
+    };
+
+    result.rows.forEach(row => {
+      syncData.paymentData[row.email] = {
+        paid: row.paid,
+        amount: row.amount
+      };
+      syncData.availabilityData[row.email] = row.status === 'declined' ? 'D' : row.status === 'accepted' ? 'A' : 'waiting';
+    });
+
+    res.json(syncData);
+  } catch (error) {
+    console.error('Error syncing to Dates:', error);
+    res.status(500).json({ error: 'Failed to sync data' });
+  }
+});
+
+// Get comprehensive dashboard stats
+app.get('/api/dashboard-stats', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+
+    const participantsResult = await pool.query('SELECT data FROM imported_data');
+    const totalParticipants = participantsResult.rows.length;
+
+    const metadataResult = await pool.query('SELECT COUNT(*) as count FROM participant_metadata WHERE status = $1', ['Active']);
+    const activeParticipants = parseInt(metadataResult.rows[0].count);
+
+    const eventsResult = await pool.query('SELECT COUNT(*) as count FROM events');
+    const totalEvents = parseInt(eventsResult.rows[0].count);
+
+    const revenueResult = await pool.query('SELECT SUM(amount) as total FROM event_participation WHERE paid = true');
+    const totalRevenue = revenueResult.rows[0].total || 0;
+
+    const referralsResult = await pool.query('SELECT COUNT(*) as count FROM event_participation WHERE referral = true AND attended = true');
+    const referralAttendees = parseInt(referralsResult.rows[0].count);
+
+    res.json({
+      totalParticipants,
+      activeParticipants,
+      totalEvents,
+      totalRevenue: parseFloat(totalRevenue),
+      referralAttendees
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

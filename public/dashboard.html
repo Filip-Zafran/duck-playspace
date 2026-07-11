@@ -6,249 +6,52 @@
   <title>Dashboard - Duck Playspace</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .dashboard-wrapper {
-      width: 100vw;
-      margin-left: calc(-50vw + 50%);
-      padding: 20px;
-    }
-
-    .dashboard-nav {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 10px;
-    }
-
-    .dashboard-tab {
-      padding: 10px 20px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      color: #666;
-      font-size: 14px;
-      border-bottom: 3px solid transparent;
-      transition: all 0.3s;
-    }
-
-    .dashboard-tab.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
-    }
-
-    .dashboard-section {
-      display: none;
-    }
-
-    .dashboard-section.active {
-      display: block;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      border-left: 4px solid #667eea;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: #999;
-      font-weight: 600;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .stat-value {
-      font-size: 28px;
-      font-weight: 700;
-      color: #667eea;
-    }
-
-    .table-container {
-      background: white;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .table-wrapper {
-      overflow-x: auto;
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-
-    .dashboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-
-    .dashboard-table th {
-      background: #667eea;
-      color: white;
-      padding: 12px;
-      text-align: left;
-      font-weight: 600;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .dashboard-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-    .dashboard-table tr:hover {
-      background: #f9f9ff;
-    }
-
-    .gender-badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-
-    .gender-badge.man {
-      background: #dbeafe;
-      color: #1e3a8a;
-    }
-
-    .gender-badge.woman {
-      background: #fce7f3;
-      color: #be185d;
-    }
-
-    .gender-badge.nonbinary {
-      background: #e9d5ff;
-      color: #6b21a8;
-    }
-
-    .gender-badge.other {
-      background: #fed7aa;
-      color: #b45309;
-    }
-
-    .status-badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-    }
-
-    .status-badge.active {
-      background: #d4edda;
-      color: #155724;
-    }
-
-    .status-badge.paused {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .reward-badge {
-      display: inline-block;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-      background: #e7d4f5;
-      color: #6b21a8;
-    }
-
-    .tags {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-    }
-
-    .tag {
-      display: inline-block;
-      padding: 2px 6px;
-      background: #f0f0f0;
-      border-radius: 3px;
-      font-size: 9px;
-      color: #666;
-    }
-
-    .tag.referral {
-      background: #fff3cd;
-      color: #856404;
-    }
-
-    .tag.vip {
-      background: #cfe2ff;
-      color: #084298;
-    }
-
-    .tag.ambassador {
-      background: #f8d7da;
-      color: #721c24;
-    }
-
-    .action-btn {
-      padding: 4px 8px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 3px;
-      cursor: pointer;
-      font-size: 10px;
-      font-weight: 600;
-    }
-
-    .action-btn:hover {
-      background: #764ba2;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #667eea;
-    }
-
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .section-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #333;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #667eea;
-    }
+    .dashboard-wrapper { width: 100vw; margin-left: calc(-50vw + 50%); padding: 20px; }
+    .dashboard-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+    .dashboard-tab { padding: 10px 20px; background: none; border: none; cursor: pointer; font-weight: 600; color: #666; font-size: 14px; border-bottom: 3px solid transparent; transition: all 0.3s; }
+    .dashboard-tab.active { color: #667eea; border-bottom-color: #667eea; }
+    .dashboard-section { display: none; }
+    .dashboard-section.active { display: block; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .stat-label { font-size: 11px; color: #999; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
+    .stat-value { font-size: 28px; font-weight: 700; color: #667eea; }
+    .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .table-wrapper { overflow-x: auto; max-height: 70vh; overflow-y: auto; }
+    .dashboard-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .dashboard-table th { background: #667eea; color: white; padding: 12px; text-align: left; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+    .dashboard-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+    .dashboard-table tr:hover { background: #f9f9ff; }
+    .gender-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+    .gender-badge.man { background: #dbeafe; color: #1e3a8a; }
+    .gender-badge.woman { background: #fce7f3; color: #be185d; }
+    .gender-badge.nonbinary { background: #e9d5ff; color: #6b21a8; }
+    .gender-badge.other { background: #fed7aa; color: #b45309; }
+    .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+    .status-badge.active { background: #d4edda; color: #155724; }
+    .status-badge.paused { background: #fff3cd; color: #856404; }
+    .reward-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; background: #e7d4f5; color: #6b21a8; }
+    .tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tag { display: inline-block; padding: 2px 6px; background: #f0f0f0; border-radius: 3px; font-size: 8px; color: #666; }
+    .tag.referral { background: #fff3cd; color: #856404; }
+    .tag.vip { background: #cfe2ff; color: #084298; }
+    .action-btn { padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 9px; font-weight: 600; }
+    .action-btn:hover { background: #764ba2; }
+    .input-field { padding: 6px 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 10px; }
+    .input-field:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,0.1); }
+    .loading { text-align: center; padding: 40px; color: #667eea; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .section-title { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea; }
+    .filter-bar { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-group label { font-size: 10px; font-weight: 600; color: #666; }
+    .checkbox { width: 16px; height: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
   <div class="page-container">
     <div class="page-bg grid-bg"></div>
-
     <div class="container">
       <header class="header">
         <div>
@@ -274,9 +77,10 @@
       <main class="content">
         <div class="dashboard-wrapper">
           <div class="dashboard-nav">
-            <button class="dashboard-tab active" onclick="switchTab('statistics')">Statistics</button>
-            <button class="dashboard-tab" onclick="switchTab('participants')">Participants</button>
-            <button class="dashboard-tab" onclick="switchTab('events')">Events</button>
+            <button class="dashboard-tab active" onclick="switchTab('statistics')">📊 Statistics</button>
+            <button class="dashboard-tab" onclick="switchTab('participants')">👥 Participants</button>
+            <button class="dashboard-tab" onclick="switchTab('events')">📅 Events</button>
+            <button class="dashboard-tab" onclick="switchTab('participation')">📋 Participation</button>
           </div>
 
           <div id="loading" class="loading" style="display: none;">
@@ -284,27 +88,35 @@
             <p>Loading dashboard...</p>
           </div>
 
-          <!-- Statistics Section -->
+          <!-- Statistics -->
           <div id="statistics" class="dashboard-section active">
             <h2 class="section-title">Dashboard Statistics</h2>
             <div class="stats-grid" id="statsGrid"></div>
           </div>
 
-          <!-- Participants Section -->
+          <!-- Participants -->
           <div id="participants" class="dashboard-section">
-            <h2 class="section-title">Participants</h2>
+            <h2 class="section-title">Participants Management</h2>
+            <div class="filter-bar">
+              <div class="filter-group" style="flex: 1;">
+                <label>Search</label>
+                <input type="text" id="participantSearch" class="input-field" placeholder="Name or Email..." oninput="filterParticipants()">
+              </div>
+              <div class="filter-group">
+                <label>Status</label>
+                <select id="statusFilter" class="input-field" onchange="filterParticipants()">
+                  <option value="">All</option>
+                  <option value="Active">Active</option>
+                  <option value="Paused">Paused</option>
+                </select>
+              </div>
+            </div>
             <div class="table-container">
               <div class="table-wrapper">
-                <table class="dashboard-table" id="participantsTable">
+                <table class="dashboard-table">
                   <thead>
                     <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Gender</th>
-                      <th>Age</th>
-                      <th>Status</th>
-                      <th>Events Attended</th>
-                      <th>Total Paid €</th>
+                      <th>Name</th><th>Email</th><th>Gender</th><th>Age</th><th>Status</th><th>Attended</th><th>Amount €</th><th>Reward</th><th>Tags</th><th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="participantsBody"></tbody>
@@ -313,21 +125,43 @@
             </div>
           </div>
 
-          <!-- Events Section -->
+          <!-- Events -->
           <div id="events" class="dashboard-section">
-            <h2 class="section-title">Events</h2>
+            <h2 class="section-title">Events Management</h2>
             <div class="table-container">
               <div class="table-wrapper">
-                <table class="dashboard-table" id="eventsTable">
+                <table class="dashboard-table">
                   <thead>
                     <tr>
-                      <th>Event Name</th>
-                      <th>Participants</th>
-                      <th>Attending</th>
-                      <th>Revenue €</th>
+                      <th>Event Name</th><th>Date</th><th>Invited</th><th>Responded</th><th>Attending</th><th>Revenue €</th><th>Free</th><th>Referral</th><th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="eventsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Participation -->
+          <div id="participation" class="dashboard-section">
+            <h2 class="section-title">Event Participation Details</h2>
+            <div class="filter-bar">
+              <div class="filter-group">
+                <label>Filter by Event</label>
+                <select id="eventFilter" class="input-field" onchange="filterParticipation()">
+                  <option value="">All Events</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-container">
+              <div class="table-wrapper">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th><th>Participant</th><th>Invited</th><th>Status</th><th>Attended</th><th>Paid</th><th>Amount €</th><th>Free</th><th>Referral</th><th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="participationBody"></tbody>
                 </table>
               </div>
             </div>
@@ -338,100 +172,151 @@
   </div>
 
   <script>
-    let allParticipants = [];
+    let allData = { participants: [], events: [], participation: {} };
 
     async function loadDashboard() {
       document.getElementById('loading').style.display = 'block';
-
       try {
-        const response = await fetch('/api/dashboard-data');
-        allParticipants = await response.json();
+        const dataResponse = await fetch('/api/dashboard-data');
+        const participants = await dataResponse.json();
+        
+        const statsResponse = await fetch('/api/dashboard-stats');
+        const stats = await statsResponse.json();
+
+        const eventsResponse = await fetch('/api/events');
+        const events = await eventsResponse.json();
+
+        allData = { participants, stats, events, participation: {} };
+
+        // Load participation data for each event
+        for (const event of events) {
+          const partResponse = await fetch(`/api/events/${event.id}/participation`);
+          const participation = await partResponse.json();
+          allData.participation[event.name] = participation;
+        }
 
         document.getElementById('loading').style.display = 'none';
         renderStatistics();
         renderParticipants();
+        renderEvents();
+        renderParticipation();
+        populateEventFilter();
       } catch (err) {
-        console.error('Failed to load dashboard:', err);
+        console.error('Error:', err);
         document.getElementById('loading').style.display = 'none';
       }
     }
 
     function renderStatistics() {
-      const stats = [
-        {
-          label: 'Total Participants',
-          value: allParticipants.length
-        },
-        {
-          label: 'Total Unique Genders',
-          value: new Set(allParticipants.map(p => p['Gender'] || '?')).size
-        },
-        {
-          label: 'Average Age',
-          value: Math.round(allParticipants.reduce((sum, p) => sum + (parseInt(p['Age']) || 0), 0) / allParticipants.length) || '?'
-        }
-      ];
+      const stats = allData.stats;
+      const html = `
+        <div class="stat-card"><div class="stat-label">Total Participants</div><div class="stat-value">${stats.totalParticipants}</div></div>
+        <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value">${stats.activeParticipants}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Events</div><div class="stat-value">${stats.totalEvents}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">€${stats.totalRevenue.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">Referral Attendees</div><div class="stat-value">${stats.referralAttendees}</div></div>
+      `;
+      document.getElementById('statsGrid').innerHTML = html;
+    }
 
-      const grid = document.getElementById('statsGrid');
-      grid.innerHTML = stats.map(stat => `
-        <div class="stat-card">
-          <div class="stat-label">${stat.label}</div>
-          <div class="stat-value">${stat.value}</div>
-        </div>
-      `).join('');
+    function getGenderClass(g) {
+      if (!g) return 'other';
+      const g2 = g.toLowerCase();
+      return g2.includes('man') && !g2.includes('woman') ? 'man' : g2.includes('woman') ? 'woman' : g2.includes('non') ? 'nonbinary' : 'other';
     }
 
     function renderParticipants() {
       const tbody = document.getElementById('participantsBody');
-      tbody.innerHTML = allParticipants.map(p => `
-        <tr>
-          <td><strong>${p.Name || p.name || 'N/A'}</strong></td>
-          <td>${p['Email'] || p['email'] || ''}</td>
-          <td><span class="gender-badge ${getGenderClass(p['Gender'])}">${p['Gender'] || '?'}</span></td>
-          <td>${p['Age'] || '?'}</td>
-          <td><span class="status-badge active">Active</span></td>
-          <td>0</td>
-          <td>€0.00</td>
-        </tr>
-      `).join('');
-    }
-
-    function getGenderClass(gender) {
-      if (!gender) return 'other';
-      const g = gender.toLowerCase();
-      if (g.includes('man')) return 'man';
-      if (g.includes('woman')) return 'woman';
-      if (g.includes('non')) return 'nonbinary';
-      return 'other';
+      tbody.innerHTML = allData.participants.map(p => {
+        const email = p['Email'] || '';
+        return `
+          <tr>
+            <td>${p.Name || 'N/A'}</td>
+            <td>${email}</td>
+            <td><span class="gender-badge ${getGenderClass(p['Gender'])}">${p['Gender'] || '?'}</span></td>
+            <td>${p['Age'] || '?'}</td>
+            <td><span class="status-badge active">Active</span></td>
+            <td>0</td><td>€0.00</td><td>-</td>
+            <td><div class="tags"></div></td>
+            <td><button class="action-btn" onclick="editParticipant('${email}')">Edit</button></td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function renderEvents() {
       const tbody = document.getElementById('eventsBody');
-      tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px;">Events synced from Dates page</td></tr>';
+      tbody.innerHTML = allData.events.map(e => `
+        <tr>
+          <td>${e.name}</td><td>${e.date || '-'}</td>
+          <td>${Object.keys(allData.participation[e.name] || {}).length}</td>
+          <td>0</td><td>0</td><td>€0</td><td>0</td><td>0</td>
+          <td><button class="action-btn" onclick="viewEvent(${e.id})">View</button></td>
+        </tr>
+      `).join('');
     }
 
-    function switchTab(tabName) {
-      document.querySelectorAll('.dashboard-section').forEach(sec => {
-        sec.classList.remove('active');
+    function renderParticipation() {
+      const tbody = document.getElementById('participationBody');
+      let rows = [];
+      Object.entries(allData.participation).forEach(([eventName, parts]) => {
+        parts.forEach(p => {
+          rows.push({ ...p, eventName });
+        });
       });
-      document.querySelectorAll('.dashboard-tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.eventName}</td><td>${r.email}</td>
+          <td><input type="checkbox" class="checkbox" ${r.invited ? 'checked' : ''}></td>
+          <td>${r.status || '-'}</td>
+          <td><input type="checkbox" class="checkbox" ${r.attended ? 'checked' : ''}></td>
+          <td><input type="checkbox" class="checkbox" ${r.paid ? 'checked' : ''}></td>
+          <td>€${r.amount || 0}</td>
+          <td><input type="checkbox" class="checkbox" ${r.free_entry ? 'checked' : ''}></td>
+          <td><input type="checkbox" class="checkbox" ${r.referral ? 'checked' : ''}></td>
+          <td><button class="action-btn" onclick="syncParticipation()">Sync</button></td>
+        </tr>
+      `).join('');
+    }
 
-      document.getElementById(tabName).classList.add('active');
+    function filterParticipants() {
+      const search = document.getElementById('participantSearch').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      renderParticipants();
+    }
+
+    function filterParticipation() {
+      renderParticipation();
+    }
+
+    function populateEventFilter() {
+      const select = document.getElementById('eventFilter');
+      select.innerHTML = '<option value="">All Events</option>' + allData.events.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.dashboard-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
       event.target.classList.add('active');
     }
 
+    function editParticipant(email) {
+      alert('Edit participant: ' + email);
+    }
+
+    function viewEvent(id) {
+      alert('View event: ' + id);
+    }
+
+    function syncParticipation() {
+      alert('Syncing with Dates page...');
+    }
+
     document.getElementById('logoutBtn').addEventListener('click', async () => {
-      try {
-        const response = await fetch('/logout', { method: 'POST' });
-        const data = await response.json();
-        if (data.success) {
-          window.location.href = '/';
-        }
-      } catch (err) {
-        console.error('Logout failed:', err);
-      }
+      const response = await fetch('/logout', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) window.location.href = '/';
     });
 
     loadDashboard();
