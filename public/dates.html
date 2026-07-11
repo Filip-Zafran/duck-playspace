@@ -169,12 +169,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      cursor: pointer;
       transition: all 0.3s;
-    }
-
-    .primary-slot:hover {
-      background: #f0f3ff;
+      color: #999;
+      font-size: 12px;
     }
 
     .primary-slot.filled {
@@ -558,7 +555,7 @@
             </div>
           `;
         } else {
-          html += `<div class="primary-slot" onclick="selectSlot('${slotKey}')">+ Click to assign</div>`;
+          html += `<div class="primary-slot">+ Empty slot</div>`;
         }
       }
 
