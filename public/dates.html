@@ -627,7 +627,7 @@
           const prefMin = person['Preferred Age Min'] || person['Age Preference Min'] || '?';
           const prefMax = person['Preferred Age Max'] || person['Age Preference Max'] || '?';
           const sexuality = person['Sexuality'] || '?';
-          const language = person['Language'] || '?';
+          const language = person['Language'] || person['Languages'] || person['language'] || person['languages'] || '?';
           const mainIntention = person['Main Intention'] || '?';
           const relationshipStyle = person['Relationship Style'] || '?';
           const isAgeMismatch = checkAgeMismatch(person);
