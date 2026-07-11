@@ -107,6 +107,59 @@ export async function initializeDatabase() {
       }
     }
 
+    // Create events table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS events (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) NOT NULL UNIQUE,
+        date VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create event_participation table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS event_participation (
+        id SERIAL PRIMARY KEY,
+        event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+        email VARCHAR(255) NOT NULL,
+        invited BOOLEAN DEFAULT FALSE,
+        invitation_date TIMESTAMP,
+        responded BOOLEAN DEFAULT FALSE,
+        response_date TIMESTAMP,
+        status VARCHAR(50) DEFAULT 'waiting',
+        attended BOOLEAN DEFAULT FALSE,
+        paid BOOLEAN DEFAULT FALSE,
+        amount DECIMAL(10, 2) DEFAULT 0,
+        payment_date TIMESTAMP,
+        free_entry BOOLEAN DEFAULT FALSE,
+        referral BOOLEAN DEFAULT FALSE,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(event_id, email)
+      )
+    `);
+
+    // Create participant_metadata table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS participant_metadata (
+        email VARCHAR(255) PRIMARY KEY,
+        status VARCHAR(50) DEFAULT 'Active',
+        phone VARCHAR(20),
+        tags JSONB DEFAULT '[]',
+        internal_notes TEXT,
+        total_attended INTEGER DEFAULT 0,
+        total_paid DECIMAL(10, 2) DEFAULT 0,
+        reward_tag VARCHAR(100),
+        last_event_name VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    console.log('Dashboard tables initialized successfully');
     console.log('Database tables initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

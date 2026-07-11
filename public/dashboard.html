@@ -3,349 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Data - Duck Playspace</title>
+  <title>Dashboard - Duck Playspace</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    .dashboard-wrapper {
-      padding: 20px;
-    }
-
-    .filters-section {
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      border: 1px solid #ddd;
-    }
-
-    .filters-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 15px;
-      color: #667eea;
-    }
-
-    .filters-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 15px;
-    }
-
-    .filter-group {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .filter-group label {
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 5px;
-      color: #666;
-    }
-
-    .filter-group select,
-    .filter-group input {
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-      font-size: 14px;
-    }
-
-    .filter-group select:focus,
-    .filter-group input:focus {
-      outline: none;
-      border-color: #667eea;
-      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-    }
-
-    .reset-filters {
-      padding: 8px 16px;
-      background: #667eea;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: 600;
-      align-self: flex-end;
-    }
-
-    .reset-filters:hover {
-      background: #764ba2;
-    }
-
-    .data-stats {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      display: flex;
-      gap: 20px;
-      font-size: 14px;
-    }
-
-    .stat {
-      display: flex;
-      gap: 8px;
-    }
-
-    .stat-label {
-      font-weight: 600;
-      color: #666;
-    }
-
-    .stat-value {
-      color: #667eea;
-      font-weight: 700;
-    }
-
-    .scrollbar-top {
-      width: 100vw;
-      margin-left: calc(-50vw + 50%);
-      overflow-x: scroll;
-      overflow-y: hidden;
-      height: 15px;
-      background: white;
-      border-top: 2px solid #667eea;
-    }
-
-    .scrollbar-top-inner {
-      width: 100%;
-      height: 1px;
-    }
-
-    .scrollbar-top::-webkit-scrollbar {
-      height: 12px;
-    }
-
-    .scrollbar-top::-webkit-scrollbar-track {
-      background: #f1f1f1;
-    }
-
-    .scrollbar-top::-webkit-scrollbar-thumb {
-      background: #667eea;
-      border-radius: 6px;
-    }
-
-    .scrollbar-top::-webkit-scrollbar-thumb:hover {
-      background: #764ba2;
-    }
-
-    .table-wrapper {
-      width: 100vw;
-      margin-left: calc(-50vw + 50%);
-      background: white;
-      border-bottom: 2px solid #667eea;
-      overflow-x: auto;
-      max-height: 70vh;
-      overflow-y: auto;
-    }
-
-    .dashboard-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    .dashboard-table th {
-      background: #667eea;
-      color: white;
-      padding: 12px;
-      text-align: left;
-      font-weight: 600;
-      min-width: 120px;
-      position: sticky;
-      top: 0;
-      z-index: 10;
-    }
-
-    .dashboard-table td {
-      padding: 10px 12px;
-      border-bottom: 1px solid #eee;
-      min-width: 120px;
-    }
-
-    .dashboard-table td:nth-child(1),
-    .dashboard-table th:nth-child(1) {
-      min-width: 60px;
-      width: 60px;
-    }
-
-    .dashboard-table td:nth-child(3),
-    .dashboard-table th:nth-child(3) {
-      min-width: 50vw;
-      width: 50vw;
-    }
-
-    .dashboard-table tr:hover {
-      background: #f9f9f9;
-    }
-
-    .row-not-staying {
-      background-color: #e0e0e0 !important;
-    }
-
-    .row-man {
-      background-color: #e3f2fd;
-    }
-
-    .row-woman {
-      background-color: #fce4ec;
-    }
-
-    .row-nonbinary {
-      background-color: #f3e5f5;
-    }
-
-    .row-other {
-      background-color: #fff3e0;
-    }
-
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #667eea;
-      font-size: 16px;
-    }
-
-    .spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #667eea;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 20px;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .legend {
-      background: white;
-      padding: 15px;
-      border-radius: 10px;
-      margin-bottom: 20px;
-      display: flex;
-      gap: 20px;
-      flex-wrap: wrap;
-      font-size: 13px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .legend-color {
-      width: 30px;
-      height: 20px;
-      border-radius: 4px;
-      border: 1px solid #ddd;
-    }
-
-    .dashboard-tabs {
-      display: flex;
-      gap: 0;
-      margin-bottom: 20px;
-      border-bottom: 2px solid #ddd;
-    }
-
-    .dashboard-tab {
-      padding: 12px 20px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      font-size: 15px;
-      font-weight: 600;
-      color: #666;
-      border-bottom: 3px solid transparent;
-      transition: all 0.3s;
-    }
-
-    .dashboard-tab.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
-    }
-
-    .dashboard-tab:hover {
-      color: #667eea;
-    }
-
-    .tab-content {
-      display: none;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    .groups-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-      gap: 20px;
-    }
-
-    .group-card {
-      background: white;
-      border: 2px solid #667eea;
-      border-radius: 10px;
-      padding: 20px;
-    }
-
-    .group-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: #667eea;
-      margin-bottom: 15px;
-      border-bottom: 2px solid #667eea;
-      padding-bottom: 10px;
-    }
-
-    .gender-subgroup {
-      margin-bottom: 15px;
-    }
-
-    .gender-subgroup-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #333;
-      margin-bottom: 10px;
-      padding-left: 10px;
-      border-left: 4px solid #667eea;
-    }
-
-    .person-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
-      gap: 10px;
-      padding: 8px;
-      background: #f9f9f9;
-      border-radius: 5px;
-      margin-bottom: 5px;
-      font-size: 12px;
-    }
-
-    .person-name {
-      font-weight: 600;
-      color: #333;
-    }
-
-    .person-age {
-      color: #666;
-    }
-
-    .person-pref {
-      color: #999;
-    }
+    .dashboard-wrapper { width: 100vw; margin-left: calc(-50vw + 50%); padding: 20px; }
+    .dashboard-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+    .dashboard-tab { padding: 10px 20px; background: none; border: none; cursor: pointer; font-weight: 600; color: #666; font-size: 14px; border-bottom: 3px solid transparent; transition: all 0.3s; }
+    .dashboard-tab.active { color: #667eea; border-bottom-color: #667eea; }
+    .dashboard-section { display: none; }
+    .dashboard-section.active { display: block; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: white; padding: 20px; border-radius: 10px; border-left: 4px solid #667eea; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .stat-label { font-size: 11px; color: #999; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; }
+    .stat-value { font-size: 28px; font-weight: 700; color: #667eea; }
+    .table-container { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    .table-wrapper { overflow-x: auto; max-height: 70vh; overflow-y: auto; }
+    .dashboard-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .dashboard-table th { background: #667eea; color: white; padding: 12px; text-align: left; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+    .dashboard-table td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+    .dashboard-table tr:hover { background: #f9f9ff; }
+    .gender-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+    .gender-badge.man { background: #dbeafe; color: #1e3a8a; }
+    .gender-badge.woman { background: #fce7f3; color: #be185d; }
+    .gender-badge.nonbinary { background: #e9d5ff; color: #6b21a8; }
+    .gender-badge.other { background: #fed7aa; color: #b45309; }
+    .status-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; }
+    .status-badge.active { background: #d4edda; color: #155724; }
+    .status-badge.paused { background: #fff3cd; color: #856404; }
+    .reward-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 600; background: #e7d4f5; color: #6b21a8; }
+    .tags { display: flex; gap: 4px; flex-wrap: wrap; }
+    .tag { display: inline-block; padding: 2px 6px; background: #f0f0f0; border-radius: 3px; font-size: 8px; color: #666; }
+    .tag.referral { background: #fff3cd; color: #856404; }
+    .tag.vip { background: #cfe2ff; color: #084298; }
+    .action-btn { padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 9px; font-weight: 600; }
+    .action-btn:hover { background: #764ba2; }
+    .input-field { padding: 6px 8px; border: 1px solid #ddd; border-radius: 3px; font-size: 10px; }
+    .input-field:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 2px rgba(102,126,234,0.1); }
+    .loading { text-align: center; padding: 40px; color: #667eea; }
+    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .section-title { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #667eea; }
+    .filter-bar { background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 15px; flex-wrap: wrap; }
+    .filter-group { display: flex; flex-direction: column; gap: 5px; }
+    .filter-group label { font-size: 10px; font-weight: 600; color: #666; }
+    .checkbox { width: 16px; height: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
   <div class="page-container">
     <div class="page-bg grid-bg"></div>
-
     <div class="container">
       <header class="header">
         <div>
@@ -353,7 +59,7 @@
             <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
             <h1>Duck Playspace</h1>
           </div>
-          <div class="header-subtitle">Analytics & Insights</div>
+          <div class="header-subtitle">Management Dashboard</div>
         </div>
         <button id="logoutBtn" class="btn btn-logout">Logout</button>
       </header>
@@ -362,94 +68,103 @@
         <a href="/home" class="nav-link">Home</a>
         <a href="/poll" class="nav-link">Polls</a>
         <a href="/upload-data" class="nav-link">Upload Data</a>
-        <a href="/dashboard" class="nav-link active">Dashboard</a>
+        <a href="/data-filters" class="nav-link">Data</a>
+        <a href="/groups" class="nav-link">Groups</a>
+        <a href="/events" class="nav-link">Dates</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
       </nav>
 
       <main class="content">
         <div class="dashboard-wrapper">
-          <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Loading data...</p>
+          <div class="dashboard-nav">
+            <button class="dashboard-tab active" onclick="switchTab('statistics')">📊 Statistics</button>
+            <button class="dashboard-tab" onclick="switchTab('participants')">👥 Participants</button>
+            <button class="dashboard-tab" onclick="switchTab('events')">📅 Events</button>
+            <button class="dashboard-tab" onclick="switchTab('participation')">📋 Participation</button>
           </div>
 
-          <div id="dashboardContent" style="display: none;">
-            <!-- Tab Navigation -->
-            <div class="dashboard-tabs">
-              <button class="dashboard-tab active" onclick="switchTab('data-filters')">Data</button>
-              <button class="dashboard-tab" onclick="switchTab('groups')">Groups</button>
-            </div>
+          <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Loading dashboard...</p>
+          </div>
 
-            <!-- Data Tab -->
-            <div id="data-filters" class="tab-content active">
-              <!-- Legend -->
-            <div class="legend">
-              <div class="legend-item">
-                <div class="legend-color" style="background: #e3f2fd;"></div>
-                <span>Man</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: #fce4ec;"></div>
-                <span>Woman</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: #f3e5f5;"></div>
-                <span>Non-binary</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: #fff3e0;"></div>
-                <span>Other</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background: #e0e0e0;"></div>
-                <span>NOT Staying in Berlin (Grey)</span>
-              </div>
-            </div>
+          <!-- Statistics -->
+          <div id="statistics" class="dashboard-section active">
+            <h2 class="section-title">Dashboard Statistics</h2>
+            <div class="stats-grid" id="statsGrid"></div>
+          </div>
 
-            <!-- Filters -->
-            <div class="filters-section">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="filters-title">Filters</div>
-                <button class="reset-filters" onclick="resetFilters()">Reset All</button>
+          <!-- Participants -->
+          <div id="participants" class="dashboard-section">
+            <h2 class="section-title">Participants Management</h2>
+            <div class="filter-bar">
+              <div class="filter-group" style="flex: 1;">
+                <label>Search</label>
+                <input type="text" id="participantSearch" class="input-field" placeholder="Name or Email..." oninput="filterParticipants()">
               </div>
-              <div class="filters-grid" id="filtersContainer"></div>
+              <div class="filter-group">
+                <label>Status</label>
+                <select id="statusFilter" class="input-field" onchange="filterParticipants()">
+                  <option value="">All</option>
+                  <option value="Active">Active</option>
+                  <option value="Paused">Paused</option>
+                </select>
+              </div>
             </div>
+            <div class="table-container">
+              <div class="table-wrapper">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th><th>Email</th><th>Gender</th><th>Age</th><th>Status</th><th>Attended</th><th>Amount €</th><th>Reward</th><th>Tags</th><th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="participantsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
 
-            <!-- Stats -->
-            <div class="data-stats">
-              <div class="stat">
-                <span class="stat-label">Total Records:</span>
-                <span class="stat-value" id="totalRecords">0</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Filtered:</span>
-                <span class="stat-value" id="filteredRecords">0</span>
-              </div>
-              <div class="stat">
-                <span class="stat-label">Not Staying:</span>
-                <span class="stat-value" id="notStayingCount">0</span>
+          <!-- Events -->
+          <div id="events" class="dashboard-section">
+            <h2 class="section-title">Events Management</h2>
+            <div class="table-container">
+              <div class="table-wrapper">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Event Name</th><th>Date</th><th>Invited</th><th>Responded</th><th>Attending</th><th>Revenue €</th><th>Free</th><th>Referral</th><th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="eventsBody"></tbody>
+                </table>
               </div>
             </div>
+          </div>
 
-            <!-- Table -->
-            <div class="scrollbar-top" id="scrollbarTop">
-              <div class="scrollbar-top-inner"></div>
-            </div>
-            <div class="table-wrapper" id="tableWrapper">
-              <table class="dashboard-table" id="dataTable">
-                <thead id="tableHead"></thead>
-                <tbody id="tableBody"></tbody>
-              </table>
-            </div>
-            </div>
-            <!-- End Data Tab -->
-
-            <!-- Groups Tab -->
-            <div id="groups" class="tab-content">
-              <div class="groups-container" id="groupsContainer">
-                <p>Loading groups...</p>
+          <!-- Participation -->
+          <div id="participation" class="dashboard-section">
+            <h2 class="section-title">Event Participation Details</h2>
+            <div class="filter-bar">
+              <div class="filter-group">
+                <label>Filter by Event</label>
+                <select id="eventFilter" class="input-field" onchange="filterParticipation()">
+                  <option value="">All Events</option>
+                </select>
               </div>
             </div>
-            <!-- End Groups Tab -->
+            <div class="table-container">
+              <div class="table-wrapper">
+                <table class="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th><th>Participant</th><th>Invited</th><th>Status</th><th>Attended</th><th>Paid</th><th>Amount €</th><th>Free</th><th>Referral</th><th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="participationBody"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -457,311 +172,154 @@
   </div>
 
   <script>
-    let allData = [];
-    let filteredData = [];
-    const filters = {};
+    let allData = { participants: [], events: [], participation: {} };
 
     async function loadDashboard() {
+      document.getElementById('loading').style.display = 'block';
       try {
-        const response = await fetch('/api/dashboard-data');
-        allData = await response.json();
-        filteredData = [...allData];
+        const dataResponse = await fetch('/api/dashboard-data');
+        const participants = await dataResponse.json();
+        
+        const statsResponse = await fetch('/api/dashboard-stats');
+        const stats = await statsResponse.json();
+
+        const eventsResponse = await fetch('/api/events');
+        const events = await eventsResponse.json();
+
+        allData = { participants, stats, events, participation: {} };
+
+        // Load participation data for each event
+        for (const event of events) {
+          const partResponse = await fetch(`/api/events/${event.id}/participation`);
+          const participation = await partResponse.json();
+          allData.participation[event.name] = participation;
+        }
 
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('dashboardContent').style.display = 'block';
-
-        createFilters();
-        displayData();
+        renderStatistics();
+        renderParticipants();
+        renderEvents();
+        renderParticipation();
+        populateEventFilter();
       } catch (err) {
-        console.error('Failed to load dashboard:', err);
+        console.error('Error:', err);
+        document.getElementById('loading').style.display = 'none';
       }
     }
 
-    function createFilters() {
-      const columns = allData.length > 0 ? Object.keys(allData[0]) : [];
-      const filterContainer = document.getElementById('filtersContainer');
-      filterContainer.innerHTML = '';
-
-      // Key columns to filter
-      const filterColumns = ['Gender', 'Sexuality', 'Attracted To', 'Staying In Berlin', 'Berlin Bezirk', 'Age', 'Main Intention'];
-
-      filterColumns.forEach(col => {
-        if (columns.includes(col)) {
-          const uniqueValues = [...new Set(allData.map(d => d[col]).filter(Boolean))].sort();
-
-          const group = document.createElement('div');
-          group.className = 'filter-group';
-
-          const label = document.createElement('label');
-          label.textContent = col;
-          group.appendChild(label);
-
-          const select = document.createElement('select');
-          select.innerHTML = `<option value="">All</option>`;
-          uniqueValues.forEach(val => {
-            const option = document.createElement('option');
-            option.value = val;
-            option.textContent = val;
-            select.appendChild(option);
-          });
-
-          select.addEventListener('change', (e) => {
-            filters[col] = e.target.value;
-            applyFilters();
-          });
-
-          group.appendChild(select);
-          filterContainer.appendChild(group);
-        }
-      });
+    function renderStatistics() {
+      const stats = allData.stats;
+      const html = `
+        <div class="stat-card"><div class="stat-label">Total Participants</div><div class="stat-value">${stats.totalParticipants}</div></div>
+        <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value">${stats.activeParticipants}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Events</div><div class="stat-value">${stats.totalEvents}</div></div>
+        <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">€${stats.totalRevenue.toFixed(2)}</div></div>
+        <div class="stat-card"><div class="stat-label">Referral Attendees</div><div class="stat-value">${stats.referralAttendees}</div></div>
+      `;
+      document.getElementById('statsGrid').innerHTML = html;
     }
 
-    function applyFilters() {
-      filteredData = allData.filter(row => {
-        return Object.entries(filters).every(([col, value]) => {
-          return !value || row[col] == value;
+    function getGenderClass(g) {
+      if (!g) return 'other';
+      const g2 = g.toLowerCase();
+      return g2.includes('man') && !g2.includes('woman') ? 'man' : g2.includes('woman') ? 'woman' : g2.includes('non') ? 'nonbinary' : 'other';
+    }
+
+    function renderParticipants() {
+      const tbody = document.getElementById('participantsBody');
+      tbody.innerHTML = allData.participants.map(p => {
+        const email = p['Email'] || '';
+        return `
+          <tr>
+            <td>${p.Name || 'N/A'}</td>
+            <td>${email}</td>
+            <td><span class="gender-badge ${getGenderClass(p['Gender'])}">${p['Gender'] || '?'}</span></td>
+            <td>${p['Age'] || '?'}</td>
+            <td><span class="status-badge active">Active</span></td>
+            <td>0</td><td>€0.00</td><td>-</td>
+            <td><div class="tags"></div></td>
+            <td><button class="action-btn" onclick="editParticipant('${email}')">Edit</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderEvents() {
+      const tbody = document.getElementById('eventsBody');
+      tbody.innerHTML = allData.events.map(e => `
+        <tr>
+          <td>${e.name}</td><td>${e.date || '-'}</td>
+          <td>${Object.keys(allData.participation[e.name] || {}).length}</td>
+          <td>0</td><td>0</td><td>€0</td><td>0</td><td>0</td>
+          <td><button class="action-btn" onclick="viewEvent(${e.id})">View</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderParticipation() {
+      const tbody = document.getElementById('participationBody');
+      let rows = [];
+      Object.entries(allData.participation).forEach(([eventName, parts]) => {
+        parts.forEach(p => {
+          rows.push({ ...p, eventName });
         });
       });
-
-      displayData();
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.eventName}</td><td>${r.email}</td>
+          <td><input type="checkbox" class="checkbox" ${r.invited ? 'checked' : ''}></td>
+          <td>${r.status || '-'}</td>
+          <td><input type="checkbox" class="checkbox" ${r.attended ? 'checked' : ''}></td>
+          <td><input type="checkbox" class="checkbox" ${r.paid ? 'checked' : ''}></td>
+          <td>€${r.amount || 0}</td>
+          <td><input type="checkbox" class="checkbox" ${r.free_entry ? 'checked' : ''}></td>
+          <td><input type="checkbox" class="checkbox" ${r.referral ? 'checked' : ''}></td>
+          <td><button class="action-btn" onclick="syncParticipation()">Sync</button></td>
+        </tr>
+      `).join('');
     }
 
-    function displayData() {
-      const tableHead = document.getElementById('tableHead');
-      const tableBody = document.getElementById('tableBody');
-      tableHead.innerHTML = '';
-      tableBody.innerHTML = '';
-
-      if (filteredData.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="100" style="text-align: center; padding: 20px;">No data found</td></tr>';
-        updateStats();
-        return;
-      }
-
-      // Create headers (show key columns first)
-      const columns = Object.keys(filteredData[0]);
-      const headerRow = document.createElement('tr');
-
-      // Add number column header
-      const numTh = document.createElement('th');
-      numTh.textContent = '#';
-      headerRow.appendChild(numTh);
-
-      columns.forEach(col => {
-        const th = document.createElement('th');
-        th.textContent = col;
-        headerRow.appendChild(th);
-      });
-      tableHead.appendChild(headerRow);
-
-      // Create rows with color coding
-      filteredData.forEach((row, index) => {
-        const tr = document.createElement('tr');
-        const gender = row['Gender'] || '';
-        const stayingInBerlin = row['Staying In Berlin'] || '';
-
-        // Apply color based on gender
-        if (gender === 'Man') tr.className = 'row-man';
-        else if (gender === 'Woman') tr.className = 'row-woman';
-        else if (gender === 'Non-binary') tr.className = 'row-nonbinary';
-        else tr.className = 'row-other';
-
-        // RED if not staying in Berlin
-        if (stayingInBerlin === 'No') {
-          tr.className = 'row-not-staying';
-        }
-
-        // Add number column
-        const numTd = document.createElement('td');
-        numTd.textContent = index + 1;
-        tr.appendChild(numTd);
-
-        columns.forEach(col => {
-          const td = document.createElement('td');
-          td.textContent = row[col] || '';
-          tr.appendChild(td);
-        });
-
-        tableBody.appendChild(tr);
-      });
-
-      updateStats();
+    function filterParticipants() {
+      const search = document.getElementById('participantSearch').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
+      renderParticipants();
     }
 
-    function updateStats() {
-      document.getElementById('totalRecords').textContent = allData.length;
-      document.getElementById('filteredRecords').textContent = filteredData.length;
-      const notStaying = filteredData.filter(r => r['Staying In Berlin'] === 'No').length;
-      document.getElementById('notStayingCount').textContent = notStaying;
+    function filterParticipation() {
+      renderParticipation();
     }
 
-    function resetFilters() {
-      Object.keys(filters).forEach(key => delete filters[key]);
-      document.querySelectorAll('.filter-group select').forEach(select => {
-        select.value = '';
-      });
-      applyFilters();
+    function populateEventFilter() {
+      const select = document.getElementById('eventFilter');
+      select.innerHTML = '<option value="">All Events</option>' + allData.events.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.dashboard-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function editParticipant(email) {
+      alert('Edit participant: ' + email);
+    }
+
+    function viewEvent(id) {
+      alert('View event: ' + id);
+    }
+
+    function syncParticipation() {
+      alert('Syncing with Dates page...');
     }
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
-      try {
-        const response = await fetch('/logout', { method: 'POST' });
-        const data = await response.json();
-        if (data.success) {
-          window.location.href = '/';
-        }
-      } catch (err) {
-        console.error('Logout failed:', err);
-      }
+      const response = await fetch('/logout', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) window.location.href = '/';
     });
 
-    // Tab switching
-    function switchTab(tabName) {
-      // Hide all tabs
-      document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      document.querySelectorAll('.dashboard-tab').forEach(btn => {
-        btn.classList.remove('active');
-      });
-
-      // Show selected tab
-      document.getElementById(tabName).classList.add('active');
-      event.target.classList.add('active');
-
-      // Load groups if switching to groups tab
-      if (tabName === 'groups') {
-        displayGroups();
-      }
-    }
-
-    // Categorize people into groups
-    function categorizeGroups() {
-      const groups = {
-        'Mono Long-Term': [],
-        'Mono Casual': [],
-        'Poly/ENM Long-Term': [],
-        'Poly/ENM Casual': [],
-        'Friends': [],
-        'LGBTQ+': []
-      };
-
-      allData.forEach(person => {
-        const mainIntention = person['Main Intention'] || '';
-        const relationshipType = person['Relationship Type'] || '';
-        const lookingFor = person['Looking For'] || '';
-        const gender = person['Gender'] || '';
-        const sexuality = person['Sexuality'] || '';
-
-        // Determine which groups the person belongs to
-        const mono = relationshipType.toLowerCase().includes('mono') || mainIntention.toLowerCase().includes('mono');
-        const poly = relationshipType.toLowerCase().includes('poly') || relationshipType.toLowerCase().includes('enm') || mainIntention.toLowerCase().includes('poly');
-        const longTerm = lookingFor.toLowerCase().includes('long') || mainIntention.toLowerCase().includes('long');
-        const casual = lookingFor.toLowerCase().includes('casual') || mainIntention.toLowerCase().includes('casual');
-        const friendsOnly = lookingFor.toLowerCase().includes('friend') || mainIntention.toLowerCase().includes('friend');
-        const lgbtq = gender !== 'Man' && gender !== 'Woman' && gender !== '' || sexuality.toLowerCase().includes('gay') || sexuality.toLowerCase().includes('lesbian') || sexuality.toLowerCase().includes('bi');
-
-        if (mono && longTerm) groups['Mono Long-Term'].push(person);
-        if (mono && casual) groups['Mono Casual'].push(person);
-        if (poly && longTerm) groups['Poly/ENM Long-Term'].push(person);
-        if (poly && casual) groups['Poly/ENM Casual'].push(person);
-        if (friendsOnly) groups['Friends'].push(person);
-        if (lgbtq) groups['LGBTQ+'].push(person);
-      });
-
-      return groups;
-    }
-
-    // Display groups with gender subgroups
-    function displayGroups() {
-      const groups = categorizeGroups();
-      const container = document.getElementById('groupsContainer');
-      container.innerHTML = '';
-
-      Object.entries(groups).forEach(([groupName, people]) => {
-        const card = document.createElement('div');
-        card.className = 'group-card';
-
-        const title = document.createElement('div');
-        title.className = 'group-title';
-        title.textContent = `${groupName} (${people.length})`;
-        card.appendChild(title);
-
-        // Group by gender
-        const byGender = {};
-        people.forEach(person => {
-          const gender = person['Gender'] || 'Not Specified';
-          if (!byGender[gender]) byGender[gender] = [];
-          byGender[gender].push(person);
-        });
-
-        // Display each gender group sorted by age
-        Object.entries(byGender).forEach(([gender, genderPeople]) => {
-          const genderTitle = document.createElement('div');
-          genderTitle.className = 'gender-subgroup-title';
-          genderTitle.textContent = `${gender}`;
-          card.appendChild(genderTitle);
-
-          const subgroup = document.createElement('div');
-          subgroup.className = 'gender-subgroup';
-
-          // Sort by age ascending
-          genderPeople.sort((a, b) => {
-            const ageA = parseInt(a['Age'] || 0);
-            const ageB = parseInt(b['Age'] || 0);
-            return ageA - ageB;
-          });
-
-          genderPeople.forEach(person => {
-            const row = document.createElement('div');
-            row.className = 'person-row';
-
-            const name = person['Name'] || person['Email'] || 'Unknown';
-            const age = person['Age'] || '?';
-            const prefMin = person['Age Preference Min'] || '?';
-            const prefMax = person['Age Preference Max'] || '?';
-
-            row.innerHTML = `
-              <div class="person-name">${name}</div>
-              <div class="person-age">${age} yrs</div>
-              <div class="person-pref">${prefMin}-${prefMax}</div>
-            `;
-
-            subgroup.appendChild(row);
-          });
-
-          card.appendChild(subgroup);
-        });
-
-        container.appendChild(card);
-      });
-    }
-
-    // Sync scroll between top scrollbar and table
-    function setupScrollSync() {
-      const scrollbarTop = document.getElementById('scrollbarTop');
-      const tableWrapper = document.getElementById('tableWrapper');
-
-      if (!scrollbarTop || !tableWrapper) return;
-
-      scrollbarTop.addEventListener('scroll', () => {
-        tableWrapper.scrollLeft = scrollbarTop.scrollLeft;
-      });
-
-      tableWrapper.addEventListener('scroll', () => {
-        scrollbarTop.scrollLeft = tableWrapper.scrollLeft;
-      });
-
-      // Set initial scrollbar width
-      setTimeout(() => {
-        const tableWidth = document.querySelector('.dashboard-table').scrollWidth;
-        document.querySelector('.scrollbar-top-inner').style.width = tableWidth + 'px';
-      }, 100);
-    }
-
-    // Load data on page load
     loadDashboard();
-    setTimeout(setupScrollSync, 500);
   </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dates - Duck Playspace</title>
+  <title>Events - Duck Playspace</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     .dashboard-wrapper {
@@ -235,6 +235,12 @@
       border-color: #667eea;
     }
 
+    .primary-slot.compatibility-issue {
+      border: 3px solid #ff6b6b;
+      background: #ffe0e0 !important;
+      box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+    }
+
     .slot-person {
       display: flex;
       flex-direction: column;
@@ -405,6 +411,77 @@
       background: #764ba2;
     }
 
+    .person-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #ddd;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: #666;
+    }
+
+    .payment-group {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .payment-check {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .payment-check input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    .payment-check label {
+      font-size: 10px;
+      cursor: pointer;
+      margin: 0;
+    }
+
+    .payment-amount {
+      flex: 1;
+    }
+
+    .payment-amount input {
+      width: 100%;
+      padding: 4px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 10px;
+    }
+
+    .availability-select {
+      padding: 4px;
+      border: 1px solid #ddd;
+      border-radius: 3px;
+      font-size: 10px;
+      background: white;
+    }
+
+    .availability-select.not-attending {
+      background: #ffe0e0;
+      color: #c2185b;
+    }
+
     .loading {
       text-align: center;
       padding: 40px;
@@ -432,6 +509,66 @@
       padding: 40px;
       color: #999;
     }
+
+    .event-group {
+      margin-bottom: 20px;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .event-group-header {
+      background: #667eea;
+      color: white;
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      user-select: none;
+      transition: background 0.3s;
+    }
+
+    .event-group-header:hover {
+      background: #764ba2;
+    }
+
+    .event-group-toggle {
+      display: inline-block;
+      transition: transform 0.3s;
+      font-size: 14px;
+    }
+
+    .event-group-toggle.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .event-group-content {
+      padding: 20px;
+      background: white;
+      max-height: 2000px;
+      overflow: hidden;
+      transition: max-height 0.3s;
+    }
+
+    .event-group-content.collapsed {
+      max-height: 0;
+      padding: 0 20px;
+    }
+
+    .date-card {
+      background: white;
+      border: 2px solid #f0f0f0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .date-card:last-child {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -445,7 +582,7 @@
             <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
             <h1>Duck Playspace</h1>
           </div>
-          <div class="header-subtitle">Event Matching</div>
+          <div class="header-subtitle">Events Management</div>
         </div>
         <button id="logoutBtn" class="btn btn-logout">Logout</button>
       </header>
@@ -456,20 +593,21 @@
         <a href="/upload-data" class="nav-link">Upload Data</a>
         <a href="/data-filters" class="nav-link">Data</a>
         <a href="/groups" class="nav-link">Groups</a>
-        <a href="/dates" class="nav-link active">Dates</a>
+        <a href="/events" class="nav-link active">Events</a>
+        <a href="/dashboard" class="nav-link">Dashboard</a>
       </nav>
 
       <main class="content">
         <div class="dashboard-wrapper">
           <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Loading dates...</p>
+            <p>Loading events...</p>
           </div>
 
           <div id="datesContent" style="display: none;">
             <div class="dates-container" id="datesContainer"></div>
             <div class="no-dates" id="noDates" style="display: none;">
-              No valid dates found. Need minimum 6 women + 6 men for regular groups, or 12 people for LGBTQ+.
+              No valid events found. Need minimum 6 women + 6 men for regular groups, or 12 people for LGBTQ+.
             </div>
           </div>
         </div>
@@ -481,6 +619,7 @@
     let allData = [];
     let dates = {};
     let selections = {};
+    let personData = {}; // { email: { paid: boolean, amount: number, availability: string } }
 
     async function loadDates() {
       try {
@@ -557,12 +696,27 @@
       container.innerHTML = '';
 
       Object.entries(dates).forEach(([dateName, people]) => {
-        const card = document.createElement('div');
-        card.className = 'date-card';
+        const eventGroup = document.createElement('div');
+        eventGroup.className = 'event-group';
 
         const womenCount = people.filter(p => p['Gender'] === 'Woman').length;
         const menCount = people.filter(p => p['Gender'] === 'Man').length;
         const totalCount = people.length;
+
+        // Create collapsible header
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'event-group-header';
+        groupHeader.innerHTML = `<span class="event-group-toggle">▼</span> ${dateName} (${womenCount}W / ${menCount}M / ${totalCount} total)`;
+        groupHeader.onclick = () => toggleEventGroup(eventGroup);
+        eventGroup.appendChild(groupHeader);
+
+        // Create content container
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'event-group-content';
+
+        // Create the date card with all content
+        const card = document.createElement('div');
+        card.className = 'date-card';
 
         const headerHTML = `
           <div class="date-header">
@@ -596,7 +750,9 @@
         const slotsHTML = createSlotsHTML(dateName, people);
 
         card.innerHTML = headerHTML + actionsHTML + venueHTML + slotsHTML;
-        container.appendChild(card);
+        contentDiv.appendChild(card);
+        eventGroup.appendChild(contentDiv);
+        container.appendChild(eventGroup);
       });
     }
 
@@ -679,11 +835,16 @@
         const person = selections[slotKey];
 
         if (person) {
+          const ageIssues = checkAgeCompatibilityInSlots(dateName, gender, person);
+          const hasIssue = ageIssues.length > 0;
+          const issueClass = hasIssue ? 'compatibility-issue' : '';
+          const issueTitle = hasIssue ? `⚠️ Age mismatch with: ${ageIssues.join(', ')}` : '';
+
           html += `
-            <div class="primary-slot filled">
+            <div class="primary-slot filled ${issueClass}" title="${issueTitle}">
               <div class="slot-person">
                 <div class="slot-person-name">${person.Name || person.Email}</div>
-                <div class="slot-person-details">${person.Age} yrs</div>
+                <div class="slot-person-details">${person.Age} yrs ${hasIssue ? '⚠️' : ''}</div>
               </div>
               <button class="slot-remove" onclick="removeFromSlot('${slotKey}')">Remove</button>
             </div>
@@ -695,7 +856,14 @@
 
       html += '</div><div class="backup-title">Backups:</div><div class="backup-people">';
 
-      people.forEach(person => {
+      // Sort people by age
+      const sortedPeople = [...people].sort((a, b) => {
+        const ageA = parseInt(a['Age']) || 0;
+        const ageB = parseInt(b['Age']) || 0;
+        return ageA - ageB;
+      });
+
+      sortedPeople.forEach(person => {
         const email = person['Email'] || '';
         const isSlotted = Object.values(selections).some(p => p && p['Email'] === email);
 
@@ -746,6 +914,28 @@
                   <div class="meta-item"><span class="meta-label">Intention:</span> ${mainIntention}</div>
                   <div class="meta-item"><span class="meta-label">Rel. Style:</span> ${relationshipStyle}</div>
                 </div>
+                <div class="person-controls">
+                  <div class="control-group">
+                    <span class="control-label">Payment</span>
+                    <div class="payment-group">
+                      <div class="payment-check">
+                        <input type="checkbox" id="paid-${email}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'paid', this.checked)">
+                        <label for="paid-${email}">Paid</label>
+                      </div>
+                      <input type="number" class="payment-amount" id="amount-${email}" placeholder="Amount" min="0" step="0.01" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'amount', this.value)" />
+                    </div>
+                  </div>
+                  <div class="control-group">
+                    <span class="control-label">Availability</span>
+                    <select class="availability-select" id="availability-${email}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'availability', this.value); this.classList.toggle('not-attending', this.value === 'D')">
+                      <option value="">Select...</option>
+                      <option value="A">A</option>
+                      <option value="B">B</option>
+                      <option value="C">C</option>
+                      <option value="D">D - Not Attending</option>
+                    </select>
+                  </div>
+                </div>
               </div>
               <div class="person-card-footer">
                 <button class="btn-assign" onclick="assignToPrimary('${dateName}', '${gender}', '${email.replace(/'/g, "\\'")}')">Assign</button>
@@ -768,6 +958,49 @@
       return age < prefMin || age > prefMax;
     }
 
+    function checkAgeCompatibilityInSlots(dateName, gender, person) {
+      const personAge = parseInt(person['Age'] || 0);
+      const personPrefMin = parseInt(person['Preferred Age Min'] || person['Age Preference Min'] || 0);
+      const personPrefMax = parseInt(person['Preferred Age Max'] || person['Age Preference Max'] || 0);
+
+      const issues = [];
+
+      // Check compatibility with other people in Primary slots
+      for (let i = 0; i < 4; i++) {
+        const slotKey = `${dateName}:${gender}:${i}`;
+        const otherPerson = selections[slotKey];
+
+        if (otherPerson && (otherPerson['Email'] || '') !== (person['Email'] || '')) {
+          const otherAge = parseInt(otherPerson['Age'] || 0);
+          const otherPrefMin = parseInt(otherPerson['Preferred Age Min'] || otherPerson['Age Preference Min'] || 0);
+          const otherPrefMax = parseInt(otherPerson['Preferred Age Max'] || otherPerson['Age Preference Max'] || 0);
+
+          // Check if person's age fits in other person's preference
+          if (otherPrefMin > 0 && otherPrefMax > 0) {
+            if (personAge < otherPrefMin || personAge > otherPrefMax) {
+              issues.push(`${otherPerson.Name || otherPerson['Email']}: wants ${otherPrefMin}-${otherPrefMax}`);
+            }
+          }
+
+          // Check if other person's age fits in person's preference
+          if (personPrefMin > 0 && personPrefMax > 0) {
+            if (otherAge < personPrefMin || otherAge > personPrefMax) {
+              issues.push(`${otherPerson.Name || otherPerson['Email']}: ${otherAge} yrs`);
+            }
+          }
+        }
+      }
+
+      return issues;
+    }
+
+    function updatePersonData(email, field, value) {
+      if (!personData[email]) {
+        personData[email] = { paid: false, amount: 0, availability: '' };
+      }
+      personData[email][field] = value;
+    }
+
     function assignToPrimary(dateName, gender, email) {
       const allPeople = dates[dateName];
       const person = allPeople.find(p => (p['Email'] || '') === email);
@@ -785,6 +1018,14 @@
       }
 
       alert('All primary slots for this gender are full!');
+    }
+
+    function toggleEventGroup(eventGroupElement) {
+      const content = eventGroupElement.querySelector('.event-group-content');
+      const toggle = eventGroupElement.querySelector('.event-group-toggle');
+
+      content.classList.toggle('collapsed');
+      toggle.classList.toggle('collapsed');
     }
 
     function removeFromSlot(slotKey) {
