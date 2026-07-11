@@ -569,6 +569,153 @@
     .date-card:last-child {
       margin-bottom: 0;
     }
+
+    .person-link {
+      cursor: pointer;
+      color: #667eea;
+      font-weight: 600;
+      text-decoration: none;
+      border-bottom: 1px dashed #667eea;
+      transition: all 0.2s;
+    }
+
+    .person-link:hover {
+      color: #764ba2;
+      border-bottom-color: #764ba2;
+    }
+
+    .profile-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .profile-modal.active {
+      display: flex;
+    }
+
+    .profile-modal-content {
+      background: white;
+      border-radius: 10px;
+      max-width: 700px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      padding: 30px;
+    }
+
+    .profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 25px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .profile-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .profile-close {
+      background: none;
+      border: none;
+      font-size: 28px;
+      cursor: pointer;
+      color: #999;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .profile-close:hover {
+      color: #333;
+    }
+
+    .profile-section {
+      margin-bottom: 20px;
+    }
+
+    .profile-section-title {
+      font-weight: 700;
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .profile-field {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .profile-field-label {
+      font-weight: 600;
+      color: #666;
+      min-width: 150px;
+    }
+
+    .profile-field-value {
+      color: #333;
+      text-align: right;
+      flex: 1;
+      margin-left: 15px;
+      word-break: break-word;
+    }
+
+    .profile-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #667eea;
+      color: white;
+      margin: 2px;
+    }
+
+    .profile-bio {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      line-height: 1.6;
+      color: #666;
+      font-size: 12px;
+      margin: 10px 0;
+    }
+
+    .profile-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .profile-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #666;
+    }
   </style>
 </head>
 <body>
@@ -612,6 +759,17 @@
           </div>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Person Profile Modal -->
+  <div class="profile-modal" id="personProfileModal">
+    <div class="profile-modal-content">
+      <div class="profile-header">
+        <div class="profile-title" id="profileName">Name</div>
+        <button class="profile-close" onclick="closePersonProfile()">✕</button>
+      </div>
+      <div id="profileContent"></div>
     </div>
   </div>
 
@@ -843,7 +1001,7 @@
           html += `
             <div class="primary-slot filled ${issueClass}" title="${issueTitle}">
               <div class="slot-person">
-                <div class="slot-person-name">${person.Name || person.Email}</div>
+                <div class="slot-person-name person-link" onclick="openPersonProfile('${(person.Email || '').replace(/'/g, "\\'")}')">${person.Name || person.Email}</div>
                 <div class="slot-person-details">${person.Age} yrs ${hasIssue ? '⚠️' : ''}</div>
               </div>
               <button class="slot-remove" onclick="removeFromSlot('${slotKey}')">Remove</button>
@@ -903,7 +1061,7 @@
           html += `
             <div class="person-card ${colorClass} ${mismatchClass}">
               <div class="person-info">
-                <div class="person-name">${person.Name || email}</div>
+                <div class="person-name person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')">${person.Name || email}</div>
                 <div class="person-details">
                   ${age} yrs | ${bezirk} | Prefers: ${prefMin}-${prefMax}
                   ${isAgeMismatch ? ' | ⚠️ Age mismatch' : ''}
@@ -1063,6 +1221,116 @@
         }
       } catch (err) {
         console.error('Logout failed:', err);
+      }
+    });
+
+    function openPersonProfile(email) {
+      const person = allData.find(p => (p['Email'] || p['email']) === email);
+      if (!person) return;
+
+      const modal = document.getElementById('personProfileModal');
+      const profileName = document.getElementById('profileName');
+      const profileContent = document.getElementById('profileContent');
+
+      profileName.textContent = person.Name || email;
+
+      let html = `
+        <div class="profile-section">
+          <div class="profile-section-title">Contact Information</div>
+          <div class="profile-field">
+            <span class="profile-field-label">Email</span>
+            <span class="profile-field-value">${person['Email'] || '-'}</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Phone</span>
+            <span class="profile-field-value">${person['Phone'] || person['phone'] || '-'}</span>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-section-title">Personal Information</div>
+          <div class="profile-field">
+            <span class="profile-field-label">Gender</span>
+            <span class="profile-field-value">${person['Gender'] || person['gender'] || '-'}</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Age</span>
+            <span class="profile-field-value">${person['Age'] || person['age'] || '-'}</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Bezirk</span>
+            <span class="profile-field-value">${person['Bezirk'] || person['bezirk'] || '-'}</span>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-section-title">Preferences & Interests</div>
+          <div class="profile-field">
+            <span class="profile-field-label">Sexuality</span>
+            <span class="profile-field-value">${person['Sexuality'] || person['sexuality'] || '-'}</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Attracted To</span>
+            <span class="profile-field-value">${person['Attracted To'] || person['attracted to'] || '-'}</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Language</span>
+            <span class="profile-field-value">${person['Language'] || person['Languages'] || person['language'] || person['languages'] || '-'}</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Relationship Style</span>
+            <span class="profile-field-value">${person['Relationship Style'] || person['relationship style'] || '-'}</span>
+          </div>
+          <div class="profile-field">
+            <span class="profile-field-label">Main Intention</span>
+            <span class="profile-field-value">${person['Main Intention'] || person['main intention'] || person['Intention'] || person['intention'] || '-'}</span>
+          </div>
+        </div>
+
+        <div class="profile-section">
+          <div class="profile-section-title">Age Preferences</div>
+          <div class="profile-field">
+            <span class="profile-field-label">Preferred Age Range</span>
+            <span class="profile-field-value">
+              ${(person['Preferred Age Min'] || person['Age Preference Min'] || '?')} -
+              ${(person['Preferred Age Max'] || person['Age Preference Max'] || '?')} years
+            </span>
+          </div>
+        </div>
+      `;
+
+      if (person['Bio'] || person['bio']) {
+        html += `
+          <div class="profile-section">
+            <div class="profile-section-title">Bio</div>
+            <div class="profile-bio">${person['Bio'] || person['bio']}</div>
+          </div>
+        `;
+      }
+
+      if (person['Venue Preferences'] || person['venue preferences']) {
+        html += `
+          <div class="profile-section">
+            <div class="profile-section-title">Venue Preferences</div>
+            <div class="profile-field">
+              <span class="profile-field-value">${person['Venue Preferences'] || person['venue preferences']}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      profileContent.innerHTML = html;
+      modal.classList.add('active');
+    }
+
+    function closePersonProfile() {
+      document.getElementById('personProfileModal').classList.remove('active');
+    }
+
+    window.addEventListener('click', (event) => {
+      const modal = document.getElementById('personProfileModal');
+      if (event.target === modal) {
+        closePersonProfile();
       }
     });
 
