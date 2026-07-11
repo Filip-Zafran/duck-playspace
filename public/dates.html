@@ -235,6 +235,12 @@
       border-color: #667eea;
     }
 
+    .primary-slot.compatibility-issue {
+      border: 3px solid #ff6b6b;
+      background: #ffe0e0 !important;
+      box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+    }
+
     .slot-person {
       display: flex;
       flex-direction: column;
@@ -679,11 +685,16 @@
         const person = selections[slotKey];
 
         if (person) {
+          const ageIssues = checkAgeCompatibilityInSlots(dateName, gender, person);
+          const hasIssue = ageIssues.length > 0;
+          const issueClass = hasIssue ? 'compatibility-issue' : '';
+          const issueTitle = hasIssue ? `⚠️ Age mismatch with: ${ageIssues.join(', ')}` : '';
+
           html += `
-            <div class="primary-slot filled">
+            <div class="primary-slot filled ${issueClass}" title="${issueTitle}">
               <div class="slot-person">
                 <div class="slot-person-name">${person.Name || person.Email}</div>
-                <div class="slot-person-details">${person.Age} yrs</div>
+                <div class="slot-person-details">${person.Age} yrs ${hasIssue ? '⚠️' : ''}</div>
               </div>
               <button class="slot-remove" onclick="removeFromSlot('${slotKey}')">Remove</button>
             </div>
@@ -695,7 +706,14 @@
 
       html += '</div><div class="backup-title">Backups:</div><div class="backup-people">';
 
-      people.forEach(person => {
+      // Sort people by age
+      const sortedPeople = [...people].sort((a, b) => {
+        const ageA = parseInt(a['Age']) || 0;
+        const ageB = parseInt(b['Age']) || 0;
+        return ageA - ageB;
+      });
+
+      sortedPeople.forEach(person => {
         const email = person['Email'] || '';
         const isSlotted = Object.values(selections).some(p => p && p['Email'] === email);
 
@@ -766,6 +784,42 @@
 
       if (prefMin === 0 || prefMax === 0) return false;
       return age < prefMin || age > prefMax;
+    }
+
+    function checkAgeCompatibilityInSlots(dateName, gender, person) {
+      const personAge = parseInt(person['Age'] || 0);
+      const personPrefMin = parseInt(person['Preferred Age Min'] || person['Age Preference Min'] || 0);
+      const personPrefMax = parseInt(person['Preferred Age Max'] || person['Age Preference Max'] || 0);
+
+      const issues = [];
+
+      // Check compatibility with other people in Primary slots
+      for (let i = 0; i < 4; i++) {
+        const slotKey = `${dateName}:${gender}:${i}`;
+        const otherPerson = selections[slotKey];
+
+        if (otherPerson && (otherPerson['Email'] || '') !== (person['Email'] || '')) {
+          const otherAge = parseInt(otherPerson['Age'] || 0);
+          const otherPrefMin = parseInt(otherPerson['Preferred Age Min'] || otherPerson['Age Preference Min'] || 0);
+          const otherPrefMax = parseInt(otherPerson['Preferred Age Max'] || otherPerson['Age Preference Max'] || 0);
+
+          // Check if person's age fits in other person's preference
+          if (otherPrefMin > 0 && otherPrefMax > 0) {
+            if (personAge < otherPrefMin || personAge > otherPrefMax) {
+              issues.push(`${otherPerson.Name || otherPerson['Email']}: wants ${otherPrefMin}-${otherPrefMax}`);
+            }
+          }
+
+          // Check if other person's age fits in person's preference
+          if (personPrefMin > 0 && personPrefMax > 0) {
+            if (otherAge < personPrefMin || otherAge > personPrefMax) {
+              issues.push(`${otherPerson.Name || otherPerson['Email']}: ${otherAge} yrs`);
+            }
+          }
+        }
+      }
+
+      return issues;
     }
 
     function assignToPrimary(dateName, gender, email) {
