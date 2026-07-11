@@ -144,6 +144,16 @@
       background: #f9f9f9;
     }
 
+    .gender-column.woman {
+      background: #ffe0e0;
+      border-color: #ff6b9d;
+    }
+
+    .gender-column.man {
+      background: #e3f2fd;
+      border-color: #667eea;
+    }
+
     .gender-column-title {
       font-size: 14px;
       font-weight: 700;
@@ -151,6 +161,15 @@
       margin-bottom: 15px;
       padding-bottom: 10px;
       border-bottom: 2px solid #667eea;
+    }
+
+    .gender-column.woman .gender-column-title {
+      border-bottom-color: #ff6b9d;
+      color: #c2185b;
+    }
+
+    .gender-column.man .gender-column-title {
+      color: #1565c0;
     }
 
     .primary-slots {
@@ -177,6 +196,18 @@
     .primary-slot.filled {
       border-style: solid;
       background: #e3f2fd;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .gender-column.woman .primary-slot.filled {
+      background: #ffe0e0;
+      border-color: #ff6b9d;
+    }
+
+    .gender-column.man .primary-slot.filled {
+      background: #e3f2fd;
+      border-color: #667eea;
     }
 
     .slot-person {
@@ -184,6 +215,7 @@
       flex-direction: column;
       gap: 2px;
       flex: 1;
+      margin-bottom: 8px;
     }
 
     .slot-person-name {
@@ -228,12 +260,9 @@
 
     .person-card {
       background: white;
-      padding: 10px;
+      padding: 12px;
       border-radius: 8px;
       border-left: 4px solid #667eea;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
       font-size: 11px;
       position: relative;
       cursor: pointer;
@@ -251,17 +280,44 @@
 
     .person-info {
       flex: 1;
+      margin-bottom: 8px;
     }
 
     .person-name {
       font-weight: 600;
       color: #333;
+      margin-bottom: 4px;
     }
 
     .person-details {
       color: #666;
       font-size: 10px;
-      margin-top: 2px;
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+
+    .person-meta {
+      color: #666;
+      font-size: 10px;
+      line-height: 1.4;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .meta-item {
+      word-break: break-word;
+    }
+
+    .meta-label {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .person-card-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
     }
 
     .btn-assign {
@@ -536,7 +592,8 @@
     }
 
     function createGenderColumn(dateName, gender, people) {
-      let html = `<div class="gender-column">
+      const genderClass = gender === 'Woman' ? 'woman' : gender === 'Man' ? 'man' : 'other';
+      let html = `<div class="gender-column ${genderClass}">
         <div class="gender-column-title">${gender}</div>
         <div class="primary-slots">`;
 
@@ -569,6 +626,10 @@
           const age = person['Age'] || '?';
           const prefMin = person['Preferred Age Min'] || person['Age Preference Min'] || '?';
           const prefMax = person['Preferred Age Max'] || person['Age Preference Max'] || '?';
+          const sexuality = person['Sexuality'] || '?';
+          const language = person['Language'] || '?';
+          const mainIntention = person['Main Intention'] || '?';
+          const relationshipStyle = person['Relationship Style'] || '?';
           const isAgeMismatch = checkAgeMismatch(person);
           const mismatchClass = isAgeMismatch ? 'age-mismatch' : '';
 
@@ -580,8 +641,16 @@
                   ${age} yrs | Prefers: ${prefMin}-${prefMax}
                   ${isAgeMismatch ? ' | ⚠️ Age mismatch' : ''}
                 </div>
+                <div class="person-meta">
+                  <div class="meta-item"><span class="meta-label">Sexuality:</span> ${sexuality}</div>
+                  <div class="meta-item"><span class="meta-label">Language:</span> ${language}</div>
+                  <div class="meta-item"><span class="meta-label">Intention:</span> ${mainIntention}</div>
+                  <div class="meta-item"><span class="meta-label">Rel. Style:</span> ${relationshipStyle}</div>
+                </div>
               </div>
-              <button class="btn-assign" onclick="assignToPrimary('${dateName}', '${gender}', '${email.replace(/'/g, "\\'")}')">Assign</button>
+              <div class="person-card-footer">
+                <button class="btn-assign" onclick="assignToPrimary('${dateName}', '${gender}', '${email.replace(/'/g, "\\'")}')">Assign</button>
+              </div>
             </div>
           `;
         }
