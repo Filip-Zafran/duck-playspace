@@ -273,6 +273,51 @@
       background: #f0f3ff;
     }
 
+    .person-card.man {
+      border-left-color: #1e3a8a;
+      background: #dbeafe;
+    }
+
+    .person-card.man:hover {
+      background: #bfdbfe;
+    }
+
+    .person-card.woman {
+      border-left-color: #be185d;
+      background: #fce7f3;
+    }
+
+    .person-card.woman:hover {
+      background: #fbcfe8;
+    }
+
+    .person-card.nonbinary {
+      border-left-color: #6b21a8;
+      background: #e9d5ff;
+    }
+
+    .person-card.nonbinary:hover {
+      background: #ddd6fe;
+    }
+
+    .person-card.other {
+      border-left-color: #b45309;
+      background: #fed7aa;
+    }
+
+    .person-card.other:hover {
+      background: #fdba74;
+    }
+
+    .person-card.not-staying {
+      border-left-color: #6b7280;
+      background: #f3f4f6;
+    }
+
+    .person-card.not-staying:hover {
+      background: #e5e7eb;
+    }
+
     .person-card.age-mismatch {
       border-left-color: #ff6b6b;
       background: #ffe0e0;
@@ -630,15 +675,37 @@
           const language = person['Language'] || person['Languages'] || person['language'] || person['languages'] || '?';
           const mainIntention = person['Main Intention'] || person['main intention'] || person['Intention'] || person['intention'] || '?';
           const relationshipStyle = person['Relationship Style'] || person['relationship style'] || person['Relationship'] || person['relationship'] || '?';
+          const bezirk = person['Bezirk'] || person['bezirk'] || '?';
+          const stayingInBerlin = person['Staying in Berlin'] || person['staying in berlin'] || 'Yes';
           const isAgeMismatch = checkAgeMismatch(person);
+
+          // Determine color class based on gender
+          let genderClass = '';
+          const personGender = person['Gender'] || '';
+          if (personGender === 'Man') {
+            genderClass = 'man';
+          } else if (personGender === 'Woman') {
+            genderClass = 'woman';
+          } else if (personGender === 'Non-binary') {
+            genderClass = 'nonbinary';
+          } else if (personGender && personGender !== 'Woman' && personGender !== 'Man') {
+            genderClass = 'other';
+          }
+
+          // Check if not staying in Berlin
+          const isNotStaying = stayingInBerlin.toLowerCase() === 'no';
+          const notStayingClass = isNotStaying ? 'not-staying' : '';
           const mismatchClass = isAgeMismatch ? 'age-mismatch' : '';
 
+          // Override color if not staying
+          const colorClass = isNotStaying ? notStayingClass : genderClass;
+
           html += `
-            <div class="person-card ${mismatchClass}">
+            <div class="person-card ${colorClass} ${mismatchClass}">
               <div class="person-info">
                 <div class="person-name">${person.Name || email}</div>
                 <div class="person-details">
-                  ${age} yrs | Prefers: ${prefMin}-${prefMax}
+                  ${age} yrs | ${bezirk} | Prefers: ${prefMin}-${prefMax}
                   ${isAgeMismatch ? ' | ⚠️ Age mismatch' : ''}
                 </div>
                 <div class="person-meta">
