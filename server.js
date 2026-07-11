@@ -139,12 +139,17 @@ app.get('/groups', (req, res) => {
   }
 });
 
-app.get('/dates', (req, res) => {
+app.get('/events', (req, res) => {
   if (!req.session.authenticated) {
     res.redirect('/');
   } else {
-    res.sendFile(path.join(__dirname, 'public', 'dates.html'));
+    res.sendFile(path.join(__dirname, 'public', 'events.html'));
   }
+});
+
+app.get('/dates', (req, res) => {
+  // Redirect old /dates route to /events
+  res.redirect('/events');
 });
 
 // ===== File Upload Config =====

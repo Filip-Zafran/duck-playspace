@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dates - Duck Playspace</title>
+  <title>Events - Duck Playspace</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     .dashboard-wrapper {
@@ -509,6 +509,66 @@
       padding: 40px;
       color: #999;
     }
+
+    .event-group {
+      margin-bottom: 20px;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .event-group-header {
+      background: #667eea;
+      color: white;
+      padding: 15px 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 16px;
+      user-select: none;
+      transition: background 0.3s;
+    }
+
+    .event-group-header:hover {
+      background: #764ba2;
+    }
+
+    .event-group-toggle {
+      display: inline-block;
+      transition: transform 0.3s;
+      font-size: 14px;
+    }
+
+    .event-group-toggle.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .event-group-content {
+      padding: 20px;
+      background: white;
+      max-height: 2000px;
+      overflow: hidden;
+      transition: max-height 0.3s;
+    }
+
+    .event-group-content.collapsed {
+      max-height: 0;
+      padding: 0 20px;
+    }
+
+    .date-card {
+      background: white;
+      border: 2px solid #f0f0f0;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .date-card:last-child {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -522,7 +582,7 @@
             <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
             <h1>Duck Playspace</h1>
           </div>
-          <div class="header-subtitle">Event Matching</div>
+          <div class="header-subtitle">Events Management</div>
         </div>
         <button id="logoutBtn" class="btn btn-logout">Logout</button>
       </header>
@@ -533,7 +593,7 @@
         <a href="/upload-data" class="nav-link">Upload Data</a>
         <a href="/data-filters" class="nav-link">Data</a>
         <a href="/groups" class="nav-link">Groups</a>
-        <a href="/dates" class="nav-link active">Dates</a>
+        <a href="/events" class="nav-link active">Events</a>
         <a href="/dashboard" class="nav-link">Dashboard</a>
       </nav>
 
@@ -541,13 +601,13 @@
         <div class="dashboard-wrapper">
           <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Loading dates...</p>
+            <p>Loading events...</p>
           </div>
 
           <div id="datesContent" style="display: none;">
             <div class="dates-container" id="datesContainer"></div>
             <div class="no-dates" id="noDates" style="display: none;">
-              No valid dates found. Need minimum 6 women + 6 men for regular groups, or 12 people for LGBTQ+.
+              No valid events found. Need minimum 6 women + 6 men for regular groups, or 12 people for LGBTQ+.
             </div>
           </div>
         </div>
@@ -636,12 +696,27 @@
       container.innerHTML = '';
 
       Object.entries(dates).forEach(([dateName, people]) => {
-        const card = document.createElement('div');
-        card.className = 'date-card';
+        const eventGroup = document.createElement('div');
+        eventGroup.className = 'event-group';
 
         const womenCount = people.filter(p => p['Gender'] === 'Woman').length;
         const menCount = people.filter(p => p['Gender'] === 'Man').length;
         const totalCount = people.length;
+
+        // Create collapsible header
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'event-group-header';
+        groupHeader.innerHTML = `<span class="event-group-toggle">▼</span> ${dateName} (${womenCount}W / ${menCount}M / ${totalCount} total)`;
+        groupHeader.onclick = () => toggleEventGroup(eventGroup);
+        eventGroup.appendChild(groupHeader);
+
+        // Create content container
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'event-group-content';
+
+        // Create the date card with all content
+        const card = document.createElement('div');
+        card.className = 'date-card';
 
         const headerHTML = `
           <div class="date-header">
@@ -675,7 +750,9 @@
         const slotsHTML = createSlotsHTML(dateName, people);
 
         card.innerHTML = headerHTML + actionsHTML + venueHTML + slotsHTML;
-        container.appendChild(card);
+        contentDiv.appendChild(card);
+        eventGroup.appendChild(contentDiv);
+        container.appendChild(eventGroup);
       });
     }
 
@@ -941,6 +1018,14 @@
       }
 
       alert('All primary slots for this gender are full!');
+    }
+
+    function toggleEventGroup(eventGroupElement) {
+      const content = eventGroupElement.querySelector('.event-group-content');
+      const toggle = eventGroupElement.querySelector('.event-group-toggle');
+
+      content.classList.toggle('collapsed');
+      toggle.classList.toggle('collapsed');
     }
 
     function removeFromSlot(slotKey) {
