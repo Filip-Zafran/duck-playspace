@@ -62,6 +62,10 @@
     .profile-field-label { font-weight: 600; color: #666; min-width: 150px; } 
     .profile-field-value { color: #333; text-align: right; flex: 1; margin-left: 15px; word-break: break-word; } 
     .profile-bio { background: #f9f9f9; padding: 15px; border-radius: 8px; line-height: 1.6; color: #666; font-size: 12px; margin: 10px 0; }
+    .responsiveness-stars { display: inline-flex; gap: 2px; align-items: center; } 
+    .star { color: #ffc107; font-size: 14px; line-height: 1; } 
+    .star.empty { color: #ddd; } 
+    .responsiveness-label { font-size: 11px; color: #666; margin-left: 5px; }
   </style>
 </head>
 <body>
@@ -244,6 +248,7 @@
       const tbody = document.getElementById('participantsBody');
       tbody.innerHTML = allData.participants.map(p => {
         const email = p['Email'] || '';
+        const starRating = calculateResponsivenessStar(email);
         return `
           <tr>
             <td><span class="person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')">${p.Name || 'N/A'}</span></td>
@@ -251,7 +256,7 @@
             <td><span class="gender-badge ${getGenderClass(p['Gender'])}">${p['Gender'] || '?'}</span></td>
             <td>${p['Age'] || '?'}</td>
             <td><span class="status-badge active">Active</span></td>
-            <td>0</td><td>€0.00</td><td>-</td>
+            <td>0</td><td>€0.00</td><td>${renderStars(starRating)}</td>
             <td><div class="tags"></div></td>
             <td><button class="action-btn" onclick="editParticipant('${email}')">Edit</button></td>
           </tr>
@@ -446,6 +451,28 @@
         closePersonProfile();
       }
     });
+
+    function calculateResponsivenessStar(email) {
+      // Calculate star rating based on attendance and responsiveness
+      // 5 stars: 90%+ attendance, responds <24h
+      // 4 stars: 70-90% attendance, responds <48h
+      // 3 stars: 50-70% attendance
+      // 2 stars: 30-50% attendance
+      // 1 star: <30% attendance
+      
+      // For now, use a default of 3 stars per person
+      // In a real implementation, this would be calculated from event participation history
+      return 3;
+    }
+
+    function renderStars(rating) {
+      let html = '<div class="responsiveness-stars">';
+      for (let i = 1; i <= 5; i++) {
+        html += `<span class="star ${i > rating ? 'empty' : ''}">★</span>`;
+      }
+      html += '</div>';
+      return html;
+    }
   </script>
   <!-- Person Profile Modal --> 
   <div class="profile-modal" id="personProfileModal"> 
