@@ -846,14 +846,31 @@
         votesHtml += `
             </tbody>
           </table>
+          <div style="margin-top: 20px; text-align: center;">
+            <button class="btn-close" onclick="closeModal()" style="width: auto; background: #95a5a6;">Close</button>
+          </div>
         `;
 
-        document.getElementById('modalEventDetails').innerHTML = '';
-        document.querySelector('.modal-link-section').style.display = 'none';
-        document.querySelector('.modal-actions').innerHTML = '<button class="btn-close" onclick="closeModal()">Close</button>';
-        document.querySelector('.modal h2').textContent = 'Detailed Votes';
-        document.querySelector('.modal').innerHTML = votesHtml + '<div style="margin-top: 20px;"><button class="btn-close" onclick="closeModal()" style="width: auto; background: #95a5a6;">Close</button></div>';
-        document.getElementById('successModal').classList.remove('hidden');
+        const modal = document.querySelector('.modal');
+        const modalOverlay = document.getElementById('successModal');
+
+        if (modal) {
+          modal.innerHTML = votesHtml;
+        }
+
+        const eventDetails = document.getElementById('modalEventDetails');
+        if (eventDetails) {
+          eventDetails.innerHTML = '';
+        }
+
+        const linkSection = document.querySelector('.modal-link-section');
+        if (linkSection) {
+          linkSection.style.display = 'none';
+        }
+
+        if (modalOverlay) {
+          modalOverlay.classList.remove('hidden');
+        }
       } catch (error) {
         showMessage('Error loading votes: ' + error.message, 'error');
       }
