@@ -160,6 +160,19 @@ app.get('/communication', (req, res) => {
   }
 });
 
+app.get('/quiz', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'quiz.html'));
+  }
+});
+
+app.get('/quiz-public/:quizId', (req, res) => {
+  // Public quiz page - no authentication required
+  res.sendFile(path.join(__dirname, 'public', 'quiz-public.html'));
+});
+
 // ===== File Upload Config =====
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -942,6 +955,239 @@ app.get('/api/dashboard-stats', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
+// ===== API: Quiz =====
+
+app.post('/api/quizzes', async (req, res) => {
+  // Optional authentication for admin creation
+  if (!req.body.title) {
+    return res.status(400).json({ error: 'Title is required' });
+  }
+  // Note: In production, you may want to add requireAuth here
+  try {
+    const { title, description, required_score_percent, reward_location, reward_address, meeting_time, questions } = req.body;
+    const pool = getPool();
+    const quizId = uuidv4();
+
+    // Insert quiz
+    await pool.query(
+      `INSERT INTO quizzes (id, title, description, required_score_percent, reward_location, reward_address, meeting_time)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [quizId, title, description || null, required_score_percent || 100, reward_location || null, reward_address || null, meeting_time || null]
+    );
+
+    // Insert questions and options
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const result = await pool.query(
+        `INSERT INTO quiz_questions (quiz_id, question_text, correct_answer, explanation, display_order)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [quizId, q.question_text, q.correct_answer, q.explanation || null, i]
+      );
+
+      const questionId = result.rows[0].id;
+
+      // Insert options
+      for (const [letter, text] of Object.entries(q.options)) {
+        await pool.query(
+          `INSERT INTO quiz_options (question_id, option_letter, option_text)
+           VALUES ($1, $2, $3)`,
+          [questionId, letter, text]
+        );
+      }
+    }
+
+    res.json({ id: quizId, message: 'Quiz created successfully' });
+  } catch (error) {
+    console.error('Error creating quiz:', error);
+    res.status(500).json({ error: 'Failed to create quiz' });
+  }
+});
+
+app.get('/api/quizzes/:quizId', async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    const pool = getPool();
+
+    const quizResult = await pool.query('SELECT * FROM quizzes WHERE id = $1', [quizId]);
+    if (quizResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Quiz not found' });
+    }
+
+    const quiz = quizResult.rows[0];
+
+    const questionsResult = await pool.query(
+      `SELECT * FROM quiz_questions WHERE quiz_id = $1 ORDER BY display_order ASC`,
+      [quizId]
+    );
+
+    const questions = await Promise.all(questionsResult.rows.map(async (q) => {
+      const optionsResult = await pool.query(
+        `SELECT * FROM quiz_options WHERE question_id = $1 ORDER BY option_letter ASC`,
+        [q.id]
+      );
+
+      const options = {};
+      optionsResult.rows.forEach(opt => {
+        options[opt.option_letter] = opt.option_text;
+      });
+
+      return {
+        id: q.id,
+        question_text: q.question_text,
+        options,
+        correct_answer: q.correct_answer,
+        explanation: q.explanation
+      };
+    }));
+
+    res.json({
+      ...quiz,
+      questions
+    });
+  } catch (error) {
+    console.error('Error fetching quiz:', error);
+    res.status(500).json({ error: 'Failed to fetch quiz' });
+  }
+});
+
+app.post('/api/quiz-answer/:quizId', async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    const { voter_token, question_id, selected_answer } = req.body;
+
+    if (!voter_token || !question_id || !selected_answer) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const pool = getPool();
+
+    // Get correct answer
+    const questionResult = await pool.query(
+      'SELECT correct_answer FROM quiz_questions WHERE id = $1',
+      [question_id]
+    );
+
+    if (questionResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    const correct_answer = questionResult.rows[0].correct_answer;
+    const is_correct = selected_answer.toUpperCase() === correct_answer;
+
+    // Upsert answer
+    await pool.query(
+      `INSERT INTO quiz_submissions (quiz_id, voter_token, question_id, selected_answer, is_correct)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (quiz_id, voter_token, question_id) DO UPDATE SET
+         selected_answer = $4,
+         is_correct = $5,
+         submitted_at = NOW()`,
+      [quizId, voter_token, question_id, selected_answer.toUpperCase(), is_correct]
+    );
+
+    res.json({ is_correct, correct_answer });
+  } catch (error) {
+    console.error('Error recording answer:', error);
+    res.status(500).json({ error: 'Failed to record answer' });
+  }
+});
+
+app.get('/api/quiz-progress/:quizId', async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    const { voter_token } = req.query;
+
+    if (!voter_token) {
+      return res.status(400).json({ error: 'voter_token required' });
+    }
+
+    const pool = getPool();
+
+    // Get total questions
+    const totalResult = await pool.query(
+      'SELECT COUNT(*) as count FROM quiz_questions WHERE quiz_id = $1',
+      [quizId]
+    );
+    const totalQuestions = parseInt(totalResult.rows[0].count);
+
+    // Get submitted answers
+    const submittedResult = await pool.query(
+      `SELECT COUNT(*) as count, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct
+       FROM quiz_submissions WHERE quiz_id = $1 AND voter_token = $2`,
+      [quizId, voter_token]
+    );
+
+    const submitted = parseInt(submittedResult.rows[0].count);
+    const correct = parseInt(submittedResult.rows[0].correct || 0);
+    const percent = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+
+    res.json({
+      total_questions: totalQuestions,
+      submitted_answers: submitted,
+      correct_answers: correct,
+      percent_correct: percent,
+      completed: submitted === totalQuestions
+    });
+  } catch (error) {
+    console.error('Error fetching quiz progress:', error);
+    res.status(500).json({ error: 'Failed to fetch progress' });
+  }
+});
+
+app.get('/api/quiz-completion/:quizId', async (req, res) => {
+  try {
+    const { quizId } = req.params;
+    const { voter_token } = req.query;
+
+    if (!voter_token) {
+      return res.status(400).json({ error: 'voter_token required' });
+    }
+
+    const pool = getPool();
+
+    // Get quiz info
+    const quizResult = await pool.query('SELECT * FROM quizzes WHERE id = $1', [quizId]);
+    if (quizResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Quiz not found' });
+    }
+
+    const quiz = quizResult.rows[0];
+
+    // Get total questions
+    const totalResult = await pool.query(
+      'SELECT COUNT(*) as count FROM quiz_questions WHERE quiz_id = $1',
+      [quizId]
+    );
+    const totalQuestions = parseInt(totalResult.rows[0].count);
+
+    // Get submitted answers
+    const submittedResult = await pool.query(
+      `SELECT COUNT(*) as count, SUM(CASE WHEN is_correct THEN 1 ELSE 0 END) as correct
+       FROM quiz_submissions WHERE quiz_id = $1 AND voter_token = $2`,
+      [quizId, voter_token]
+    );
+
+    const submitted = parseInt(submittedResult.rows[0].count);
+    const correct = parseInt(submittedResult.rows[0].correct || 0);
+    const percent = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+
+    const isCompleted = submitted === totalQuestions && percent >= (quiz.required_score_percent || 100);
+
+    res.json({
+      completed: isCompleted,
+      percent_correct: percent,
+      total_questions: totalQuestions,
+      correct_answers: correct,
+      reward_location: isCompleted ? quiz.reward_location : null,
+      reward_address: isCompleted ? quiz.reward_address : null,
+      meeting_time: isCompleted ? quiz.meeting_time : null
+    });
+  } catch (error) {
+    console.error('Error checking quiz completion:', error);
+    res.status(500).json({ error: 'Failed to check completion' });
   }
 });
 

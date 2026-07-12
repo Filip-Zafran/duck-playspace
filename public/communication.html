@@ -319,9 +319,17 @@
         <a href="/events" class="nav-link">Events</a>
         <a href="/poll" class="nav-link">Polls</a>
         <a href="/communication" class="nav-link active">Communication</a>
+        <a href="/quiz" class="nav-link">Quiz</a>
       </nav>
 
       <main class="content dashboard-wrapper">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; margin-bottom: 30px; text-align: center;">
+          <h2 style="color: white; margin-top: 0;">📝 Code of Conduct Quiz Required</h2>
+          <p style="margin: 15px 0; font-size: 16px;">Before attending the Duck Playspace event, you must complete our Code of Conduct quiz. This ensures everyone understands and commits to our values of consent, respect, and inclusivity.</p>
+          <a href="/quiz" class="btn btn-primary" style="display: inline-block; padding: 12px 28px; text-decoration: none; font-weight: 600; border-radius: 5px; background: white; color: #667eea; margin-top: 15px;">Take the Quiz Now</a>
+          <p style="font-size: 12px; margin-top: 15px; opacity: 0.9;">✓ Score 100% to unlock the event location and meeting details</p>
+        </div>
+
         <h2>📧 Communication Strategy</h2>
         <p>
           Manage your email communication with participants through the event lifecycle. Use these templates as guides for key communication moments.
@@ -412,14 +420,20 @@
           <div class="email-template-card">
             <div class="email-header">
               <div>
-                <div class="email-title">✅ Email 2: Confirmation Email</div>
-                <div style="font-size: 12px; color: #666; margin-top: 5px;">After poll closes - Confirm attendance and next steps</div>
+                <div class="email-title">✅ Email 2: Confirmation Email with Code of Conduct Quiz</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">After poll closes - Confirm attendance and Code of Conduct agreement</div>
               </div>
               <div class="email-stage">CONFIRMATION</div>
             </div>
 
             <div class="explanation">
-              <strong>Purpose:</strong> Thank confirmed participants, provide finalized event details, explain logistics, and set clear expectations for the event. This solidifies their commitment.
+              <strong>Purpose:</strong> Thank confirmed participants and require them to complete the Code of Conduct quiz. Provide finalized event details upon quiz completion (100% score unlocks location/time). This ensures everyone understands our values and solidifies their commitment.
+            </div>
+
+            <div style="background: #f0f3ff; border-left: 4px solid #667eea; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+              <strong style="color: #667eea;">📝 Embedded Quiz:</strong><br>
+              <p style="margin: 10px 0 0 0; font-size: 12px; color: #333;">The confirmation email contains a link to the Code of Conduct quiz. Participants must complete it with 100% correct answers to receive the event location and meeting time.</p>
+              <p style="margin: 10px 0 0 0; font-size: 12px; color: #667eea; font-weight: 600;">Quiz Link: <code style="background: white; padding: 2px 6px; border-radius: 3px;">https://yoursite.com/quiz-public/coc-2026?token={unique_token}</code></p>
             </div>
 
             <div class="checklist-section">
@@ -451,7 +465,11 @@
                 </div>
                 <div class="checklist-item">
                   <input type="checkbox" id="conf_coc">
-                  <label for="conf_coc">Code of Conduct link is included</label>
+                  <label for="conf_coc">Code of Conduct Quiz link is included with clear CTA</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_quiz_instruction">
+                  <label for="conf_quiz_instruction">Quiz requirement is clearly explained (100% = unlock location)</label>
                 </div>
                 <div class="checklist-item">
                   <input type="checkbox" id="conf_personal">
@@ -470,6 +488,36 @@
                   <label for="conf_contact">Organizer contact info is provided</label>
                 </div>
               </div>
+            </div>
+
+            <div class="key-points">
+              <div class="key-points-title">📝 Email 2 Structure with Quiz:</div>
+              <ul>
+                <li>Thank you for confirming your attendance</li>
+                <li>Final event details (date, time, group composition)</li>
+                <li><strong>🔒 Code of Conduct Quiz Section:</strong>
+                  <ul style="margin-top: 8px;">
+                    <li>Explain quiz requirement and why it matters</li>
+                    <li>CTA button/link to quiz: <code style="background: #f0f3ff; padding: 2px 6px; border-radius: 3px; font-size: 11px;">https://yoursite.com/quiz-public/coc-2026</code></li>
+                    <li>Note: "Score 100% to receive the event location and arrival details"</li>
+                  </ul>
+                </li>
+                <li>Pre-event logistics (dress code, parking, arrival time)</li>
+                <li>Code of Conduct overview</li>
+                <li>Cannot send a substitute statement</li>
+                <li>Contact info for questions</li>
+              </ul>
+            </div>
+
+            <div style="background: #ecfdf5; border-left: 4px solid #10b981; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
+              <strong style="color: #047857;">✅ Quiz Benefits:</strong>
+              <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 12px; color: #333;">
+                <li>Ensures everyone understands consent and respect values</li>
+                <li>No login required - accessible via email link</li>
+                <li>Instant gratification - location/time unlocks immediately upon 100% completion</li>
+                <li>Device-tracked - each person can only take quiz once per device</li>
+                <li>Retakeable - users can clear and start over if needed</li>
+              </ul>
             </div>
 
             <div class="html-editor-section">

@@ -159,6 +159,59 @@ export async function initializeDatabase() {
       )
     `);
 
+    // Create quiz table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS quizzes (
+        id VARCHAR(36) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        required_score_percent INTEGER DEFAULT 100,
+        reward_location VARCHAR(255),
+        reward_address TEXT,
+        meeting_time VARCHAR(255),
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create quiz_questions table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS quiz_questions (
+        id SERIAL PRIMARY KEY,
+        quiz_id VARCHAR(36) REFERENCES quizzes(id) ON DELETE CASCADE,
+        question_text TEXT NOT NULL,
+        correct_answer VARCHAR(1) NOT NULL,
+        explanation TEXT,
+        display_order INTEGER,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create quiz_options table for question choices
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS quiz_options (
+        id SERIAL PRIMARY KEY,
+        question_id INTEGER REFERENCES quiz_questions(id) ON DELETE CASCADE,
+        option_letter VARCHAR(1) NOT NULL,
+        option_text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Create quiz_submissions table to track user progress
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS quiz_submissions (
+        id SERIAL PRIMARY KEY,
+        quiz_id VARCHAR(36) REFERENCES quizzes(id) ON DELETE CASCADE,
+        voter_token VARCHAR(255),
+        question_id INTEGER REFERENCES quiz_questions(id),
+        selected_answer VARCHAR(1),
+        is_correct BOOLEAN,
+        submitted_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(quiz_id, voter_token, question_id)
+      )
+    `);
+
+    console.log('Quiz tables initialized successfully');
     console.log('Dashboard tables initialized successfully');
     console.log('Database tables initialized successfully');
   } catch (error) {

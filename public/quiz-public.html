@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code of Conduct Quiz - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .quiz-wrapper {
+      min-height: 100vh;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .quiz-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .quiz-header {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .quiz-logo {
+      height: 50px;
+      margin-bottom: 20px;
+    }
+
+    .quiz-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+    }
+
+    .quiz-description {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .progress-bar-container {
+      background: #e0e0e0;
+      border-radius: 20px;
+      height: 10px;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .progress-text {
+      font-size: 12px;
+      margin-top: 10px;
+      color: #666;
+    }
+
+    .question-card {
+      background: white;
+      border-radius: 10px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s;
+    }
+
+    .question-number {
+      display: inline-block;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 30px;
+      font-weight: 700;
+      margin-right: 10px;
+      margin-bottom: 15px;
+    }
+
+    .question-text {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+      display: inline-block;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: white;
+    }
+
+    .option:hover {
+      border-color: #667eea;
+      background: #f9f9f9;
+    }
+
+    .option input[type="radio"] {
+      width: 20px;
+      height: 20px;
+      margin-top: 2px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .option-text {
+      flex: 1;
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .option.selected {
+      border-color: #667eea;
+      background: #f0f3ff;
+    }
+
+    .option.correct {
+      border-color: #10b981;
+      background: #ecfdf5;
+    }
+
+    .option.incorrect {
+      border-color: #ef4444;
+      background: #fef2f2;
+    }
+
+    .feedback {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .feedback.correct {
+      background: #ecfdf5;
+      border-left: 4px solid #10b981;
+      color: #047857;
+    }
+
+    .feedback.incorrect {
+      background: #fef2f2;
+      border-left: 4px solid #ef4444;
+      color: #991b1b;
+    }
+
+    .completion-card {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      padding: 40px;
+      border-radius: 10px;
+      text-align: center;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .completion-icon {
+      font-size: 60px;
+      margin-bottom: 20px;
+    }
+
+    .completion-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 15px;
+    }
+
+    .completion-message {
+      font-size: 14px;
+      line-height: 1.6;
+      opacity: 0.95;
+      margin-bottom: 25px;
+    }
+
+    .reward-box {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      padding: 20px;
+      margin: 15px 0;
+      text-align: left;
+    }
+
+    .reward-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      opacity: 0.8;
+      margin-bottom: 8px;
+    }
+
+    .reward-value {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .btn-retry {
+      padding: 12px 28px;
+      background: white;
+      color: #059669;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.3s;
+      margin-top: 20px;
+    }
+
+    .btn-retry:hover {
+      background: #f0fdf4;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: white;
+    }
+
+    .spinner {
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top: 4px solid white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .public-header {
+      text-align: center;
+      margin-bottom: 30px;
+      color: white;
+    }
+
+    .public-header h2 {
+      margin: 0;
+      font-size: 20px;
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      .quiz-header {
+        padding: 20px;
+      }
+
+      .quiz-title {
+        font-size: 22px;
+      }
+
+      .question-card {
+        padding: 20px;
+      }
+
+      .question-text {
+        font-size: 16px;
+      }
+
+      .completion-card {
+        padding: 25px;
+      }
+
+      .completion-title {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="quiz-wrapper">
+    <div class="quiz-container">
+      <div class="public-header">
+        <h2>✉️ Confirm Your RSVP</h2>
+      </div>
+
+      <div id="quizContainer">
+        <div class="loading">
+          <div class="spinner"></div>
+          <p>Loading quiz...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const QUIZ_ID = 'coc-2026';
+    let voterToken = '';
+    let quizData = null;
+    let userAnswers = {};
+
+    // Generate or retrieve voter token
+    function getVoterToken() {
+      const params = new URLSearchParams(window.location.search);
+      const tokenParam = params.get('token');
+      if (tokenParam) {
+        localStorage.setItem('quiz_voter_token', tokenParam);
+        return tokenParam;
+      }
+
+      let token = localStorage.getItem('quiz_voter_token');
+      if (!token) {
+        token = 'device_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+        localStorage.setItem('quiz_voter_token', token);
+      }
+      return token;
+    }
+
+    async function loadQuiz() {
+      try {
+        voterToken = getVoterToken();
+
+        // Fetch quiz data
+        const response = await fetch(`/api/quizzes/${QUIZ_ID}`);
+        if (!response.ok) {
+          throw new Error('Quiz not found');
+        }
+
+        quizData = await response.json();
+
+        // Fetch user progress
+        const progressResponse = await fetch(`/api/quiz-progress/${QUIZ_ID}?voter_token=${voterToken}`);
+        const progress = await progressResponse.json();
+
+        renderQuiz(progress);
+      } catch (error) {
+        console.error('Error loading quiz:', error);
+        document.getElementById('quizContainer').innerHTML = `
+          <div class="question-card" style="text-align: center; color: #ef4444;">
+            <h2>❌ Quiz Not Available</h2>
+            <p>We're sorry, but the Code of Conduct Quiz is not currently available. Please try again later.</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderQuiz(progress) {
+      const container = document.getElementById('quizContainer');
+      container.innerHTML = '';
+
+      const percent = progress.percent_correct;
+      const completed = progress.completed;
+
+      if (completed) {
+        renderCompletionCard(container);
+      } else {
+        renderQuestionsCard(container, progress);
+      }
+    }
+
+    function renderCompletionCard(container) {
+      const completionData = quizData.reward_address ? {
+        location: quizData.reward_location,
+        address: quizData.reward_address,
+        time: quizData.meeting_time
+      } : null;
+
+      let html = `
+        <div class="completion-card">
+          <div class="completion-icon">🎉</div>
+          <div class="completion-title">You're All Set!</div>
+          <div class="completion-message">
+            Thank you for confirming your understanding of our Code of Conduct. Here are your event details:
+          </div>
+      `;
+
+      if (completionData) {
+        html += `
+          <div class="reward-box">
+            <div class="reward-label">📍 Event</div>
+            <div class="reward-value">${escapeHtml(completionData.location)}</div>
+          </div>
+          <div class="reward-box">
+            <div class="reward-label">📬 Location</div>
+            <div class="reward-value">${escapeHtml(completionData.address)}</div>
+          </div>
+          <div class="reward-box">
+            <div class="reward-label">🕐 Time</div>
+            <div class="reward-value">${escapeHtml(completionData.time)}</div>
+          </div>
+        `;
+      }
+
+      html += `
+          <p style="margin-top: 30px; font-size: 13px; opacity: 0.9;">We look forward to seeing you there! Please come prepared to have a wonderful time.</p>
+          <button class="btn-retry" onclick="retakeQuiz()">Start Over</button>
+        </div>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function renderQuestionsCard(container, progress) {
+      let html = `
+        <div class="quiz-header">
+          <img src="images/DDA-logo.png" alt="DDA Logo" class="quiz-logo">
+          <div class="quiz-title">${escapeHtml(quizData.title)}</div>
+          <div class="quiz-description">${escapeHtml(quizData.description || 'Test your knowledge of our Code of Conduct')}</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar" style="width: ${progress.percent_correct}%"></div>
+          </div>
+          <div class="progress-text">
+            ${progress.correct_answers} of ${progress.total_questions} questions answered correctly
+          </div>
+        </div>
+      `;
+
+      quizData.questions.forEach((question, index) => {
+        const qIndex = index + 1;
+        const answered = userAnswers[question.id];
+
+        html += `
+          <div class="question-card">
+            <div>
+              <span class="question-number">${qIndex}</span>
+              <span class="question-text">${escapeHtml(question.question_text)}</span>
+            </div>
+            <div class="options">
+        `;
+
+        const letters = ['A', 'B', 'C'];
+        letters.forEach(letter => {
+          const isCorrect = letter === question.correct_answer;
+          const isSelected = answered === letter;
+          let optionClass = 'option';
+
+          if (answered) {
+            if (isSelected && isCorrect) {
+              optionClass += ' selected correct';
+            } else if (isSelected && !isCorrect) {
+              optionClass += ' selected incorrect';
+            } else if (isCorrect) {
+              optionClass += ' correct';
+            }
+          } else if (isSelected) {
+            optionClass += ' selected';
+          }
+
+          html += `
+            <label class="${optionClass}" onclick="selectAnswer(${question.id}, '${letter}')">
+              <input type="radio" name="q${question.id}" value="${letter}" ${isSelected ? 'checked' : ''}>
+              <div class="option-text">
+                <strong>${letter}.</strong> ${escapeHtml(question.options[letter])}
+              </div>
+            </label>
+          `;
+        });
+
+        if (answered) {
+          const isCorrect = answered === question.correct_answer;
+          html += `
+            <div class="feedback ${isCorrect ? 'correct' : 'incorrect'}">
+              <strong>${isCorrect ? '✓ Correct!' : '✗ Incorrect'}</strong><br>
+              ${escapeHtml(question.explanation || (isCorrect ? 'Great job!' : 'Try reading the Code of Conduct again.'))}
+            </div>
+          `;
+        }
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+
+      // Load previous answers
+      quizData.questions.forEach(q => {
+        const radio = document.querySelector(`input[name="q${q.id}"]:checked`);
+        if (radio) {
+          userAnswers[q.id] = radio.value;
+        }
+      });
+    }
+
+    async function selectAnswer(questionId, letter) {
+      userAnswers[questionId] = letter;
+
+      try {
+        const response = await fetch(`/api/quiz-answer/${QUIZ_ID}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            voter_token: voterToken,
+            question_id: questionId,
+            selected_answer: letter
+          })
+        });
+
+        const result = await response.json();
+
+        // Refresh progress
+        const progressResponse = await fetch(`/api/quiz-progress/${QUIZ_ID}?voter_token=${voterToken}`);
+        const progress = await progressResponse.json();
+
+        renderQuiz(progress);
+      } catch (error) {
+        console.error('Error submitting answer:', error);
+        alert('Error recording your answer. Please try again.');
+      }
+    }
+
+    function retakeQuiz() {
+      userAnswers = {};
+      localStorage.removeItem('quiz_voter_token');
+      location.reload();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Load quiz when page loads
+    loadQuiz();
+  </script>
+</body>
+</html>
