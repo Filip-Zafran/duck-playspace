@@ -278,21 +278,11 @@
     }
 
     .preview-content {
-      padding: 0;
+      padding: 20px;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       font-size: 14px;
       line-height: 1.6;
       color: #333;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .preview-content iframe {
-      width: 100%;
-      height: 100%;
     }
 
     @media (max-width: 1200px) {
@@ -801,8 +791,6 @@
       const htmlInput = document.getElementById(inputId);
       const preview = document.getElementById(previewId);
 
-      console.log('Updating preview for:', emailId, 'Input element:', !!htmlInput, 'Preview element:', !!preview);
-
       if (htmlInput && preview) {
         const htmlCode = htmlInput.value;
         if (htmlCode.trim()) {
@@ -814,28 +802,21 @@
             const blob = new Blob([htmlCode], { type: 'text/html' });
             const blobUrl = URL.createObjectURL(blob);
 
-            console.log('Created blob URL:', blobUrl);
-
             // Create iframe with src pointing to blob
             const iframe = document.createElement('iframe');
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
-            iframe.style.display = 'block';
+            iframe.style.borderRadius = '6px';
             iframe.src = blobUrl;
 
             // Append iframe to preview
             preview.appendChild(iframe);
-            console.log('Iframe appended to preview');
           } catch (error) {
             console.error('Error rendering preview:', error);
-            preview.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">Error: ' + error.message + '</p>';
+            preview.innerHTML = '<p style="color: #999; padding: 20px;">Error rendering preview: ' + error.message + '</p>';
           }
-        } else {
-          preview.innerHTML = '<p style="color: #999; padding: 20px; text-align: center;">Empty code</p>';
         }
-      } else {
-        console.error('Preview elements not found');
       }
     }
 
