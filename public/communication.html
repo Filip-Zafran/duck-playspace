@@ -794,7 +794,24 @@
       if (htmlInput && preview) {
         const htmlCode = htmlInput.value;
         if (htmlCode.trim()) {
-          preview.innerHTML = htmlCode;
+          // Clear previous content
+          preview.innerHTML = '';
+
+          // Create iframe
+          const iframe = document.createElement('iframe');
+          iframe.style.width = '100%';
+          iframe.style.height = '100%';
+          iframe.style.border = 'none';
+          iframe.style.borderRadius = '6px';
+
+          // Append iframe to preview
+          preview.appendChild(iframe);
+
+          // Write HTML to iframe
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+          iframeDoc.open();
+          iframeDoc.write(htmlCode);
+          iframeDoc.close();
         }
       }
     }
