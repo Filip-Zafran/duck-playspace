@@ -683,6 +683,335 @@
       event.target.classList.add('active');
     }
 
+    const emailTemplates = {
+      email1: `<!DOCTYPE html>
+<html ⚡4email xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <style amp4email-boilerplate>body{visibility:hidden}</style>
+  <style amp-custom>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #171717; background-color: #f5f5f5; }
+    .email-wrapper { background-color: white; max-width: 600px; margin: 0 auto; padding: 0; }
+    .header { background: linear-gradient(135deg, #ffd84d 0%, #ffe66d 100%); padding: 30px 20px; text-align: center; }
+    .header h1 { margin: 0 0 10px 0; font-size: 28px; font-weight: 700; color: #171717; }
+    .header p { margin: 0; font-size: 16px; color: #333; }
+    .content { padding: 20px; }
+    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #e0e0e0; }
+    .card h2 { margin: 0 0 15px 0; font-size: 18px; font-weight: 700; color: #171717; }
+    .card p { margin: 0 0 10px 0; font-size: 14px; }
+    .card ul { margin: 10px 0; padding-left: 20px; }
+    .card li { margin-bottom: 8px; font-size: 14px; }
+    .date-button-wrapper { display: block; text-align: center; margin: 12px 0; }
+    .date-button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; }
+    .footer { text-align: center; font-size: 12px; color: #999; padding: 20px; border-top: 1px solid #e0e0e0; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="header">
+      <h1>📅 Let's Plan Our Next Event!</h1>
+      <p>We're excited to invite you to join us!</p>
+    </div>
+
+    <div class="content">
+      <div class="card">
+        <h2>Event Overview</h2>
+        <p>We're organizing an amazing gathering and would love to have you there! This event brings together like-minded people for connection, fun, and meaningful experiences.</p>
+      </div>
+
+      <div class="card" style="background: #f0f7ff;">
+        <h2>Group Dynamic</h2>
+        <ul>
+          <li>6 Women + 6 Men</li>
+          <li>Long-term relationship focused</li>
+          <li>Open to new connections and friendships</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>Select Your Preferred Date & Venue</h2>
+        <p>Click a date option to vote and see more details:</p>
+        <div class="date-button-wrapper">
+          <a href="[POLL_LINK_DATE1]" class="date-button">📅 Friday, Jul 18, 2026</a>
+        </div>
+        <div class="date-button-wrapper">
+          <a href="[POLL_LINK_DATE2]" class="date-button">📅 Saturday, Jul 19, 2026</a>
+        </div>
+        <div class="date-button-wrapper">
+          <a href="[POLL_LINK_DATE3]" class="date-button">📅 Sunday, Jul 20, 2026</a>
+        </div>
+        <div class="date-button-wrapper">
+          <a href="[POLL_LINK_SKIP]" class="date-button" style="background: #ff9800;">I can't make it ❌</a>
+        </div>
+      </div>
+
+      <div class="card" style="background: #fff3cd; border-color: #ffc107;">
+        <h2>⏰ Time to Vote!</h2>
+        <p><strong>Please respond by: [DEADLINE]</strong></p>
+        <p>Your timely response helps us secure the perfect venue and confirm attendance. Thank you!</p>
+      </div>
+
+      <div class="footer" style="background: #f9f9f9; margin: 20px -20px -20px -20px; padding: 20px;">
+        <p>Questions? Check our <a href="[FAQ_LINK]" style="color: #667eea; text-decoration: none;">FAQ</a></p>
+        <p style="margin-top: 12px; font-size: 11px;">Duck Playspace | Bringing amazing people together</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+      email2: `<!DOCTYPE html>
+<html ⚡4email xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <style amp4email-boilerplate>body{visibility:hidden}</style>
+  <style amp-custom>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #171717; background-color: #f5f5f5; }
+    .email-wrapper { background-color: white; max-width: 600px; margin: 0 auto; padding: 0; }
+    .header { background: linear-gradient(135deg, #8ff0c4 0%, #6ee7b7 100%); padding: 30px 20px; text-align: center; }
+    .header h1 { margin: 0 0 10px 0; font-size: 28px; font-weight: 700; color: #171717; }
+    .header p { margin: 0; font-size: 16px; color: #333; }
+    .content { padding: 20px; }
+    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #e0e0e0; }
+    .card h2 { margin: 0 0 15px 0; font-size: 18px; font-weight: 700; color: #171717; }
+    .card p { margin: 0 0 10px 0; font-size: 14px; }
+    .card ul { margin: 10px 0; padding-left: 20px; }
+    .card li { margin-bottom: 8px; font-size: 14px; }
+    .confirmed { background: #8ff0c4 !important; border-color: #6ee7b7 !important; }
+    .warning { background: #ffe66d; border-color: #ffc107; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .warning-text { font-weight: 600; color: #171717; }
+    .footer { text-align: center; font-size: 12px; color: #999; padding: 20px; border-top: 1px solid #e0e0e0; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="header">
+      <h1>✅ You're Confirmed!</h1>
+      <p>Thank you for responding! We're excited to see you there!</p>
+    </div>
+
+    <div class="content">
+      <div class="card confirmed">
+        <h2>🎉 Great News</h2>
+        <p>We have <strong>6 Women and 6 Men</strong> confirmed for this event! Perfect group size is locked in.</p>
+      </div>
+
+      <div class="card">
+        <h2>📍 Event Details</h2>
+        <p><strong>Date:</strong> [FINAL_DATE]</p>
+        <p><strong>Time:</strong> [FINAL_TIME]</p>
+        <p><strong>Location:</strong> [VENUE_NAME]</p>
+        <p><strong>Team Color:</strong> [TEAM_COLOR]</p>
+        <p><strong>Duration:</strong> 2 hours</p>
+      </div>
+
+      <div class="card">
+        <h2>📝 How This Will Go Down</h2>
+        <ul>
+          <li>Welcome & introductions (15 min)</li>
+          <li>Icebreaker games & activities (45 min)</li>
+          <li>Free mingling & connection time (50 min)</li>
+          <li>Optional: Exchange contact info (10 min)</li>
+        </ul>
+      </div>
+
+      <div class="warning">
+        <p class="warning-text">⚠️ Important:</p>
+        <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+          <li style="margin: 5px 0;">This is a personal invitation - you cannot send someone else</li>
+          <li style="margin: 5px 0;">Please review our Code of Conduct: <a href="[COC_LINK]" style="color: #667eea;">Read here</a></li>
+          <li style="margin: 5px 0;">Dress code: Smart casual</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>❓ Questions?</h2>
+        <p>Check our <a href="[FAQ_LINK]" style="color: #667eea; text-decoration: none;">FAQ</a> or reach out to us at [CONTACT_EMAIL]</p>
+      </div>
+
+      <div class="footer" style="background: #f9f9f9; margin: 20px -20px -20px -20px; padding: 20px;">
+        <p>See you soon! 🎊</p>
+        <p style="margin-top: 12px; font-size: 11px;">Duck Playspace | Making connections that matter</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+      email3: `<!DOCTYPE html>
+<html ⚡4email xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <style amp4email-boilerplate>body{visibility:hidden}</style>
+  <style amp-custom>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #171717; background-color: #f5f5f5; }
+    .email-wrapper { background-color: white; max-width: 600px; margin: 0 auto; padding: 0; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px 20px; text-align: center; color: white; }
+    .header h1 { margin: 0 0 10px 0; font-size: 28px; font-weight: 700; color: white; }
+    .header p { margin: 0; font-size: 16px; color: #f0f0f0; }
+    .content { padding: 20px; }
+    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #e0e0e0; }
+    .card h2 { margin: 0 0 15px 0; font-size: 18px; font-weight: 700; color: #171717; }
+    .card p { margin: 0 0 10px 0; font-size: 14px; }
+    .info-box { background: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 6px; margin: 12px 0; }
+    .info-box strong { color: #667eea; }
+    .contact-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 6px; margin: 12px 0; }
+    .footer { text-align: center; font-size: 12px; color: #999; padding: 20px; border-top: 1px solid #e0e0e0; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="header">
+      <h1>🎉 See You Tonight!</h1>
+      <p>The big event is here. Everything you need to know:</p>
+    </div>
+
+    <div class="content">
+      <div class="card">
+        <h2>⏰ Event Time & Location</h2>
+        <div class="info-box">
+          <p><strong>📅 Date:</strong> [DATE_TODAY]</p>
+          <p><strong>🕐 Time:</strong> [EVENT_TIME] (Please arrive by [ARRIVAL_TIME])</p>
+          <p><strong>📍 Location:</strong> [FULL_ADDRESS]</p>
+          <p><strong>🅿️ Parking:</strong> [PARKING_INFO]</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📞 Point of Contact</h2>
+        <div class="contact-box">
+          <p><strong>Name:</strong> [ORGANIZER_NAME]</p>
+          <p><strong>Phone:</strong> [PHONE_NUMBER]</p>
+          <p><strong>WhatsApp:</strong> [WHATSAPP_LINK]</p>
+          <p style="font-size: 12px; color: #666; margin-top: 8px;">Running late? Having issues? Reach out immediately!</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>❓ Tonight's Focus Topics</h2>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li style="margin-bottom: 8px;">What brings you to these meetups?</li>
+          <li style="margin-bottom: 8px;">Share one thing you're looking forward to</li>
+          <li style="margin-bottom: 8px;">Relationship & lifestyle discussions</li>
+        </ul>
+      </div>
+
+      <div class="card" style="background: #ffe66d; border-color: #ffc107;">
+        <h2>💡 Remember</h2>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+          <li style="margin-bottom: 8px;">Be respectful and follow our Code of Conduct</li>
+          <li style="margin-bottom: 8px;">Wear smart casual attire</li>
+          <li style="margin-bottom: 8px;">Bring a positive attitude!</li>
+        </ul>
+      </div>
+
+      <div class="footer" style="background: #f9f9f9; margin: 20px -20px -20px -20px; padding: 20px;">
+        <p style="font-size: 16px; font-weight: 600;">Can't wait to see you! 🌟</p>
+        <p style="margin-top: 12px; font-size: 11px;">Duck Playspace | Let's make tonight amazing</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`,
+      email4: `<!DOCTYPE html>
+<html ⚡4email xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+  <style amp4email-boilerplate>body{visibility:hidden}</style>
+  <style amp-custom>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.6; color: #171717; background-color: #f5f5f5; }
+    .email-wrapper { background-color: white; max-width: 600px; margin: 0 auto; padding: 0; }
+    .header { background: linear-gradient(135deg, #6ee7b7 0%, #8ff0c4 100%); padding: 30px 20px; text-align: center; }
+    .header h1 { margin: 0 0 10px 0; font-size: 28px; font-weight: 700; color: #171717; }
+    .header p { margin: 0; font-size: 16px; color: #333; }
+    .content { padding: 20px; }
+    .card { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; border: 2px solid #e0e0e0; }
+    .card h2 { margin: 0 0 15px 0; font-size: 18px; font-weight: 700; color: #171717; }
+    .card p { margin: 0 0 10px 0; font-size: 14px; }
+    .highlight { background: #f0f7ff; border-left: 4px solid #667eea; padding: 15px; border-radius: 6px; margin: 12px 0; }
+    .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; }
+    .survey-item { background: #f9f9f9; padding: 12px; border-radius: 6px; margin: 8px 0; border-left: 4px solid #667eea; }
+    .footer { text-align: center; font-size: 12px; color: #999; padding: 20px; border-top: 1px solid #e0e0e0; }
+  </style>
+</head>
+<body>
+  <div class="email-wrapper">
+    <div class="header">
+      <h1>🙌 Thank You!</h1>
+      <p>We had an amazing time with you last night!</p>
+    </div>
+
+    <div class="content">
+      <div class="card">
+        <h2>✨ Event Highlights</h2>
+        <p>Thank you so much for joining us! We had wonderful connections, great conversations, and made some fantastic new friends. Your energy and presence made the event special!</p>
+        <div class="highlight">
+          <p><strong>Favorite moment:</strong> The group bonding activity where everyone shared their most memorable dating story!</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📋 We'd Love Your Feedback!</h2>
+        <p>Your input helps us plan even better events. Please take 3-5 minutes to share your thoughts:</p>
+        <div style="text-align: center; margin: 20px 0;">
+          <a href="[FEEDBACK_FORM_LINK]" class="button">Share Your Feedback</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>❓ Quick Survey Questions:</h2>
+        <div class="survey-item">
+          <strong>1. Venue Experience</strong>
+          <p style="font-size: 12px; margin: 5px 0 0 0;">How did you like the venue and atmosphere?</p>
+        </div>
+        <div class="survey-item">
+          <strong>2. Group Vibe</strong>
+          <p style="font-size: 12px; margin: 5px 0 0 0;">What did you think of the people and energy?</p>
+        </div>
+        <div class="survey-item">
+          <strong>3. Would You Attend Again?</strong>
+          <p style="font-size: 12px; margin: 5px 0 0 0;">Would you like to attend similar events in the future?</p>
+        </div>
+        <div class="survey-item">
+          <strong>4. Suggestions for Improvement</strong>
+          <p style="font-size: 12px; margin: 5px 0 0 0;">Any ideas to make the next event even better?</p>
+        </div>
+      </div>
+
+      <div class="card" style="background: #f0f7ff; border-color: #667eea;">
+        <h2>🎉 What's Next?</h2>
+        <p>We're already planning our next gathering! If you have ideas or want to help organize future events, let us know. We'd love to have you involved!</p>
+        <p style="margin-top: 12px;"><strong>Next Event:</strong> Coming soon! Follow us for updates.</p>
+      </div>
+
+      <div class="footer" style="background: #f9f9f9; margin: 20px -20px -20px -20px; padding: 20px;">
+        <p>Thanks for being part of the Duck Playspace community! 💕</p>
+        <p style="margin-top: 12px; font-size: 11px;">Questions? Contact us at [CONTACT_EMAIL]</p>
+        <p style="margin-top: 8px; font-size: 10px; color: #999;">Duck Playspace | Where amazing people connect</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+    };
+
+    function populateTemplates() {
+      for (let i = 1; i <= 4; i++) {
+        const emailId = `email${i}`;
+        const inputId = `html${i}-input`;
+        const inputElement = document.getElementById(inputId);
+        if (inputElement && emailTemplates[emailId]) {
+          inputElement.value = emailTemplates[emailId];
+        }
+      }
+    }
+
     function updatePreview(emailId) {
       const emailNum = emailId.replace('email', '');
       const inputId = `html${emailNum}-input`;
@@ -698,6 +1027,9 @@
         }
       }
     }
+
+    // Populate templates on page load
+    document.addEventListener('DOMContentLoaded', populateTemplates);
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       try {
