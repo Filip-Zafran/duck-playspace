@@ -794,24 +794,32 @@
       if (htmlInput && preview) {
         const htmlCode = htmlInput.value;
         if (htmlCode.trim()) {
-          // Clear previous content
-          preview.innerHTML = '';
+          try {
+            // Clear previous content
+            preview.innerHTML = '';
 
-          // Create iframe
-          const iframe = document.createElement('iframe');
-          iframe.style.width = '100%';
-          iframe.style.height = '100%';
-          iframe.style.border = 'none';
-          iframe.style.borderRadius = '6px';
+            // Create iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.style.borderRadius = '6px';
+            iframe.setAttribute('sandbox', 'allow-same-origin');
 
-          // Append iframe to preview
-          preview.appendChild(iframe);
+            // Append iframe to preview
+            preview.appendChild(iframe);
 
-          // Write HTML to iframe
-          const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-          iframeDoc.open();
-          iframeDoc.write(htmlCode);
-          iframeDoc.close();
+            // Get iframe document and write content
+            const iframeDoc = iframe.contentDocument;
+            if (iframeDoc) {
+              iframeDoc.open();
+              iframeDoc.write(htmlCode);
+              iframeDoc.close();
+            }
+          } catch (error) {
+            console.error('Error rendering preview:', error);
+            preview.innerHTML = '<p style="color: #999; padding: 20px;">Error rendering preview. Check browser console.</p>';
+          }
         }
       }
     }
