@@ -876,11 +876,24 @@
     let selections = {};
     let personData = {}; // { email: { paid: boolean, amount: number, availability: string } }
 
+    function saveToLocalStorage() {
+      localStorage.setItem('selections', JSON.stringify(selections));
+      localStorage.setItem('personData', JSON.stringify(personData));
+    }
+
+    function loadFromLocalStorage() {
+      const savedSelections = localStorage.getItem('selections');
+      const savedPersonData = localStorage.getItem('personData');
+      if (savedSelections) selections = JSON.parse(savedSelections);
+      if (savedPersonData) personData = JSON.parse(savedPersonData);
+    }
+
     async function loadDates() {
       try {
         const response = await fetch('/api/dashboard-data');
         allData = await response.json();
 
+        loadFromLocalStorage();
         generateDates();
         displayDates();
 
@@ -1094,12 +1107,36 @@
           const hasIssue = ageIssues.length > 0;
           const issueClass = hasIssue ? 'compatibility-issue' : '';
           const issueTitle = hasIssue ? `⚠️ Age mismatch with: ${ageIssues.join(', ')}` : '';
+          const email = person.Email || '';
+          const personDataEntry = personData[email] || { paid: false, amount: 0, availability: '' };
 
           html += `
             <div class="primary-slot filled ${issueClass}" title="${issueTitle}">
               <div class="slot-person">
-                <div class="slot-person-name person-link" onclick="openPersonProfile('${(person.Email || '').replace(/'/g, "\\'")}')">${person.Name || person.Email}</div>
+                <div class="slot-person-name person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')">${person.Name || person.Email}</div>
                 <div class="slot-person-details">${person.Age} yrs ${hasIssue ? '⚠️' : ''}</div>
+                <div class="person-controls" style="margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+                  <div class="control-group">
+                    <span class="control-label">Payment</span>
+                    <div class="payment-group">
+                      <div class="payment-check">
+                        <input type="checkbox" id="paid-${email}" ${personDataEntry.paid ? 'checked' : ''} onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'paid', this.checked)">
+                        <label for="paid-${email}">Paid</label>
+                      </div>
+                      <input type="number" class="payment-amount" id="amount-${email}" placeholder="Amount" min="0" step="0.01" value="${personDataEntry.amount || ''}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'amount', this.value)" />
+                    </div>
+                  </div>
+                  <div class="control-group">
+                    <span class="control-label">Availability</span>
+                    <select class="availability-select" id="availability-${email}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'availability', this.value); this.classList.toggle('not-attending', this.value === 'D')">
+                      <option value="">Select...</option>
+                      <option value="A" ${personDataEntry.availability === 'A' ? 'selected' : ''}>A</option>
+                      <option value="B" ${personDataEntry.availability === 'B' ? 'selected' : ''}>B</option>
+                      <option value="C" ${personDataEntry.availability === 'C' ? 'selected' : ''}>C</option>
+                      <option value="D" ${personDataEntry.availability === 'D' ? 'selected' : ''}>D - Not Attending</option>
+                    </select>
+                  </div>
+                </div>
               </div>
               <button class="slot-remove" onclick="removeFromSlot('${slotKey}')">Remove</button>
             </div>
@@ -1257,6 +1294,7 @@
         personData[email] = { paid: false, amount: 0, availability: '' };
       }
       personData[email][field] = value;
+      saveToLocalStorage();
     }
 
     function assignToPrimary(dateName, gender, email) {
@@ -1270,6 +1308,7 @@
         const slotKey = `${dateName}:${gender}:${i}`;
         if (!selections[slotKey]) {
           selections[slotKey] = person;
+          saveToLocalStorage();
           displayDates();
           return;
         }
@@ -1288,6 +1327,7 @@
 
     function removeFromSlot(slotKey) {
       delete selections[slotKey];
+      saveToLocalStorage();
       displayDates();
     }
 
@@ -1464,7 +1504,19 @@
 
     let customEventParticipants = {};
 
-    const customEventPrimary = [];
+    let customEventPrimary = [];
+
+    function saveCustomEventToLocalStorage() {
+      localStorage.setItem('customEventPrimary', JSON.stringify(customEventPrimary));
+      localStorage.setItem('customEventParticipants', JSON.stringify(customEventParticipants));
+    }
+
+    function loadCustomEventFromLocalStorage() {
+      const savedPrimary = localStorage.getItem('customEventPrimary');
+      const savedParticipants = localStorage.getItem('customEventParticipants');
+      if (savedPrimary) customEventPrimary = JSON.parse(savedPrimary);
+      if (savedParticipants) customEventParticipants = JSON.parse(savedParticipants);
+    }
 
     function searchCustomEventParticipants() {
       const searchInput = document.getElementById('customEventSearch');
@@ -1513,6 +1565,7 @@
       customEventParticipants[email] = person;
       document.getElementById('customEventSearch').value = '';
       document.getElementById('customEventSearchResults').style.display = 'none';
+      saveCustomEventToLocalStorage();
       updateCustomEventDisplay();
     }
 
@@ -1522,6 +1575,7 @@
 
       customEventPrimary.push(person);
       delete customEventParticipants[email];
+      saveCustomEventToLocalStorage();
       updateCustomEventDisplay();
     }
 
@@ -1529,11 +1583,13 @@
       const person = customEventPrimary[index];
       customEventPrimary.splice(index, 1);
       customEventParticipants[(person['Email'] || person['email'])] = person;
+      saveCustomEventToLocalStorage();
       updateCustomEventDisplay();
     }
 
     function removeFromCustomEvent(email) {
       delete customEventParticipants[email];
+      saveCustomEventToLocalStorage();
       updateCustomEventDisplay();
     }
 
@@ -1557,11 +1613,34 @@
           const email = p['Email'] || p['email'] || '';
           const gender = p['Gender'] || '?';
           const age = p['Age'] || '?';
+          const personDataEntry = personData[email] || { paid: false, amount: 0, availability: '' };
           primaryHTML += `
             <div class="custom-primary-slot filled">
               <div class="custom-slot-person">
                 <div class="custom-slot-person-name">${p.Name || email}</div>
                 <div class="custom-slot-person-details">${gender} | ${age} yrs</div>
+                <div class="person-controls" style="margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
+                  <div class="control-group">
+                    <span class="control-label">Payment</span>
+                    <div class="payment-group">
+                      <div class="payment-check">
+                        <input type="checkbox" id="custom-paid-${email}" ${personDataEntry.paid ? 'checked' : ''} onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'paid', this.checked)">
+                        <label for="custom-paid-${email}">Paid</label>
+                      </div>
+                      <input type="number" class="payment-amount" id="custom-amount-${email}" placeholder="Amount" min="0" step="0.01" value="${personDataEntry.amount || ''}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'amount', this.value)" />
+                    </div>
+                  </div>
+                  <div class="control-group">
+                    <span class="control-label">Availability</span>
+                    <select class="availability-select" id="custom-availability-${email}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'availability', this.value); this.classList.toggle('not-attending', this.value === 'D')">
+                      <option value="">Select...</option>
+                      <option value="A" ${personDataEntry.availability === 'A' ? 'selected' : ''}>A</option>
+                      <option value="B" ${personDataEntry.availability === 'B' ? 'selected' : ''}>B</option>
+                      <option value="C" ${personDataEntry.availability === 'C' ? 'selected' : ''}>C</option>
+                      <option value="D" ${personDataEntry.availability === 'D' ? 'selected' : ''}>D - Not Attending</option>
+                    </select>
+                  </div>
+                </div>
               </div>
               <div class="custom-slot-actions">
                 <button class="custom-slot-remove" onclick="removeFromPrimarySlot(${i})">Remove</button>
@@ -1586,15 +1665,38 @@
         const gender = p['Gender'] || '?';
         const age = p['Age'] || '?';
         const canAddToPrimary = customEventPrimary.length < 4;
+        const personDataEntry = personData[email] || { paid: false, amount: 0, availability: '' };
         return `
-          <div class="participant-chip">
-            <div class="participant-chip-info">
-              <div class="participant-chip-name">${p.Name || email}</div>
-              <div class="participant-chip-details">${gender} | ${age} yrs</div>
+          <div class="person-card">
+            <div class="person-info">
+              <div class="person-name">${p.Name || email}</div>
+              <div class="person-details">${gender} | ${age} yrs</div>
+              <div class="person-controls">
+                <div class="control-group">
+                  <span class="control-label">Payment</span>
+                  <div class="payment-group">
+                    <div class="payment-check">
+                      <input type="checkbox" id="custom-backup-paid-${email}" ${personDataEntry.paid ? 'checked' : ''} onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'paid', this.checked)">
+                      <label for="custom-backup-paid-${email}">Paid</label>
+                    </div>
+                    <input type="number" class="payment-amount" id="custom-backup-amount-${email}" placeholder="Amount" min="0" step="0.01" value="${personDataEntry.amount || ''}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'amount', this.value)" />
+                  </div>
+                </div>
+                <div class="control-group">
+                  <span class="control-label">Availability</span>
+                  <select class="availability-select" id="custom-backup-availability-${email}" onchange="updatePersonData('${email.replace(/'/g, "\\'")}', 'availability', this.value); this.classList.toggle('not-attending', this.value === 'D')">
+                    <option value="">Select...</option>
+                    <option value="A" ${personDataEntry.availability === 'A' ? 'selected' : ''}>A</option>
+                    <option value="B" ${personDataEntry.availability === 'B' ? 'selected' : ''}>B</option>
+                    <option value="C" ${personDataEntry.availability === 'C' ? 'selected' : ''}>C</option>
+                    <option value="D" ${personDataEntry.availability === 'D' ? 'selected' : ''}>D - Not Attending</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <div style="display: flex; gap: 6px;">
-              ${canAddToPrimary ? `<button class="participant-chip-remove" style="background: #667eea;" onclick="addToPrimarySlot('${email.replace(/'/g, "\\'")}')">→ Primary</button>` : ''}
-              <button class="participant-chip-remove" onclick="removeFromCustomEvent('${email.replace(/'/g, "\\'")}')">✕</button>
+            <div class="person-card-footer">
+              ${canAddToPrimary ? `<button class="btn-assign" style="background: #667eea;" onclick="addToPrimarySlot('${email.replace(/'/g, "\\'")}')">→ Primary</button>` : ''}
+              <button class="btn-assign" style="background: #ff6b6b;" onclick="removeFromCustomEvent('${email.replace(/'/g, "\\'")}')">✕</button>
             </div>
           </div>
         `;
@@ -1622,6 +1724,7 @@
 
     // Initialize custom event display on load
     document.addEventListener('DOMContentLoaded', () => {
+      loadCustomEventFromLocalStorage();
       updateCustomEventDisplay();
     });
   </script>

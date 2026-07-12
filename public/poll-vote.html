@@ -161,8 +161,9 @@
     }
 
     .time-value {
-      font-size: 14px;
-      color: #666;
+      font-size: 18px;
+      font-weight: 600;
+      color: #667eea;
       display: block;
       margin-top: 4px;
     }
@@ -413,7 +414,7 @@
                 <input type="checkbox" id="date1" name="choice" value="date1">
                 <label for="date1">
                   <span class="date-value">${formatDate(poll.date1)}</span>
-                  ${poll.time1 ? `<span class="time-value">${poll.time1}</span>` : ''}
+                  ${poll.time1 ? `<span class="time-value">${poll.time1}h</span>` : ''}
                 </label>
               </div>
 
@@ -421,7 +422,7 @@
                 <input type="checkbox" id="date2" name="choice" value="date2">
                 <label for="date2">
                   <span class="date-value">${formatDate(poll.date2)}</span>
-                  ${poll.time2 ? `<span class="time-value">${poll.time2}</span>` : ''}
+                  ${poll.time2 ? `<span class="time-value">${poll.time2}h</span>` : ''}
                 </label>
               </div>
 
@@ -429,14 +430,14 @@
                 <input type="checkbox" id="date3" name="choice" value="date3">
                 <label for="date3">
                   <span class="date-value">${formatDate(poll.date3)}</span>
-                  ${poll.time3 ? `<span class="time-value">${poll.time3}</span>` : ''}
+                  ${poll.time3 ? `<span class="time-value">${poll.time3}h</span>` : ''}
                 </label>
               </div>
 
               <div class="date-option" data-choice="none">
                 <input type="checkbox" id="none" name="choice" value="none">
                 <label for="none">
-                  <span class="date-value">I can't make it this month</span>
+                  <span class="date-value">I can't make these dates</span>
                 </label>
                 <div class="backup-message" id="backupMessage">
                   No worries, we will invite someone from the backup list
@@ -455,7 +456,7 @@
               </p>
               <p style="margin: 8px 0;">
                 <strong>Location:</strong> ${poll.location || 'TBD'}
-                ${poll.location ? '<div style="font-size: 12px; color: #555; margin-top: 4px; font-style: italic;">Exact bar location will be revealed to confirmed participants</div>' : ''}
+                ${poll.location ? '<div style="font-size: 12px; color: #555; margin-top: 4px; font-style: italic;">Exact location will be revealed to confirmed participants</div>' : ''}
               </p>
             </div>
 
@@ -532,7 +533,6 @@
                   <li>We organize group activities based on confirmed headcount to ensure everyone has a great experience</li>
                   <li>Your payment helps us secure the venue and make necessary arrangements</li>
                   <li>Last-minute cancellations can disrupt group dynamics and make it harder to fill your spot</li>
-                  <li>This policy ensures fairness to all members who show up and honor their commitments</li>
                 </ul>
                 <p style="margin-top: 15px;"><strong>If you need to cancel:</strong> Please let us know as soon as possible so we can offer your spot to someone from our waitlist. While refunds cannot be issued, we appreciate your courtesy in informing us promptly.</p>
               </div>

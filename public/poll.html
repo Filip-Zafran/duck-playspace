@@ -921,13 +921,13 @@
       // Generate email template with pre-formatted values
       const expected = formData.expected || 0;
       const location = formData.location || 'TBD';
-      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted);
+      const emailTemplate = generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted, formData.time1, formData.time2, formData.time3);
       document.getElementById('emailTemplate').textContent = emailTemplate;
 
       document.getElementById('successModal').classList.remove('hidden');
     }
 
-    function generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted) {
+    function generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted, time1, time2, time3) {
       const pollId = pollData.id;
       const baseUrl = window.location.origin;
 
@@ -966,7 +966,7 @@
     .card h2 { margin: 0 0 15px 0; font-size: 18px; font-weight: 700; color: #171717; }
     .card p { margin: 0 0 10px 0; font-size: 14px; }
     .date-button-wrapper { display: block; text-align: center; margin: 12px 0; }
-    .date-button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 14px; }
+    .date-button { display: inline-block; background: #667eea; color: white; padding: 16px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; }
     .date-button:hover { background: #764ba2; }
     .timer-section { background: linear-gradient(135deg, #fff3cd 0%, #ffe66d 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 2px solid #ffc107; }
     .timer-label { font-size: 12px; color: #333; margin-bottom: 8px; font-weight: 500; }
@@ -996,8 +996,12 @@
       ${aboutSection ? `
       <div class="card" style="background: #f0f7ff;">
         <h2>Group Dynamic</h2>
-        <ul style="margin: 10px 0; padding-left: 20px;">
-          ${aboutSection.split('\n').filter(line => line.trim()).map(line => `<li style="margin-bottom: 8px;">${line.trim()}</li>`).join('')}
+        <ul style="margin: 15px 0; padding-left: 25px; list-style: disc; line-height: 1.8;">
+          ${aboutSection.split('\n').filter(line => line.trim()).map(line => {
+            // Remove bullet if already present
+            const cleanLine = line.trim().replace(/^[•\-\*]\s*/, '');
+            return `<li style="margin-bottom: 12px; font-size: 15px; color: #333;">${cleanLine}</li>`;
+          }).join('')}
         </ul>
       </div>
       ` : ''}
@@ -1010,17 +1014,19 @@
       <div class="card">
         <h2>Select Your Availability</h2>
         <p>Click an option and find out more</p>
+        <p style="font-size: 13px; color: #666; margin-top: 12px;">Add as many options as you can, as we will only choose one time, voted by the majority.</p>
+        <p style="font-size: 13px; color: #666; margin-top: 12px;">Add as many options as you can, as we will only choose one time, voted by the majority.</p>
         <div class="date-button-wrapper">
-          <a href="${date1Link}" class="date-button">${date1Formatted}</a>
+          <a href="${date1Link}" class="date-button">${date1Formatted}${time1 ? ` <strong style="font-size: 18px; color: white;">${time1}h</strong>` : ''}</a>
         </div>
         <div class="date-button-wrapper">
-          <a href="${date2Link}" class="date-button">${date2Formatted}</a>
+          <a href="${date2Link}" class="date-button">${date2Formatted}${time2 ? ` <strong style="font-size: 18px; color: white;">${time2}h</strong>` : ''}</a>
         </div>
         <div class="date-button-wrapper">
-          <a href="${date3Link}" class="date-button">${date3Formatted}</a>
+          <a href="${date3Link}" class="date-button">${date3Formatted}${time3 ? ` <strong style="font-size: 18px; color: white;">${time3}h</strong>` : ''}</a>
         </div>
         <div class="date-button-wrapper">
-          <a href="${noneLink}" class="date-button" style="background: #ff9800;">I can't make it this month</a>
+          <a href="${noneLink}" class="date-button" style="background: #ff9800;">I can't make these dates</a>
         </div>
       </div>
 
@@ -1037,11 +1043,11 @@
         <p style="margin: 8px 0;"><strong>Duration:</strong> ${duration || 'TBD'}</p>
         <p style="margin: 8px 0;"><strong>Expected Attendees:</strong> ${expected || '0'}</p>
         <p style="margin: 8px 0;"><strong>Location:</strong> ${location || 'TBD'}</p>
-        <p style="margin: 12px 0 0 0; font-size: 12px; color: #555; font-style: italic;">Exact bar location will be revealed to confirmed participants</p>
+        <p style="margin: 12px 0 0 0; font-size: 12px; color: #555; font-style: italic;">Exact location will be revealed to confirmed participants</p>
       </div>
 
-      <div class="footer" style="background: #f9f9f9; margin: 20px -20px -20px -20px; padding: 20px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #e0e0e0;">
-        <p>We invite more people with better response rate. Please confirm as soon as possible!</p>
+      <div class="footer" style="background: #f9f9f9; margin: 20px -20px -20px -20px; padding: 20px; text-align: center; font-size: 16px; color: #333; border-top: 1px solid #e0e0e0; font-weight: 600;">
+        <p style="margin: 0; font-size: 18px; color: #171717; line-height: 1.6;">Your response matters! The more people who vote, the better we can find the perfect time for everyone. Please share your availability as soon as possible – it only takes a second!</p>
       </div>
     </div>
 
