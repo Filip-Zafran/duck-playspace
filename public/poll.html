@@ -662,6 +662,10 @@
     <!-- Manage Polls Tab -->
     <div id="manage" class="tab-content">
       <h2>Your Polls</h2>
+      <div id="bulkActions" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+        <span id="selectedCount" style="font-weight: 600; color: #333;"></span>
+        <button onclick="deleteSelectedPolls()" class="danger" style="margin-left: 15px;">Delete Selected</button>
+      </div>
       <div id="pollsList"></div>
     </div>
   </div>
@@ -772,6 +776,17 @@
 
         html += '</tbody></table>';
         pollsList.innerHTML = html;
+
+        // Add event listeners to checkboxes
+        const pollCheckboxes = document.querySelectorAll('.poll-checkbox');
+        pollCheckboxes.forEach(checkbox => {
+          checkbox.addEventListener('change', updateBulkActionsDisplay);
+        });
+
+        const selectAllCheckbox = document.getElementById('selectAllPolls');
+        if (selectAllCheckbox) {
+          selectAllCheckbox.addEventListener('change', updateBulkActionsDisplay);
+        }
       } catch (error) {
         pollsList.innerHTML = '<div class="error-message">Failed to load polls</div>';
       }
@@ -784,6 +799,65 @@
       pollCheckboxes.forEach(checkbox => {
         checkbox.checked = selectAllCheckbox.checked;
       });
+
+      updateBulkActionsDisplay();
+    }
+
+    function updateBulkActionsDisplay() {
+      const selectedPolls = getSelectedPolls();
+      const bulkActionsDiv = document.getElementById('bulkActions');
+      const selectedCountSpan = document.getElementById('selectedCount');
+
+      if (selectedPolls.length > 0) {
+        bulkActionsDiv.style.display = 'block';
+        selectedCountSpan.textContent = `${selectedPolls.length} poll${selectedPolls.length !== 1 ? 's' : ''} selected`;
+      } else {
+        bulkActionsDiv.style.display = 'none';
+      }
+    }
+
+    async function deleteSelectedPolls() {
+      const selectedPolls = getSelectedPolls();
+
+      if (selectedPolls.length === 0) {
+        showMessage('No polls selected', 'error');
+        return;
+      }
+
+      const confirmMessage = `Are you sure you want to delete ${selectedPolls.length} poll${selectedPolls.length !== 1 ? 's' : ''}?`;
+      if (!confirm(confirmMessage)) return;
+
+      try {
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const pollId of selectedPolls) {
+          try {
+            const response = await fetch(`${API_BASE}/polls/${pollId}`, {
+              method: 'DELETE'
+            });
+
+            if (response.ok) {
+              successCount++;
+            } else {
+              errorCount++;
+            }
+          } catch (error) {
+            errorCount++;
+          }
+        }
+
+        if (successCount > 0) {
+          showMessage(`${successCount} poll${successCount !== 1 ? 's' : ''} deleted successfully`, 'success');
+        }
+        if (errorCount > 0) {
+          showMessage(`Failed to delete ${errorCount} poll${errorCount !== 1 ? 's' : ''}`, 'error');
+        }
+
+        loadPolls();
+      } catch (error) {
+        showMessage('Error deleting polls: ' + error.message, 'error');
+      }
     }
 
     function getSelectedPolls() {
