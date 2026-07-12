@@ -464,7 +464,12 @@
             ${poll.about_section ? `
               <div class="card" style="background: #d8c7ff;">
                 <h2>Group Dynamics</h2>
-                <p>${poll.about_section}</p>
+                <ul style="margin: 15px 0; padding-left: 25px; list-style: disc; line-height: 1.8;">
+                  ${poll.about_section.split('\n').filter(line => line.trim()).map(line => {
+                    const cleanLine = line.trim().replace(/^[•\-\*]\s*/, '');
+                    return `<li style="margin-bottom: 12px; font-size: 15px; color: #333;">${cleanLine}</li>`;
+                  }).join('')}
+                </ul>
               </div>
             ` : ''}
 
