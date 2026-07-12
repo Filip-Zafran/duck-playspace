@@ -6,73 +6,9 @@
   <title>Poll Admin Dashboard</title>
   <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .container {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-      max-width: 1000px;
+    .content {
       width: 100%;
-      padding: 40px;
-    }
-
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-      gap: 15px;
-    }
-
-    h1 {
-      margin: 0;
-      color: #333;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    button, input[type="submit"] {
-      background: #667eea;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background 0.3s;
-    }
-
-    button:hover, input[type="submit"]:hover {
-      background: #764ba2;
-    }
-
-    button.danger {
-      background: #e74c3c;
-    }
-
-    button.danger:hover {
-      background: #c0392b;
-    }
-
-    button.secondary {
-      background: #95a5a6;
-    }
-
-    button.secondary:hover {
-      background: #7f8c8d;
+      max-width: 100%;
     }
 
     .form-section {
@@ -527,6 +463,37 @@
   </style>
 </head>
 <body>
+  <div class="page-container">
+    <div class="page-bg grid-bg"></div>
+
+    <div class="container">
+      <header class="header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
+            <h1>Duck Playspace</h1>
+          </div>
+          <div class="header-subtitle">Poll Management</div>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <a href="/dashboard" class="btn btn-primary" style="padding: 8px 16px; text-decoration: none; font-weight: 600; border-radius: 5px;">Dashboard</a>
+          <button id="logoutBtn" class="btn btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <nav class="navbar">
+        <a href="/home" class="nav-link">Home</a>
+        <a href="/upload-data" class="nav-link">Upload Data</a>
+        <a href="/data-filters" class="nav-link">Data</a>
+        <a href="/groups" class="nav-link">Groups</a>
+        <a href="/events" class="nav-link">Events</a>
+        <a href="/poll" class="nav-link active">Polls</a>
+        <a href="/communication" class="nav-link">Communication</a>
+        <a href="/quiz" class="nav-link">Quiz</a>
+      </nav>
+
+      <main class="content">
+
   <div class="modal-overlay hidden" id="successModal">
     <div class="modal" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
       <h2>Poll Created! 🎉</h2>
@@ -554,24 +521,6 @@
     </div>
   </div>
 
-  <div class="navbar-wrapper">
-    <a href="/home" class="nav-link">Home</a>
-    <a href="/poll" class="nav-link active">Polls</a>
-    <a href="/upload-data" class="nav-link">Upload Data</a>
-    <a href="/data-filters" class="nav-link">Data</a>
-    <a href="/groups" class="nav-link">Groups</a>
-    <a href="/events" class="nav-link">Events</a>
-    <a href="/dashboard" class="nav-link">Dashboard</a>
-  </div>
-
-  <div class="content-wrapper">
-    <div class="container">
-    <div class="header">
-      <h1>Poll Admin Dashboard</h1>
-      <div class="button-group">
-        <button class="secondary" onclick="location.href='/home'">Back</button>
-      </div>
-    </div>
 
     <div class="success-message" id="successMsg"></div>
     <div class="error-message" id="errorMsg"></div>
@@ -1286,6 +1235,39 @@
       loadSavedPolls();
     }
   </script>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    });
+
+    // Keep-alive ping
+    function startKeepAlive() {
+      setInterval(() => {
+        const randomDelay = Math.random() * 60000 + 60000;
+        setTimeout(() => {
+          fetch('/ping').catch(err => console.log('Ping failed (expected if offline):', err));
+        }, randomDelay);
+      }, 120000);
+
+      fetch('/ping').catch(err => console.log('Initial ping failed (expected if offline):', err));
+    }
+
+    startKeepAlive();
+  </script>
+      </main>
     </div>
   </div>
 </body>
