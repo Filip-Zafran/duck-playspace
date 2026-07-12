@@ -1021,16 +1021,30 @@
         </div>
       `;
 
-      document.getElementById('modalEventDetails').innerHTML = eventDetails;
-      document.getElementById('votingLinkDisplay').textContent = pollData.vote_url;
+      const modalEventDetails = document.getElementById('modalEventDetails');
+      if (modalEventDetails) {
+        modalEventDetails.innerHTML = eventDetails;
+      }
+
+      const votingLinkDisplay = document.getElementById('votingLinkDisplay');
+      if (votingLinkDisplay) {
+        votingLinkDisplay.textContent = pollData.vote_url;
+      }
 
       // Generate email template with pre-formatted values
       const expected = formData.expected || 0;
       const location = formData.location || 'TBD';
       const emailTemplate = generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted, formData.time1, formData.time2, formData.time3);
-      document.getElementById('emailTemplate').textContent = emailTemplate;
 
-      document.getElementById('successModal').classList.remove('hidden');
+      const emailTemplateElement = document.getElementById('emailTemplate');
+      if (emailTemplateElement) {
+        emailTemplateElement.textContent = emailTemplate;
+      }
+
+      const successModal = document.getElementById('successModal');
+      if (successModal) {
+        successModal.classList.remove('hidden');
+      }
     }
 
     function generateEmailTemplate(pollData, title, description, duration, expected, location, aboutSection, importantSection, date1Formatted, date2Formatted, date3Formatted, time1, time2, time3) {
