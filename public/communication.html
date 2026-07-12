@@ -7,8 +7,19 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     .dashboard-wrapper {
-      width: 100vw;
-      margin-left: calc(-50vw + 50%);
+      width: 100%;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 100%;
+      width: 100%;
+      padding: 0;
+    }
+
+    main.content {
+      width: 100%;
+      max-width: 100%;
       padding: 20px;
     }
 
@@ -210,10 +221,19 @@
       display: block;
     }
 
-    @media (max-width: 1200px) {
+    @media (max-width: 1400px) {
       .template-section {
         grid-template-columns: 1fr;
       }
+
+      .html-code,
+      .html-preview {
+        max-height: 400px;
+      }
+    }
+
+    body {
+      overflow-x: hidden;
     }
   </style>
 </head>
