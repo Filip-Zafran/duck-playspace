@@ -7,19 +7,8 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     .dashboard-wrapper {
-      width: 100%;
-      padding: 20px;
-    }
-
-    .container {
-      max-width: 100%;
-      width: 100%;
-      padding: 0;
-    }
-
-    main.content {
-      width: 100%;
-      max-width: 100%;
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
       padding: 20px;
     }
 
@@ -266,13 +255,14 @@
         <a href="/communication" class="nav-link active">Communication</a>
       </nav>
 
-      <main class="content dashboard-wrapper">
-        <h2>📧 Communication Strategy</h2>
-        <p>
-          Manage your email communication with participants through the event lifecycle. Edit templates as needed and check them off before sending.
-        </p>
+      <main class="content">
+        <div class="dashboard-wrapper">
+          <h2>📧 Communication Strategy</h2>
+          <p>
+            Manage your email communication with participants through the event lifecycle. Edit templates as needed and check them off before sending.
+          </p>
 
-        <div class="tabs">
+          <div class="tabs">
           <button class="tab-btn active" onclick="switchTab('email1')">1. Poll Email</button>
           <button class="tab-btn" onclick="switchTab('email2')">2. Confirmation Email</button>
           <button class="tab-btn" onclick="switchTab('email3')">3. On the Day Email</button>
@@ -891,6 +881,7 @@
               </div>
             </div>
           </div>
+        </div>
         </div>
 
       </main>
