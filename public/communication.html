@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Communication - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dashboard-wrapper {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      padding: 20px;
+    }
+
+    .communication-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .email-template-card {
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .email-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #667eea;
+    }
+
+    .email-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #333;
+    }
+
+    .email-stage {
+      background: #667eea;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .email-content {
+      background: #f9f9f9;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .checklist-section {
+      margin-top: 15px;
+    }
+
+    .checklist-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+
+    .checklist {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .checklist-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .checklist-item label {
+      flex: 1;
+      cursor: pointer;
+      font-size: 12px;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .checklist-item input[type="checkbox"]:checked + label {
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .explanation {
+      background: #f0f3ff;
+      border-left: 4px solid #667eea;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .key-points {
+      background: #fff3cd;
+      border-left: 4px solid #f59e0b;
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .key-points-title {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .key-points ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .key-points li {
+      margin: 4px 0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #e0e0e0;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      font-size: 14px;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .html-viewer {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 20px;
+      min-height: 400px;
+      overflow-x: auto;
+    }
+
+    .btn-view-html {
+      padding: 6px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 11px;
+      margin-left: 10px;
+    }
+
+    .btn-view-html:hover {
+      background: #764ba2;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-bg grid-bg"></div>
+
+    <div class="container">
+      <header class="header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
+            <h1>Duck Playspace</h1>
+          </div>
+          <div class="header-subtitle">Communication & Email Templates</div>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <a href="/dashboard" class="btn btn-primary" style="padding: 8px 16px; text-decoration: none; font-weight: 600; border-radius: 5px;">Dashboard</a>
+          <button id="logoutBtn" class="btn btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <nav class="navbar">
+        <a href="/home" class="nav-link">Home</a>
+        <a href="/upload-data" class="nav-link">Upload Data</a>
+        <a href="/data-filters" class="nav-link">Data</a>
+        <a href="/groups" class="nav-link">Groups</a>
+        <a href="/events" class="nav-link">Events</a>
+        <a href="/poll" class="nav-link">Polls</a>
+        <a href="/communication" class="nav-link active">Communication</a>
+      </nav>
+
+      <main class="content dashboard-wrapper">
+        <h2>📧 Communication Strategy</h2>
+        <p>
+          Manage your email communication with participants through the event lifecycle. Use these templates as guides for key communication moments.
+        </p>
+
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab('email1')">1. Poll Email</button>
+          <button class="tab-btn" onclick="switchTab('email2')">2. Confirmation Email</button>
+          <button class="tab-btn" onclick="switchTab('email3')">3. On the Day Email</button>
+          <button class="tab-btn" onclick="switchTab('email4')">4. Feedback Email</button>
+        </div>
+
+        <!-- EMAIL 1: POLL -->
+        <div id="email1" class="tab-content active">
+          <div class="email-template-card">
+            <div class="email-header">
+              <div>
+                <div class="email-title">📋 Email 1: Poll Invitation</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">First touchpoint - Gather responses and preferences</div>
+              </div>
+              <div class="email-stage">INITIAL OUTREACH</div>
+            </div>
+
+            <div class="explanation">
+              <strong>Purpose:</strong> Introduce the upcoming event and gather RSVPs and venue preferences from participants. This is your first communication about the specific event.
+            </div>
+
+            <div class="key-points">
+              <div class="key-points-title">🔑 Critical Elements to Include:</div>
+              <ul>
+                <li>Event date(s) - Multiple options if polling for dates</li>
+                <li>Event type/theme - What kind of gathering is this?</li>
+                <li>Participant group composition - Who will be attending (e.g., "8 women + 8 men")</li>
+                <li>Venue options - If multiple venues, include all for voting</li>
+                <li>Response deadline - When do you need answers by?</li>
+                <li>Poll link - Make it easy to respond</li>
+                <li>FAQ link - Answer common questions upfront</li>
+                <li>Tone - Warm, inviting, build excitement</li>
+              </ul>
+            </div>
+
+            <div class="email-content">Subject: Let's Plan Our Next Event! 🎉
+
+Dear [Name],
+
+We're excited to invite you to our next event! Here's what we need from you:
+
+📅 Date Options: [List dates]
+📍 Venue Preferences: [List venues with descriptions]
+👥 Group: [Description - e.g., "Mono Long-Term 6W+6M"]
+
+Please vote on your preferred date and venue by [DEADLINE].
+
+🔗 [POLL LINK]
+
+Have questions? Check our FAQ: [FAQ LINK]
+
+Looking forward to seeing you!
+[Organizer Name]</div>
+
+            <div class="checklist-section">
+              <div class="checklist-title">✅ Pre-Send Checklist</div>
+              <div class="checklist">
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_dates">
+                  <label for="poll1_dates">Event dates are clearly listed</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_venues">
+                  <label for="poll1_venues">Venue options with details are included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_group">
+                  <label for="poll1_group">Participant group composition is specified</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_deadline">
+                  <label for="poll1_deadline">Clear response deadline is stated</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_link">
+                  <label for="poll1_link">Poll link is working and accessible</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_faq">
+                  <label for="poll1_faq">FAQ link is included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_tone">
+                  <label for="poll1_tone">Tone is warm and inviting</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="poll1_recipients">
+                  <label for="poll1_recipients">All intended participants are included</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMAIL 2: CONFIRMATION -->
+        <div id="email2" class="tab-content">
+          <div class="email-template-card">
+            <div class="email-header">
+              <div>
+                <div class="email-title">✅ Email 2: Confirmation Email</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">After poll closes - Confirm attendance and next steps</div>
+              </div>
+              <div class="email-stage">CONFIRMATION</div>
+            </div>
+
+            <div class="explanation">
+              <strong>Purpose:</strong> Thank confirmed participants, provide finalized event details, explain logistics, and set clear expectations for the event. This solidifies their commitment.
+            </div>
+
+            <div class="key-points">
+              <div class="key-points-title">🔑 Critical Elements to Include:</div>
+              <ul>
+                <li>Thank you message - Show appreciation for confirming</li>
+                <li>Final attendance count - "We have 8 women and 8 men confirmed"</li>
+                <li>Event team/color - What group/team they're part of</li>
+                <li>Final date & time - No ambiguity about when</li>
+                <li>Final venue - Confirmed location</li>
+                <li>How the event will run - Explain the flow/structure</li>
+                <li>Code of Conduct reference - Link to expectations</li>
+                <li>Important logistics - Transportation, dress code, what to bring</li>
+                <li>Constraint: Can't send someone else - Make clear it's personal attendance only</li>
+                <li>FAQ link - For last-minute questions</li>
+                <li>Contact info - How to reach organizer if issues arise</li>
+              </ul>
+            </div>
+
+            <div class="email-content">Subject: Confirmed! ✅ Your Event Details
+
+Dear [Name],
+
+Thank you for confirming! Happy to see we have 8 women and 8 men confirmed for our event.
+
+🎯 Event Details:
+Date: [Final Date & Time]
+Location: [Final Venue]
+Team: [Team Name/Color]
+
+📝 How This Will Go Down:
+[Describe event flow, activities, timeline]
+
+⚠️ Important:
+- This is a personal invitation - you cannot send someone in your place
+- Please review our Code of Conduct: [LINK]
+- [Any other logistics/requirements]
+
+❓ Questions? Check our FAQ: [FAQ LINK]
+
+Looking forward to seeing you!
+[Organizer Name]
+[Contact Info]</div>
+
+            <div class="checklist-section">
+              <div class="checklist-title">✅ Pre-Send Checklist</div>
+              <div class="checklist">
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_thank">
+                  <label for="conf_thank">Thank you message is warm and genuine</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_count">
+                  <label for="conf_count">Final attendance count is included (e.g., "8W+8M")</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_team">
+                  <label for="conf_team">Event team/group color is specified</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_datetime">
+                  <label for="conf_datetime">Final date and time are crystal clear</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_venue">
+                  <label for="conf_venue">Final confirmed venue is listed</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_flow">
+                  <label for="conf_flow">Event flow/how it will run is explained</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_coc">
+                  <label for="conf_coc">Code of Conduct link is included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_personal">
+                  <label for="conf_personal">"Can't send someone else" is explicitly stated</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_logistics">
+                  <label for="conf_logistics">Important logistics (dress, transportation, etc.) are clear</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_faq">
+                  <label for="conf_faq">FAQ link is included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="conf_contact">
+                  <label for="conf_contact">Organizer contact info is provided</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMAIL 3: ON THE DAY -->
+        <div id="email3" class="tab-content">
+          <div class="email-template-card">
+            <div class="email-header">
+              <div>
+                <div class="email-title">📍 Email 3: On the Day Reminder</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">Day of event - Final reminder and point of contact</div>
+              </div>
+              <div class="email-stage">EVENT DAY</div>
+            </div>
+
+            <div class="explanation">
+              <strong>Purpose:</strong> Remind participants of event details on the day, provide point of contact information, and set clear expectations for any activities or questions they may have during the event.
+            </div>
+
+            <div class="key-points">
+              <div class="key-points-title">🔑 Critical Elements to Include:</div>
+              <ul>
+                <li>Excitement message - Build anticipation for the event</li>
+                <li>Final time & location - As a reminder, make it very clear</li>
+                <li>Point of contact - Who to reach if they're running late or have issues</li>
+                <li>Contact method - Phone number, text, email, etc.</li>
+                <li>Arrival time - When should they arrive?</li>
+                <li>Parking/access info - How to get there and where to park</li>
+                <li>Questions for the date - What you'll be asking or discussing</li>
+                <li>Any last-minute changes - Communicate clearly if something changed</li>
+                <li>Code of Conduct reminder - Brief reference to expectations</li>
+              </ul>
+            </div>
+
+            <div class="email-content">Subject: See You Tonight! 🎉
+
+Hi [Name],
+
+We're excited! Tonight's the big event. Here's everything you need to know:
+
+⏰ Time: [Time - Arrive by HH:MM]
+📍 Location: [Full Address]
+🅿️ Parking: [Parking Info]
+
+📞 Point of Contact: [Organizer Name]
+   Phone: [Number]
+   Text/WhatsApp: [Details]
+
+❓ We'll be discussing:
+[List topics/questions for the date]
+
+💡 Remember to:
+- Be respectful and follow our Code of Conduct
+- [Any other reminders]
+
+See you soon!
+[Organizer Name]</div>
+
+            <div class="checklist-section">
+              <div class="checklist-title">✅ Pre-Send Checklist</div>
+              <div class="checklist">
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_excitement">
+                  <label for="day_excitement">Excitement/anticipation message is included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_time">
+                  <label for="day_time">Event time is clearly stated</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_location">
+                  <label for="day_location">Full address/location details are provided</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_arrival">
+                  <label for="day_arrival">Arrival time expectations are clear</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_parking">
+                  <label for="day_parking">Parking or access instructions are included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_contact">
+                  <label for="day_contact">Point of contact name is provided</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_phone">
+                  <label for="day_phone">Phone number for point of contact is included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_method">
+                  <label for="day_method">Contact method is clear (text/call/email)</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_questions">
+                  <label for="day_questions">Topics/questions for discussion are listed</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_coc">
+                  <label for="day_coc">Code of Conduct is referenced</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="day_lastmin">
+                  <label for="day_lastmin">Any last-minute changes are communicated</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EMAIL 4: FEEDBACK -->
+        <div id="email4" class="tab-content">
+          <div class="email-template-card">
+            <div class="email-header">
+              <div>
+                <div class="email-title">📝 Email 4: Feedback & Follow-up</div>
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">After event - Gather feedback and maintain connection</div>
+              </div>
+              <div class="email-stage">POST-EVENT</div>
+            </div>
+
+            <div class="explanation">
+              <strong>Purpose:</strong> Thank participants for attending, gather their feedback to improve future events, and keep them engaged with the community. This is your chance to learn and build loyalty.
+            </div>
+
+            <div class="key-points">
+              <div class="key-points-title">🔑 Critical Elements to Include:</div>
+              <ul>
+                <li>Thank you message - Express genuine appreciation for their attendance</li>
+                <li>Event highlights - Remind them of positive moments</li>
+                <li>Feedback form link - Make it easy to share thoughts</li>
+                <li>Specific questions - Ask about: venue, vibe, activities, logistics, would they attend similar events?</li>
+                <li>Appreciation for specific contributions - If they helped, acknowledge it</li>
+                <li>Upcoming events hint - Build excitement for next gathering</li>
+                <li>Optional: Social proof - Share photos/testimonials from event</li>
+                <li>Deadline for feedback - When you need responses by</li>
+                <li>Contact for any concerns - If they have issues to discuss</li>
+              </ul>
+            </div>
+
+            <div class="email-content">Subject: Thank You for an Amazing Event! 🙌
+
+Dear [Name],
+
+Thank you so much for joining us! We had an incredible time with you and the rest of the group.
+
+✨ Highlights from the event:
+[Mention memorable moments or connections made]
+
+📋 We'd love your feedback!
+Your input helps us plan even better events. Please take 5 minutes to share your thoughts:
+[FEEDBACK FORM LINK]
+
+Questions on the form:
+- How did you like the venue?
+- What was the vibe like for you?
+- Would you attend a similar event?
+- Any suggestions for improvement?
+
+🎉 We're already planning our next gathering. If you have ideas or want to help, let us know!
+
+[Contact info for follow-up]
+
+Thanks again,
+[Organizer Name]</div>
+
+            <div class="checklist-section">
+              <div class="checklist-title">✅ Pre-Send Checklist</div>
+              <div class="checklist">
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_thank">
+                  <label for="fb_thank">Genuine thank you message is included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_highlights">
+                  <label for="fb_highlights">Positive event highlights are mentioned</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_form">
+                  <label for="fb_form">Feedback form link is working and accessible</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_easy">
+                  <label for="fb_easy">Form is easy to complete (estimate 5 min or less)</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_venue">
+                  <label for="fb_venue">Form asks about venue satisfaction</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_vibe">
+                  <label for="fb_vibe">Form asks about overall vibe/experience</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_repeat">
+                  <label for="fb_repeat">Form asks if they'd attend similar events</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_improve">
+                  <label for="fb_improve">Form asks for improvement suggestions</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_deadline">
+                  <label for="fb_deadline">Feedback deadline is specified</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_next">
+                  <label for="fb_next">Mention of upcoming events/opportunities is included</label>
+                </div>
+                <div class="checklist-item">
+                  <input type="checkbox" id="fb_contact">
+                  <label for="fb_contact">Contact info for follow-up concerns is provided</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabName) {
+      // Hide all tab contents
+      const contents = document.querySelectorAll('.tab-content');
+      contents.forEach(content => content.classList.remove('active'));
+
+      // Remove active class from all buttons
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      // Show selected tab content
+      document.getElementById(tabName).classList.add('active');
+
+      // Add active class to clicked button
+      event.target.classList.add('active');
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    });
+
+    // Keep-alive ping
+    function startKeepAlive() {
+      setInterval(() => {
+        const randomDelay = Math.random() * 60000 + 60000;
+        setTimeout(() => {
+          fetch('/ping').catch(err => console.log('Ping failed (expected if offline):', err));
+        }, randomDelay);
+      }, 120000);
+
+      fetch('/ping').catch(err => console.log('Initial ping failed (expected if offline):', err));
+    }
+
+    startKeepAlive();
+  </script>
+</body>
+</html>
