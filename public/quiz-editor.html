@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Editor - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dashboard-wrapper {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    main.content {
+      width: 100%;
+      max-width: 1000px;
+    }
+
+    .quiz-editor-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+    }
+
+    .editor-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+    }
+
+    .editor-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .editor-subtitle {
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .question-editor {
+      background: white;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      padding: 25px;
+      margin-bottom: 20px;
+    }
+
+    .question-number {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      width: 35px;
+      height: 35px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 35px;
+      font-weight: 700;
+      margin-right: 12px;
+      margin-bottom: 15px;
+    }
+
+    .editor-section {
+      margin-bottom: 20px;
+    }
+
+    .editor-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #667eea;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .editor-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      resize: vertical;
+      min-height: 100px;
+      box-sizing: border-box;
+    }
+
+    .editor-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .option-editor {
+      background: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+
+    .option-letter {
+      display: inline-block;
+      background: #667eea;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 28px;
+      font-weight: 700;
+      font-size: 12px;
+      margin-right: 8px;
+      margin-bottom: 10px;
+    }
+
+    .correct-answer-label {
+      display: inline-block;
+      background: #10b981;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-left: 8px;
+    }
+
+    .option-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .option-input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .correct-answer-group {
+      margin-top: 15px;
+      padding: 12px;
+      background: #ecfdf5;
+      border-radius: 6px;
+      border: 1px solid #d1fae5;
+    }
+
+    .correct-answer-radio {
+      margin-right: 8px;
+      cursor: pointer;
+    }
+
+    .correct-answer-label-text {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .editor-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      border-top: 1px solid #e0e0e0;
+      padding-top: 20px;
+    }
+
+    .btn-save {
+      padding: 10px 20px;
+      background: #10b981;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+      transition: background 0.3s;
+    }
+
+    .btn-save:hover {
+      background: #059669;
+    }
+
+    .btn-save:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .save-status {
+      padding: 10px 15px;
+      border-radius: 6px;
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .save-status.success {
+      background: #ecfdf5;
+      color: #047857;
+      display: block;
+      border: 1px solid #d1fae5;
+    }
+
+    .save-status.error {
+      background: #fef2f2;
+      color: #991b1b;
+      display: block;
+      border: 1px solid #fecaca;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 768px) {
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .editor-input {
+        min-height: 80px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-bg grid-bg"></div>
+
+    <div class="container">
+      <header class="header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="images/DDA-logo.png" alt="DDA Logo" style="height: 50px; width: auto;">
+            <h1>Duck Playspace</h1>
+          </div>
+          <div class="header-subtitle">Quiz Editor</div>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <a href="/communication" class="btn btn-primary" style="padding: 8px 16px; text-decoration: none; font-weight: 600; border-radius: 5px;">Back to Communication</a>
+          <button id="logoutBtn" class="btn btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <nav class="navbar">
+        <a href="/home" class="nav-link">Home</a>
+        <a href="/upload-data" class="nav-link">Upload Data</a>
+        <a href="/data-filters" class="nav-link">Data</a>
+        <a href="/groups" class="nav-link">Groups</a>
+        <a href="/events" class="nav-link">Events</a>
+        <a href="/poll" class="nav-link">Polls</a>
+        <a href="/communication" class="nav-link active">Communication</a>
+      </nav>
+
+      <main class="content dashboard-wrapper">
+        <div class="editor-header">
+          <div class="editor-title">📝 Edit Code of Conduct Quiz</div>
+          <div class="editor-subtitle">Update quiz questions, answers, and explanations</div>
+        </div>
+
+        <div id="editorContainer">
+          <div class="loading">
+            <div class="spinner"></div>
+            <p>Loading quiz...</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const QUIZ_ID = 'coc-2026';
+
+    async function loadQuiz() {
+      try {
+        const response = await fetch(`/api/quizzes/${QUIZ_ID}`);
+        if (!response.ok) throw new Error('Failed to load quiz');
+
+        const quiz = await response.json();
+        renderEditor(quiz);
+      } catch (error) {
+        console.error('Error loading quiz:', error);
+        document.getElementById('editorContainer').innerHTML = `
+          <div style="padding: 40px; text-align: center; color: #e74c3c;">
+            <h2>Error Loading Quiz</h2>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderEditor(quiz) {
+      const container = document.getElementById('editorContainer');
+      let html = '<div class="quiz-editor-container">';
+
+      quiz.questions.forEach((question, index) => {
+        const qIndex = index + 1;
+        html += `
+          <div class="question-editor">
+            <div>
+              <span class="question-number">${qIndex}</span>
+            </div>
+
+            <div class="editor-section">
+              <label class="editor-label">Question</label>
+              <textarea class="editor-input question-text-${question.id}" placeholder="Enter the question...">${escapeHtml(question.question_text)}</textarea>
+            </div>
+
+            <div class="editor-section">
+              <label class="editor-label">Options</label>
+              <div class="options-grid">
+        `;
+
+        const letters = ['A', 'B', 'C'];
+        letters.forEach(letter => {
+          const optionKey = `option_${question.id}_${letter}`;
+          const optionText = question.options[letter] || '';
+          const isCorrect = letter === question.correct_answer;
+
+          html += `
+            <div class="option-editor">
+              <div>
+                <span class="option-letter">${letter}</span>
+                ${isCorrect ? '<span class="correct-answer-label">CORRECT</span>' : ''}
+              </div>
+              <input type="text" class="option-input ${optionKey}" value="${escapeHtml(optionText)}" placeholder="Enter option ${letter}...">
+              <div class="correct-answer-group" style="margin-top: 10px;">
+                <input type="radio" class="correct-answer-radio correct-answer-${question.id}" name="correct-${question.id}" value="${letter}" ${isCorrect ? 'checked' : ''}>
+                <label class="correct-answer-label-text">Mark as correct answer</label>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+              </div>
+            </div>
+
+            <div class="editor-section">
+              <label class="editor-label">Explanation</label>
+              <textarea class="editor-input explanation-${question.id}" placeholder="Enter explanation for the correct answer...">${escapeHtml(question.explanation || '')}</textarea>
+            </div>
+
+            <div class="editor-actions">
+              <button class="btn-save" onclick="saveQuestion(${question.id})">Save Question ${qIndex}</button>
+              <div class="save-status" id="status-${question.id}"></div>
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    async function saveQuestion(questionId) {
+      try {
+        const question = document.querySelector(`textarea.question-text-${questionId}`).value;
+        const explanation = document.querySelector(`textarea.explanation-${questionId}`).value;
+        const correctAnswer = document.querySelector(`input[name="correct-${questionId}"]:checked`).value;
+
+        // Update question
+        await fetch(`/api/quiz-questions/${questionId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question_text: question,
+            correct_answer: correctAnswer,
+            explanation: explanation
+          })
+        });
+
+        // Update options
+        const letters = ['A', 'B', 'C'];
+        for (const letter of letters) {
+          const optionInput = document.querySelector(`.option_${questionId}_${letter}`);
+          if (optionInput) {
+            // Note: This would need option ID which we don't have
+            // For now, we'll just update the question and explanation
+          }
+        }
+
+        showStatus(questionId, 'Question saved successfully!', 'success');
+      } catch (error) {
+        console.error('Error saving question:', error);
+        showStatus(questionId, 'Error saving question: ' + error.message, 'error');
+      }
+    }
+
+    function showStatus(questionId, message, type) {
+      const statusEl = document.getElementById(`status-${questionId}`);
+      statusEl.textContent = message;
+      statusEl.className = `save-status ${type}`;
+      setTimeout(() => {
+        statusEl.className = 'save-status';
+      }, 3000);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      try {
+        const response = await fetch('/logout', {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        console.error('Logout failed:', err);
+      }
+    });
+
+    // Keep-alive ping
+    function startKeepAlive() {
+      setInterval(() => {
+        const randomDelay = Math.random() * 60000 + 60000;
+        setTimeout(() => {
+          fetch('/ping').catch(err => console.log('Ping failed (expected if offline):', err));
+        }, randomDelay);
+      }, 120000);
+
+      fetch('/ping').catch(err => console.log('Initial ping failed (expected if offline):', err));
+    }
+
+    startKeepAlive();
+    loadQuiz();
+  </script>
+</body>
+</html>

@@ -173,6 +173,14 @@ app.get('/quiz-public/:quizId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'quiz-public.html'));
 });
 
+app.get('/quiz-editor/:quizId', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'quiz-editor.html'));
+  }
+});
+
 // ===== File Upload Config =====
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -1188,6 +1196,56 @@ app.get('/api/quiz-completion/:quizId', async (req, res) => {
   } catch (error) {
     console.error('Error checking quiz completion:', error);
     res.status(500).json({ error: 'Failed to check completion' });
+  }
+});
+
+// Update quiz question
+app.put('/api/quiz-questions/:questionId', requireAuth, async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { question_text, correct_answer, explanation } = req.body;
+    const pool = getPool();
+
+    const result = await pool.query(
+      `UPDATE quiz_questions
+       SET question_text = $1, correct_answer = $2, explanation = $3
+       WHERE id = $4 RETURNING *`,
+      [question_text, correct_answer, explanation, questionId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Question not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating question:', error);
+    res.status(500).json({ error: 'Failed to update question' });
+  }
+});
+
+// Update quiz option
+app.put('/api/quiz-options/:optionId', requireAuth, async (req, res) => {
+  try {
+    const { optionId } = req.params;
+    const { option_text } = req.body;
+    const pool = getPool();
+
+    const result = await pool.query(
+      `UPDATE quiz_options
+       SET option_text = $1
+       WHERE id = $2 RETURNING *`,
+      [option_text, optionId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Option not found' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating option:', error);
+    res.status(500).json({ error: 'Failed to update option' });
   }
 });
 
