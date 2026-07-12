@@ -798,27 +798,23 @@
             // Clear previous content
             preview.innerHTML = '';
 
-            // Create iframe
+            // Create blob URL from HTML
+            const blob = new Blob([htmlCode], { type: 'text/html' });
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Create iframe with src pointing to blob
             const iframe = document.createElement('iframe');
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
             iframe.style.borderRadius = '6px';
-            iframe.setAttribute('sandbox', 'allow-same-origin');
+            iframe.src = blobUrl;
 
             // Append iframe to preview
             preview.appendChild(iframe);
-
-            // Get iframe document and write content
-            const iframeDoc = iframe.contentDocument;
-            if (iframeDoc) {
-              iframeDoc.open();
-              iframeDoc.write(htmlCode);
-              iframeDoc.close();
-            }
           } catch (error) {
             console.error('Error rendering preview:', error);
-            preview.innerHTML = '<p style="color: #999; padding: 20px;">Error rendering preview. Check browser console.</p>';
+            preview.innerHTML = '<p style="color: #999; padding: 20px;">Error rendering preview: ' + error.message + '</p>';
           }
         }
       }
