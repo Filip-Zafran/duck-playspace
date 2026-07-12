@@ -831,8 +831,8 @@
             <thead>
               <tr>
                 <th>Voter Name</th>
+                <th>Email</th>
                 <th>Date Choices</th>
-                <th>Location Choice</th>
                 <th>Submitted</th>
               </tr>
             </thead>
@@ -851,8 +851,8 @@
           votesHtml += `
             <tr>
               <td>${vote.voter_name || 'Anonymous'}</td>
+              <td>${vote.voter_email || '—'}</td>
               <td><span class="vote-choice ${vote.choice}">${choiceLabel[vote.choice] || vote.choice}</span></td>
-              <td>${vote.location_choice || '—'}</td>
               <td>${submittedDate}</td>
             </tr>
           `;
