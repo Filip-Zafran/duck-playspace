@@ -738,7 +738,7 @@
           return;
         }
 
-        let html = '<table class="polls-table"><thead><tr><th>Title</th><th>Created</th><th>Votes</th><th>Expected</th><th>Public Voting Link</th><th>Actions</th></tr></thead><tbody>';
+        let html = '<table class="polls-table"><thead><tr><th><input type="checkbox" id="selectAllPolls" onchange="toggleSelectAllPolls()"></th><th>Title</th><th>Created</th><th>Votes</th><th>Expected</th><th>Public Voting Link</th><th>Actions</th></tr></thead><tbody>';
 
         polls.forEach(poll => {
           const createdDate = new Date(poll.created_at).toLocaleDateString();
@@ -747,6 +747,7 @@
 
           html += `
             <tr>
+              <td><input type="checkbox" class="poll-checkbox" data-poll-id="${poll.id}"></td>
               <td>${poll.title}</td>
               <td>${createdDate}</td>
               <td>${totalVotes}</td>
@@ -774,6 +775,20 @@
       } catch (error) {
         pollsList.innerHTML = '<div class="error-message">Failed to load polls</div>';
       }
+    }
+
+    function toggleSelectAllPolls() {
+      const selectAllCheckbox = document.getElementById('selectAllPolls');
+      const pollCheckboxes = document.querySelectorAll('.poll-checkbox');
+
+      pollCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+      });
+    }
+
+    function getSelectedPolls() {
+      const pollCheckboxes = document.querySelectorAll('.poll-checkbox:checked');
+      return Array.from(pollCheckboxes).map(checkbox => checkbox.dataset.pollId);
     }
 
     function copyToken(token) {
