@@ -152,6 +152,14 @@ app.get('/dates', (req, res) => {
   res.redirect('/events');
 });
 
+app.get('/communication', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'communication.html'));
+  }
+});
+
 // ===== File Upload Config =====
 const upload = multer({ storage: multer.memoryStorage() });
 
