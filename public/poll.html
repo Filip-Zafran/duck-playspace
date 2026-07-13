@@ -973,60 +973,42 @@
 
         const poll = await response.json();
 
-        // Generate email content (simplified - showing raw poll data)
-        const emailContent = generateEmailPreview(poll);
-        emailModalContent = emailContent;
+        // Format dates
+        const formatDate = (dateStr) => {
+          if (!dateStr) return 'Not specified';
+          const date = new Date(dateStr + 'T00:00:00');
+          if (isNaN(date.getTime())) return 'Invalid date';
+          return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        };
 
+        const date1Formatted = formatDate(poll.date1);
+        const date2Formatted = formatDate(poll.date2);
+        const date3Formatted = formatDate(poll.date3);
+
+        // Generate the actual email HTML that was sent
+        const emailContent = generateEmailTemplate(
+          poll,
+          poll.title,
+          poll.description,
+          poll.duration,
+          poll.expected,
+          poll.location,
+          poll.about_section,
+          poll.important_section,
+          date1Formatted,
+          date2Formatted,
+          date3Formatted,
+          poll.time1,
+          poll.time2,
+          poll.time3
+        );
+
+        emailModalContent = emailContent;
         document.getElementById('emailContent').textContent = emailContent;
         document.getElementById('emailModal').classList.remove('hidden');
       } catch (error) {
         showMessage('Error loading poll email: ' + error.message, 'error');
       }
-    }
-
-    function generateEmailPreview(poll) {
-      const formatDate = (dateStr) => {
-        if (!dateStr) return 'Not specified';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
-      };
-
-      const date1 = formatDate(poll.date1);
-      const date2 = formatDate(poll.date2);
-      const date3 = formatDate(poll.date3);
-
-      let deadline = '';
-      if (poll.timer_end) {
-        const deadlineDate = new Date(poll.timer_end);
-        deadline = deadlineDate.toLocaleString();
-      }
-
-      const email = `
-POLL: ${poll.title}
-${poll.description ? 'Description: ' + poll.description : ''}
-
-VOTING DEADLINE: ${deadline || 'No deadline set'}
-
-DATE OPTIONS:
-  Option 1: ${date1}${poll.time1 ? ' at ' + poll.time1 : ''}
-  Option 2: ${date2}${poll.time2 ? ' at ' + poll.time2 : ''}
-  Option 3: ${date3}${poll.time3 ? ' at ' + poll.time3 : ''}
-
-EVENT DETAILS:
-  Duration: ${poll.duration || 'Not specified'}
-  Expected Attendees: ${poll.expected || 'Not specified'}
-  Location: ${poll.location || 'Not specified'}
-
-${poll.about_section ? '\nGROUP DYNAMICS:\n' + poll.about_section.split('\n').map(line => '  ' + line).join('\n') : ''}
-
-${poll.important_section ? '\nIMPORTANT:\n' + poll.important_section + '\n' : ''}
-
-Voting Link: ${window.location.origin}/poll-vote?token=${poll.id}
-
-Thank you!
-      `;
-
-      return email.trim();
     }
 
     function closeEmailModal() {
