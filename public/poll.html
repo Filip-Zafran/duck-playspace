@@ -482,13 +482,20 @@
       </header>
 
       <nav class="navbar">
-        <a href="/home" class="nav-link">Home</a>
-        <a href="/upload-data" class="nav-link">Upload Data</a>
-        <a href="/data-filters" class="nav-link">Data</a>
-        <a href="/groups" class="nav-link">Groups</a>
-        <a href="/events" class="nav-link">Events</a>
-        <a href="/poll" class="nav-link active">Polls</a>
-        <a href="/communication" class="nav-link">Communication</a>
+        <button id="hamburgerMenu" class="hamburger-menu" onclick="toggleNavMenu()">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+        <div class="nav-menu" id="navMenu">
+          <a href="/home" class="nav-link">Home</a>
+          <a href="/upload-data" class="nav-link">Upload Data</a>
+          <a href="/data-filters" class="nav-link">Data</a>
+          <a href="/groups" class="nav-link">Groups</a>
+          <a href="/events" class="nav-link">Events</a>
+          <a href="/poll" class="nav-link active">Polls</a>
+          <a href="/communication" class="nav-link">Communication</a>
+        </div>
       </nav>
 
       <main class="content">
@@ -520,6 +527,22 @@
     </div>
   </div>
 
+  <!-- Extend Deadline Modal -->
+  <div class="modal-overlay hidden" id="extendDeadlineModal">
+    <div class="modal">
+      <h2>Extend Deadline</h2>
+      <div style="margin: 25px 0;">
+        <p style="color: #666; margin-bottom: 20px;">Poll: <strong id="extendPollTitle"></strong></p>
+        <label for="extendHours" style="display: block; margin-bottom: 8px; font-weight: 600;">Add hours to deadline:</label>
+        <input type="number" id="extendHours" min="1" max="72" value="24" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px; margin-bottom: 20px;">
+        <p style="font-size: 12px; color: #999; margin-bottom: 20px;">Current deadline will be extended by the selected hours</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-manage" onclick="extendDeadline()">Extend Deadline</button>
+        <button class="btn-close" onclick="closeExtendDeadlineModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
 
     <div class="success-message" id="successMsg"></div>
     <div class="error-message" id="errorMsg"></div>
@@ -767,6 +790,7 @@
                   <button onclick="showDetailedVotes('${poll.id}')">View Votes</button>
                   <button onclick="window.open('/poll-vote?token=${poll.id}', '_blank')">Vote</button>
                   <button onclick="window.open('/poll-results?token=${poll.id}', '_blank')">Results</button>
+                  ${poll.timer_end ? `<button onclick="showExtendDeadlineModal('${poll.id}', '${poll.title}')">⏱️ Extend</button>` : ''}
                   <button class="danger" onclick="deletePoll('${poll.id}')">Delete</button>
                 </div>
               </td>
@@ -857,6 +881,53 @@
         loadPolls();
       } catch (error) {
         showMessage('Error deleting polls: ' + error.message, 'error');
+      }
+    }
+
+    let extendingPollId = null;
+
+    function showExtendDeadlineModal(pollId, pollTitle) {
+      extendingPollId = pollId;
+      document.getElementById('extendPollTitle').textContent = pollTitle;
+      document.getElementById('extendHours').value = 24;
+      document.getElementById('extendDeadlineModal').classList.remove('hidden');
+    }
+
+    function closeExtendDeadlineModal() {
+      document.getElementById('extendDeadlineModal').classList.add('hidden');
+      extendingPollId = null;
+    }
+
+    async function extendDeadline() {
+      if (!extendingPollId) {
+        showMessage('Error: Poll not selected', 'error');
+        return;
+      }
+
+      const hoursToAdd = parseInt(document.getElementById('extendHours').value);
+
+      if (isNaN(hoursToAdd) || hoursToAdd < 1) {
+        showMessage('Please enter a valid number of hours', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/polls/${extendingPollId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ extend_hours: hoursToAdd })
+        });
+
+        if (response.ok) {
+          showMessage(`Deadline extended by ${hoursToAdd} hour${hoursToAdd !== 1 ? 's' : ''}`, 'success');
+          closeExtendDeadlineModal();
+          loadPolls();
+        } else {
+          const data = await response.json();
+          showMessage(data.error || 'Failed to extend deadline', 'error');
+        }
+      } catch (error) {
+        showMessage('Error extending deadline: ' + error.message, 'error');
       }
     }
 
@@ -1357,6 +1428,28 @@
   </script>
 
   <script>
+    function toggleNavMenu() {
+      const navMenu = document.getElementById('navMenu');
+      const hamburger = document.getElementById('hamburgerMenu');
+
+      if (navMenu) {
+        navMenu.classList.toggle('active');
+      }
+      if (hamburger) {
+        hamburger.classList.toggle('active');
+      }
+    }
+
+    // Close menu when clicking on a nav link
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        const navMenu = document.getElementById('navMenu');
+        const hamburger = document.getElementById('hamburgerMenu');
+        if (navMenu) navMenu.classList.remove('active');
+        if (hamburger) hamburger.classList.remove('active');
+      });
+    });
+
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       try {
         const response = await fetch('/logout', {
