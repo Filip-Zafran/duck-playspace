@@ -231,8 +231,9 @@ app.get('/api/polls', requireAuth, async (req, res) => {
     const pollsResult = await pool.query('SELECT * FROM polls ORDER BY created_at DESC');
 
     const pollsWithVotes = await Promise.all(pollsResult.rows.map(async (poll) => {
+      // Count distinct voters for each choice (1 person = 1 vote, even if they voted for multiple options)
       const votesResult = await pool.query(
-        'SELECT choice, COUNT(*) as count FROM votes WHERE poll_id = $1 GROUP BY choice',
+        'SELECT choice, COUNT(DISTINCT voter_name) as count FROM votes WHERE poll_id = $1 GROUP BY choice',
         [poll.id]
       );
 
@@ -273,8 +274,9 @@ app.get('/api/polls/:id', async (req, res) => {
       [id]
     );
 
+    // Count distinct voters for each choice (1 person = 1 vote, even if they voted for multiple options)
     const countsResult = await pool.query(
-      'SELECT choice, COUNT(*) as count FROM votes WHERE poll_id = $1 GROUP BY choice',
+      'SELECT choice, COUNT(DISTINCT voter_name) as count FROM votes WHERE poll_id = $1 GROUP BY choice',
       [id]
     );
 
@@ -391,8 +393,9 @@ app.get('/api/vote/:pollId', async (req, res) => {
       [pollId]
     );
 
+    // Count distinct voters for each choice (1 person = 1 vote, even if they voted for multiple options)
     const countsResult = await pool.query(
-      'SELECT choice, COUNT(*) as count FROM votes WHERE poll_id = $1 GROUP BY choice',
+      'SELECT choice, COUNT(DISTINCT voter_name) as count FROM votes WHERE poll_id = $1 GROUP BY choice',
       [pollId]
     );
 
