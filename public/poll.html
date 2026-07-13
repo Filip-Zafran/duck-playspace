@@ -544,6 +544,27 @@
     </div>
   </div>
 
+  <!-- Email Modal -->
+  <div class="modal-overlay hidden" id="emailModal">
+    <div class="modal" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+      <h2>📧 Poll Email Template</h2>
+      <p style="color: #666; margin-bottom: 20px;">Poll: <strong id="emailModalTitle"></strong></p>
+
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 12px; line-height: 1.5;">
+        <pre id="emailContent" style="margin: 0; white-space: pre-wrap; word-wrap: break-word;"></pre>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button class="modal-copy-btn" onclick="copyEmailText()" style="flex: 1;">📋 Copy Email Text</button>
+        <button class="modal-copy-btn" style="flex: 1; background: #27ae60;" onclick="downloadEmailText()">⬇️ Download as TXT</button>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-close" onclick="closeEmailModal()" style="flex: 1;">Close</button>
+      </div>
+    </div>
+  </div>
+
     <div class="success-message" id="successMsg"></div>
     <div class="error-message" id="errorMsg"></div>
 
@@ -790,6 +811,7 @@
                   <button onclick="showDetailedVotes('${poll.id}')">View Votes</button>
                   <button onclick="window.open('/poll-vote?token=${poll.id}', '_blank')">Vote</button>
                   <button onclick="window.open('/poll-results?token=${poll.id}', '_blank')">Results</button>
+                  <button onclick="showEmailModal('${poll.id}', '${poll.title}')">📧 Email</button>
                   ${poll.timer_end ? `<button onclick="showExtendDeadlineModal('${poll.id}', '${poll.title}')">⏱️ Extend</button>` : ''}
                   <button class="danger" onclick="deletePoll('${poll.id}')">Delete</button>
                 </div>
@@ -929,6 +951,125 @@
       } catch (error) {
         showMessage('Error extending deadline: ' + error.message, 'error');
       }
+    }
+
+    let emailModalPollId = null;
+    let emailModalContent = null;
+
+    async function showEmailModal(pollId, pollTitle) {
+      emailModalPollId = pollId;
+      document.getElementById('emailModalTitle').textContent = pollTitle;
+
+      try {
+        // Fetch the poll to get all its data for email generation
+        const response = await fetch(`${API_BASE}/polls/${pollId}`, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          showMessage('Failed to load poll data', 'error');
+          return;
+        }
+
+        const poll = await response.json();
+
+        // Generate email content (simplified - showing raw poll data)
+        const emailContent = generateEmailPreview(poll);
+        emailModalContent = emailContent;
+
+        document.getElementById('emailContent').textContent = emailContent;
+        document.getElementById('emailModal').classList.remove('hidden');
+      } catch (error) {
+        showMessage('Error loading poll email: ' + error.message, 'error');
+      }
+    }
+
+    function generateEmailPreview(poll) {
+      const formatDate = (dateStr) => {
+        if (!dateStr) return 'Not specified';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+      };
+
+      const date1 = formatDate(poll.date1);
+      const date2 = formatDate(poll.date2);
+      const date3 = formatDate(poll.date3);
+
+      let deadline = '';
+      if (poll.timer_end) {
+        const deadlineDate = new Date(poll.timer_end);
+        deadline = deadlineDate.toLocaleString();
+      }
+
+      const email = `
+POLL: ${poll.title}
+${poll.description ? 'Description: ' + poll.description : ''}
+
+VOTING DEADLINE: ${deadline || 'No deadline set'}
+
+DATE OPTIONS:
+  Option 1: ${date1}${poll.time1 ? ' at ' + poll.time1 : ''}
+  Option 2: ${date2}${poll.time2 ? ' at ' + poll.time2 : ''}
+  Option 3: ${date3}${poll.time3 ? ' at ' + poll.time3 : ''}
+
+EVENT DETAILS:
+  Duration: ${poll.duration || 'Not specified'}
+  Expected Attendees: ${poll.expected || 'Not specified'}
+  Location: ${poll.location || 'Not specified'}
+
+${poll.about_section ? '\nGROUP DYNAMICS:\n' + poll.about_section.split('\n').map(line => '  ' + line).join('\n') : ''}
+
+${poll.important_section ? '\nIMPORTANT:\n' + poll.important_section + '\n' : ''}
+
+Voting Link: ${window.location.origin}/poll-vote?token=${poll.id}
+
+Thank you!
+      `;
+
+      return email.trim();
+    }
+
+    function closeEmailModal() {
+      document.getElementById('emailModal').classList.add('hidden');
+      emailModalPollId = null;
+      emailModalContent = null;
+    }
+
+    function copyEmailText() {
+      if (!emailModalContent) {
+        showMessage('No email content to copy', 'error');
+        return;
+      }
+
+      navigator.clipboard.writeText(emailModalContent).then(() => {
+        const btn = document.querySelector('button[onclick="copyEmailText()"]');
+        if (btn) {
+          const originalText = btn.textContent;
+          btn.textContent = '✅ Copied!';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        }
+      }).catch(err => {
+        showMessage('Failed to copy email', 'error');
+      });
+    }
+
+    function downloadEmailText() {
+      if (!emailModalContent) {
+        showMessage('No email content to download', 'error');
+        return;
+      }
+
+      const element = document.createElement('a');
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(emailModalContent));
+      element.setAttribute('download', `poll-email-${emailModalPollId}.txt`);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+
+      showMessage('Email downloaded as TXT file', 'success');
     }
 
     function getSelectedPolls() {
