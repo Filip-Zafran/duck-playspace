@@ -331,6 +331,46 @@ app.delete('/api/polls/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Extend poll deadline
+app.patch('/api/polls/:id', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { extend_hours } = req.body;
+
+    if (!extend_hours || extend_hours < 1) {
+      return res.status(400).json({ error: 'Invalid extend_hours value' });
+    }
+
+    const pool = getPool();
+
+    // Get current poll
+    const pollResult = await pool.query('SELECT timer_end FROM polls WHERE id = $1', [id]);
+    if (pollResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Poll not found' });
+    }
+
+    const currentTimerEnd = pollResult.rows[0].timer_end;
+
+    // Calculate new deadline by adding hours to current timer_end
+    const newTimerEnd = new Date(new Date(currentTimerEnd).getTime() + extend_hours * 60 * 60 * 1000);
+
+    // Update the poll
+    await pool.query(
+      'UPDATE polls SET timer_end = $1 WHERE id = $2',
+      [newTimerEnd, id]
+    );
+
+    res.json({
+      id,
+      message: `Deadline extended by ${extend_hours} hour${extend_hours !== 1 ? 's' : ''}`,
+      new_deadline: newTimerEnd
+    });
+  } catch (error) {
+    console.error('Error extending poll deadline:', error);
+    res.status(500).json({ error: 'Failed to extend deadline' });
+  }
+});
+
 // ===== API: Voting =====
 
 app.get('/api/vote/:pollId', async (req, res) => {
