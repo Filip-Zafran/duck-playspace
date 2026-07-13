@@ -290,7 +290,12 @@ app.get('/api/polls/:id', async (req, res) => {
       choice: vote.choice
     }));
 
-    res.json({ counts, previews });
+    const poll = pollResult.rows[0];
+    res.json({
+      ...poll,
+      counts,
+      previews
+    });
   } catch (error) {
     console.error('Error fetching poll details:', error);
     res.status(500).json({ error: 'Failed to fetch poll' });
