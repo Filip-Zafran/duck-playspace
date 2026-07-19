@@ -473,18 +473,42 @@
               </div>
             ` : ''}
 
-            <!-- Payment Card -->
+            <!-- Payment & Contact Sections -->
             ${timerHtml}
 
+            <!-- Payment Card -->
             <div class="card card-payment">
-              <h2>Confirm your participation</h2>
-              <p>To confirm your spot, please send the <strong>5€ participation fee</strong> via PayPal in the next 24h</p>
-              <div style="text-align: center;">
-                <a href="https://paypal.me/fichozee" class="payment-link">Pay 5€ via PayPal</a>
+              <div class="collapsible" onclick="toggleCollapsible('payment')">
+                <h2 style="margin: 0;">💳 Payment</h2>
               </div>
-              <p>Please select <strong>Friends & Family</strong>, as we are still in a testing phase.</p>
-              <p style="margin-top: 15px; font-weight: 600;">Thank you for understanding!</p>
-              <p>For questions contact: <a href="mailto:duckdatingapps@gmail.com" style="color: #ff5b92; text-decoration: underline;">duckdatingapps@gmail.com</a></p>
+              <div class="collapsible-content" id="payment">
+                <p style="margin-top: 15px; line-height: 1.6;">
+                  Once a time is confirmed, you will get payment information in a separate e-mail.
+                </p>
+                <p style="margin-top: 10px; line-height: 1.6;">
+                  Event normally costs <strong>5 €</strong>
+                </p>
+                <ul style="margin: 10px 0 0 0; padding-left: 20px; list-style: none;">
+                  <li style="margin-bottom: 6px; padding-left: 20px; position: relative;">
+                    <span style="position: absolute; left: 0;">•</span>Reduced for referrals, loyalty, or people with vouchers
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- Contact Card -->
+            <div class="card card-payment" style="margin-top: 15px;">
+              <div class="collapsible" onclick="toggleCollapsible('contact')">
+                <h2 style="margin: 0;">❓ Contact</h2>
+              </div>
+              <div class="collapsible-content" id="contact">
+                <p style="margin-top: 15px; line-height: 1.6;">
+                  You have questions?
+                </p>
+                <p style="margin-top: 10px;">
+                  Write us at: <a href="mailto:duckdatingapps@gmail.com" style="color: #ff5b92; text-decoration: underline; font-weight: 600;">duckdatingapps@gmail.com</a>
+                </p>
+              </div>
             </div>
 
             <!-- What This Group Is About Card -->
