@@ -41,6 +41,14 @@
           Welcome to your cozy Play Space. This is where you manage events, create polls, and bring your flock together for unforgettable moments.
         </p>
 
+        <!-- Active Polls Section -->
+        <div id="activePollsSection" style="display: none; margin-top: 3rem; margin-bottom: 3rem;">
+          <h3 style="font-size: 1.3rem; font-weight: 900; margin-bottom: 1.5rem; color: #000;">📊 Active Polls</h3>
+          <div id="activePollsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem;">
+            <!-- Active polls will be loaded here -->
+          </div>
+        </div>
+
         <!-- Tools & Features Guide -->
         <div style="margin-top: 3rem;">
           <h3 style="font-size: 1.3rem; font-weight: 900; margin-bottom: 1.5rem; color: #000;">📚 Tools & Features Guide</h3>
@@ -161,6 +169,88 @@
     }
 
     startKeepAlive();
+
+    // Load and display active polls
+    async function loadActivePolls() {
+      try {
+        const response = await fetch('/api/polls');
+        if (!response.ok) return;
+
+        const polls = await response.json();
+        const now = new Date();
+        const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+        // Filter polls with active timers created within last 2 weeks
+        const activePolls = polls.filter(poll => {
+          if (!poll.timer_end) return false;
+          const timerEnd = new Date(poll.timer_end);
+          const createdAt = new Date(poll.created_at);
+          return timerEnd > now && createdAt > twoWeeksAgo;
+        }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        if (activePolls.length === 0) return;
+
+        const section = document.getElementById('activePollsSection');
+        const container = document.getElementById('activePollsContainer');
+        container.innerHTML = '';
+
+        activePolls.forEach(poll => {
+          const maxVotes = Math.max(poll.counts.date1, poll.counts.date2, poll.counts.date3);
+          const getMostVotedClass = (count) => count === maxVotes && maxVotes > 0 ? 'most-voted' : '';
+
+          const pollCard = document.createElement('div');
+          pollCard.style.cssText = 'background: white; border: 2px solid #667eea; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);';
+
+          pollCard.innerHTML = `
+            <h4 style="margin-top: 0; color: #667eea; font-size: 1.1rem; font-weight: 700;">${escapeHtml(poll.title)}</h4>
+            <div style="margin-top: 15px;">
+              <div style="font-size: 0.85rem; font-weight: 600; color: #333; margin-bottom: 10px;">Vote Results:</div>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${formatPollOption('Date 1', new Date(poll.date1), poll.time1, poll.counts.date1, maxVotes, getMostVotedClass(poll.counts.date1))}
+                ${formatPollOption('Date 2', new Date(poll.date2), poll.time2, poll.counts.date2, maxVotes, getMostVotedClass(poll.counts.date2))}
+                ${formatPollOption('Date 3', new Date(poll.date3), poll.time3, poll.counts.date3, maxVotes, getMostVotedClass(poll.counts.date3))}
+              </div>
+            </div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+              <a href="/poll-vote?token=${poll.id}" style="color: #667eea; font-weight: 600; text-decoration: none; font-size: 0.9rem;">Vote Now →</a>
+            </div>
+          `;
+          container.appendChild(pollCard);
+        });
+
+        section.style.display = 'block';
+      } catch (error) {
+        console.error('Error loading active polls:', error);
+      }
+    }
+
+    function formatPollOption(label, date, time, votes, maxVotes, highlight) {
+      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const timeStr = time ? ` at ${time}` : '';
+      const barWidth = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
+      const isMostVoted = highlight ? 'most-voted' : '';
+
+      return `
+        <div style="padding: 10px; background: #f9f9f9; border-radius: 6px; border-left: 3px solid ${isMostVoted ? '#10b981' : '#ddd'};">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <span style="font-weight: 600; color: #333; font-size: 0.9rem;">${dateStr}${timeStr}</span>
+            <span style="background: ${isMostVoted ? '#10b981' : '#667eea'}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">${votes} vote${votes !== 1 ? 's' : ''}</span>
+          </div>
+          <div style="background: #e0e0e0; height: 6px; border-radius: 3px; overflow: hidden;">
+            <div style="background: ${isMostVoted ? '#10b981' : '#667eea'}; height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    loadActivePolls();
+    setInterval(loadActivePolls, 30000); // Refresh every 30 seconds
   </script>
 </body>
 </html>
