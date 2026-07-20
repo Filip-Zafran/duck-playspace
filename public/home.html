@@ -205,7 +205,8 @@
             const votesByChoice = {
               date1: [],
               date2: [],
-              date3: []
+              date3: [],
+              none: []
             };
 
             votes.forEach(vote => {
@@ -214,7 +215,7 @@
               }
             });
 
-            const maxVotes = Math.max(poll.counts.date1, poll.counts.date2, poll.counts.date3);
+            const maxVotes = Math.max(poll.counts.date1, poll.counts.date2, poll.counts.date3, poll.counts.none || 0);
             const getMostVotedClass = (count) => count === maxVotes && maxVotes > 0 ? 'most-voted' : '';
 
             const pollCard = document.createElement('div');
@@ -228,6 +229,7 @@
                   ${formatPollOptionWithVoters('Date 1', new Date(poll.date1), poll.time1, poll.counts.date1, maxVotes, getMostVotedClass(poll.counts.date1), votesByChoice.date1)}
                   ${formatPollOptionWithVoters('Date 2', new Date(poll.date2), poll.time2, poll.counts.date2, maxVotes, getMostVotedClass(poll.counts.date2), votesByChoice.date2)}
                   ${formatPollOptionWithVoters('Date 3', new Date(poll.date3), poll.time3, poll.counts.date3, maxVotes, getMostVotedClass(poll.counts.date3), votesByChoice.date3)}
+                  ${formatPollOptionWithVoters('Can\'t make it on these dates', null, null, poll.counts.none || 0, maxVotes, getMostVotedClass(poll.counts.none || 0), votesByChoice.none)}
                 </div>
               </div>
               <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
@@ -247,23 +249,25 @@
     }
 
     function formatPollOptionWithVoters(label, date, time, votes, maxVotes, highlight, voters) {
-      const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      const dateStr = date ? date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : label;
       const timeStr = time ? ` at ${time}` : '';
       const barWidth = maxVotes > 0 ? (votes / maxVotes) * 100 : 0;
       const isMostVoted = highlight ? 'most-voted' : '';
+      const borderColor = date ? (isMostVoted ? '#10b981' : '#ddd') : '#e74c3c';
+      const badgeColor = date ? (isMostVoted ? '#10b981' : '#667eea') : '#e74c3c';
 
       const votersList = voters && voters.length > 0
         ? voters.map(name => `<span style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 0.8rem; color: #666;">${escapeHtml(name)}</span>`).join(' ')
         : '<span style="color: #999; font-size: 0.85rem;">No votes yet</span>';
 
       return `
-        <div style="padding: 10px; background: #f9f9f9; border-radius: 6px; border-left: 3px solid ${isMostVoted ? '#10b981' : '#ddd'};">
+        <div style="padding: 10px; background: #f9f9f9; border-radius: 6px; border-left: 3px solid ${borderColor};">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
             <span style="font-weight: 600; color: #333; font-size: 0.9rem;">${dateStr}${timeStr}</span>
-            <span style="background: ${isMostVoted ? '#10b981' : '#667eea'}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">${votes} vote${votes !== 1 ? 's' : ''}</span>
+            <span style="background: ${badgeColor}; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.8rem; font-weight: 600;">${votes} vote${votes !== 1 ? 's' : ''}</span>
           </div>
           <div style="background: #e0e0e0; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
-            <div style="background: ${isMostVoted ? '#10b981' : '#667eea'}; height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
+            <div style="background: ${badgeColor}; height: 100%; width: ${barWidth}%; transition: width 0.3s;"></div>
           </div>
           <div style="display: flex; flex-wrap: wrap; gap: 5px;">
             ${votersList}
