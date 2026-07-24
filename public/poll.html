@@ -196,6 +196,98 @@
       display: none;
     }
 
+    .feedback-section {
+      background: #f1f8ff;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      border: 1px solid #d8e9fb;
+    }
+
+    .feedback-section h2 {
+      margin-top: 0;
+      color: #1a3d7c;
+    }
+
+    .feedback-section p {
+      margin: 0 0 16px 0;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .feedback-question {
+      margin-bottom: 18px;
+    }
+
+    .feedback-question label {
+      font-weight: 600;
+      color: #1b355e;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .feedback-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .feedback-choice {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: white;
+      border: 1px solid #c7d9f2;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .feedback-choice input {
+      margin: 0;
+    }
+
+    .feedback-email-sample {
+      background: white;
+      border: 1px solid #d8e9fb;
+      border-radius: 10px;
+      padding: 18px;
+      margin-top: 20px;
+    }
+
+    .feedback-email-sample a {
+      color: #0b61d3;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .feedback-email-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .feedback-email-actions button {
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 12px 18px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .feedback-email-actions button:hover {
+      background: #5468c1;
+    }
+
+    .feedback-note {
+      font-size: 13px;
+      color: #5a697d;
+      margin-top: 10px;
+    }
+
     .tab-content.active {
       display: block;
     }
@@ -573,6 +665,56 @@
       <button class="tab" onclick="switchTab('saved')">Saved Polls</button>
       <button class="tab" onclick="switchTab('manage')">Manage Polls</button>
     </div>
+
+    <section class="feedback-section">
+      <h2>Feedback for People Who Didn’t Respond</h2>
+      <p>Give anonymous feedback and earn a free event next time. These process questions can be included in an email so recipients can answer with one click.</p>
+
+      <form id="feedbackForm">
+        <div class="feedback-question">
+          <label>1. How easy was it to understand the event details and choose a date?</label>
+          <div class="feedback-choices">
+            <label class="feedback-choice"><input type="radio" name="question1" value="very_easy" required> Very easy</label>
+            <label class="feedback-choice"><input type="radio" name="question1" value="somewhat_easy"> Somewhat easy</label>
+            <label class="feedback-choice"><input type="radio" name="question1" value="hard"> Hard</label>
+          </div>
+        </div>
+
+        <div class="feedback-question">
+          <label>2. What could make our planning process smoother for you?</label>
+          <div class="feedback-choices">
+            <label class="feedback-choice"><input type="radio" name="question2" value="clearer_dates"> Clearer dates/times</label>
+            <label class="feedback-choice"><input type="radio" name="question2" value="faster_reminders"> Faster reminders</label>
+            <label class="feedback-choice"><input type="radio" name="question2" value="more_event_info"> More event details</label>
+          </div>
+        </div>
+
+        <div class="feedback-question">
+          <label>3. Anything else we should improve for the next event?</label>
+          <textarea id="feedbackComment" name="question3" placeholder="Your open comment..." rows="4"></textarea>
+        </div>
+
+        <button type="submit" style="background: #27ae60; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer;">Submit Feedback Example</button>
+      </form>
+
+      <div class="feedback-email-sample" id="feedbackEmailSample">
+        <h3>Suggested Email with Clickable Answers</h3>
+        <p>Use this sample in your outreach to non-responders. Each answer is a direct link, and the last question is a comment field.</p>
+        <p><strong>1.</strong> How easy was it to understand the event details?<br>
+          <a href="#">Very easy</a> · <a href="#">Somewhat easy</a> · <a href="#">Hard</a>
+        </p>
+        <p><strong>2.</strong> What would make our planning faster for you?<br>
+          <a href="#">Clearer dates/times</a> · <a href="#">Faster reminders</a> · <a href="#">More event info</a>
+        </p>
+        <p><strong>3.</strong> Anything else we should improve?<br>
+          <em>Reply with a quick comment.</em>
+        </p>
+        <div class="feedback-email-actions">
+          <button type="button" onclick="copyFeedbackEmailSnippet()">Copy Sample Email</button>
+        </div>
+        <p class="feedback-note">Tip: In the real email, replace each link with a unique feedback endpoint so answers can be captured with one click.</p>
+      </div>
+    </section>
 
     <!-- Create Poll Tab -->
     <div id="create" class="tab-content active">
@@ -1172,6 +1314,20 @@
         errorMsg.style.display = 'block';
         setTimeout(() => errorMsg.style.display = 'none', 5000);
       }
+    }
+
+    document.getElementById('feedbackForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      showMessage('This feedback form is a sample layout for non-responders. Use the email links above to collect one-click answers.', 'success');
+    });
+
+    function copyFeedbackEmailSnippet() {
+      const sampleText = `Feedback request for non-responders:\n\n1) How easy was it to understand the event details?\n- Very easy: https://example.com/feedback?question=1&answer=very_easy\n- Somewhat easy: https://example.com/feedback?question=1&answer=somewhat_easy\n- Hard: https://example.com/feedback?question=1&answer=hard\n\n2) What would make our planning smoother?\n- Clearer dates/times: https://example.com/feedback?question=2&answer=clearer_dates\n- Faster reminders: https://example.com/feedback?question=2&answer=faster_reminders\n- More event info: https://example.com/feedback?question=2&answer=more_event_info\n\n3) Anything else we should improve?\nPlease reply with a quick comment.\n\nThank you for helping us improve!`;
+      navigator.clipboard.writeText(sampleText).then(() => {
+        showMessage('Sample feedback email text copied to clipboard.', 'success');
+      }).catch(() => {
+        showMessage('Unable to copy sample email text. Please select and copy manually.', 'error');
+      });
     }
 
     function showSuccessModal(pollData, formData) {
