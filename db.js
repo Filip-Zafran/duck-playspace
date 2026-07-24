@@ -49,6 +49,7 @@ export async function initializeDatabase() {
         important_section TEXT,
         faq_link VARCHAR(500),
         faq_title VARCHAR(255) DEFAULT 'Read the FAQs',
+        is_closed BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
@@ -60,7 +61,8 @@ export async function initializeDatabase() {
       { column: 'important_section', type: 'TEXT' },
       { column: 'faq_link', type: 'VARCHAR(500)' },
       { column: 'faq_title', type: 'VARCHAR(255)' },
-      { column: 'location', type: 'VARCHAR(255)' }
+      { column: 'location', type: 'VARCHAR(255)' },
+      { column: 'is_closed', type: 'BOOLEAN DEFAULT FALSE' }
     ];
 
     for (const { column, type } of columnChecks) {

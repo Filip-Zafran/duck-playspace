@@ -338,6 +338,27 @@ app.delete('/api/polls/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Manually close a poll without deleting its votes or results
+app.patch('/api/polls/:id/close', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = getPool();
+    const result = await pool.query(
+      'UPDATE polls SET is_closed = TRUE WHERE id = $1 RETURNING id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Poll not found' });
+    }
+
+    res.json({ id, message: 'Poll closed successfully' });
+  } catch (error) {
+    console.error('Error closing poll:', error);
+    res.status(500).json({ error: 'Failed to close poll' });
+  }
+});
+
 // Extend poll deadline
 app.patch('/api/polls/:id', requireAuth, async (req, res) => {
   try {
@@ -426,6 +447,7 @@ app.get('/api/vote/:pollId', async (req, res) => {
       date3: poll.date3,
       time3: poll.time3,
       timer_end: poll.timer_end,
+      is_closed: poll.is_closed,
       location: poll.location,
       about_section: poll.about_section,
       participation_section: poll.participation_section,
@@ -462,6 +484,10 @@ app.post('/api/vote/:pollId', async (req, res) => {
     }
 
     const poll = pollResult.rows[0];
+    if (poll.is_closed) {
+      return res.status(400).json({ error: 'Voting has ended' });
+    }
+
     if (poll.timer_end && new Date() > new Date(poll.timer_end)) {
       return res.status(400).json({ error: 'Voting has ended' });
     }

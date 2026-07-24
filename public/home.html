@@ -177,22 +177,19 @@
         if (!response.ok) return;
 
         const polls = await response.json();
-        const now = new Date();
-        const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-
-        // Filter polls with active timers created within last 2 weeks
-        const activePolls = polls.filter(poll => {
-          if (!poll.timer_end) return false;
-          const timerEnd = new Date(poll.timer_end);
-          const createdAt = new Date(poll.created_at);
-          return timerEnd > now && createdAt > twoWeeksAgo;
-        }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-        if (activePolls.length === 0) return;
+        // Polls stay visible until an admin closes them manually.
+        const activePolls = polls
+          .filter(poll => !poll.is_closed)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         const section = document.getElementById('activePollsSection');
         const container = document.getElementById('activePollsContainer');
         container.innerHTML = '';
+
+        if (activePolls.length === 0) {
+          section.style.display = 'none';
+          return;
+        }
 
         activePolls.forEach(async poll => {
           try {
@@ -232,8 +229,9 @@
                   ${formatPollOptionWithVoters('Can\'t make it on these dates', null, null, poll.counts.none || 0, maxVotes, getMostVotedClass(poll.counts.none || 0), votesByChoice.none)}
                 </div>
               </div>
-              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+              <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
                 <a href="/poll-vote?token=${poll.id}" style="color: #667eea; font-weight: 600; text-decoration: none; font-size: 0.9rem;">Vote Now →</a>
+                <button type="button" onclick="closePoll('${poll.id}')" style="background: none; border: none; color: #e74c3c; font-weight: 600; cursor: pointer; font-size: 0.9rem; padding: 0;">Close Poll</button>
               </div>
             `;
             container.appendChild(pollCard);
@@ -245,6 +243,29 @@
         section.style.display = 'block';
       } catch (error) {
         console.error('Error loading active polls:', error);
+      }
+    }
+
+    async function closePoll(pollId) {
+      if (!confirm('Are you sure you want to close this poll? It will be removed from the Home page and no longer accept votes.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/polls/${pollId}/close`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.error || 'Failed to close poll');
+        }
+
+        await loadActivePolls();
+      } catch (error) {
+        console.error('Error closing poll:', error);
+        alert(error.message);
       }
     }
 
