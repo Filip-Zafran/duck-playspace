@@ -107,6 +107,18 @@ app.get('/poll-results', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'poll-results.html'));
 });
 
+app.get('/feedback', (req, res) => {
+  if (!req.session.authenticated) {
+    res.redirect('/');
+  } else {
+    res.sendFile(path.join(__dirname, 'public', 'feedback.html'));
+  }
+});
+
+app.get('/feedback-response', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'feedback-response.html'));
+});
+
 app.get('/upload-data', (req, res) => {
   if (!req.session.authenticated) {
     res.redirect('/');
@@ -396,6 +408,224 @@ app.patch('/api/polls/:id', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error extending poll deadline:', error);
     res.status(500).json({ error: 'Failed to extend deadline' });
+  }
+});
+
+// ===== API: Feedback =====
+
+app.post('/api/feedback', requireAuth, async (req, res) => {
+  try {
+    const { title, description, is_anonymous, questions, timer_minutes } = req.body;
+    if (!title || !Array.isArray(questions) || questions.length === 0) {
+      return res.status(400).json({ error: 'A title and at least one question are required' });
+    }
+
+    const allowedTypes = ['text', 'rating', 'yes_no', 'multiple_select', 'checkbox'];
+    const cleanQuestions = questions.map((question, index) => ({
+      id: `q${index + 1}`,
+      text: String(question.text || '').trim(),
+      type: allowedTypes.includes(question.type) ? question.type : 'text',
+      required: Boolean(question.required),
+      options: question.type === 'multiple_select'
+        ? (Array.isArray(question.options) ? question.options : [])
+            .map(option => String(option).trim())
+            .filter(Boolean)
+        : []
+    }));
+
+    if (cleanQuestions.some(question => !question.text)) {
+      return res.status(400).json({ error: 'Every question must have text' });
+    }
+    if (cleanQuestions.some(question => question.type === 'multiple_select' && question.options.length < 2)) {
+      return res.status(400).json({ error: 'Multiple-select questions need at least two options' });
+    }
+
+    const feedbackId = uuidv4();
+    const timerMinutes = Number(timer_minutes);
+    const timerEnd = Number.isFinite(timerMinutes) && timerMinutes > 0
+      ? new Date(Date.now() + timerMinutes * 60000)
+      : null;
+    const pool = getPool();
+
+    await pool.query(
+      `INSERT INTO feedback_forms (id, title, description, is_anonymous, questions, timer_end)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6)`,
+      [feedbackId, title.trim(), description?.trim() || null, Boolean(is_anonymous), JSON.stringify(cleanQuestions), timerEnd]
+    );
+
+    const origin = `${req.protocol}://${req.get('host')}`;
+    res.json({
+      id: feedbackId,
+      response_url: `${origin}/feedback-response?token=${feedbackId}`
+    });
+  } catch (error) {
+    console.error('Error creating feedback form:', error);
+    res.status(500).json({ error: 'Failed to create feedback form' });
+  }
+});
+
+app.get('/api/feedback', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query(`
+      SELECT f.*, COUNT(r.id)::int AS response_count
+      FROM feedback_forms f
+      LEFT JOIN feedback_responses r ON r.feedback_id = f.id
+      GROUP BY f.id
+      ORDER BY f.created_at DESC
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching feedback forms:', error);
+    res.status(500).json({ error: 'Failed to fetch feedback forms' });
+  }
+});
+
+app.get('/api/feedback/:id/results', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const formResult = await pool.query('SELECT * FROM feedback_forms WHERE id = $1', [req.params.id]);
+    if (formResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Feedback form not found' });
+    }
+    const responsesResult = await pool.query(
+      `SELECT id, respondent_name, respondent_email, answers, submitted_at
+       FROM feedback_responses WHERE feedback_id = $1 ORDER BY submitted_at DESC`,
+      [req.params.id]
+    );
+    res.json({ form: formResult.rows[0], responses: responsesResult.rows });
+  } catch (error) {
+    console.error('Error fetching feedback results:', error);
+    res.status(500).json({ error: 'Failed to fetch feedback results' });
+  }
+});
+
+app.patch('/api/feedback/:id/close', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query(
+      'UPDATE feedback_forms SET is_closed = TRUE WHERE id = $1 RETURNING id',
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Feedback form not found' });
+    }
+    res.json({ message: 'Feedback form closed' });
+  } catch (error) {
+    console.error('Error closing feedback form:', error);
+    res.status(500).json({ error: 'Failed to close feedback form' });
+  }
+});
+
+app.delete('/api/feedback/:id', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query('DELETE FROM feedback_forms WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Feedback form not found' });
+    }
+    res.json({ message: 'Feedback form deleted' });
+  } catch (error) {
+    console.error('Error deleting feedback form:', error);
+    res.status(500).json({ error: 'Failed to delete feedback form' });
+  }
+});
+
+app.get('/api/public-feedback/:id', async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query(
+      `SELECT id, title, description, is_anonymous, questions, timer_end, is_closed
+       FROM feedback_forms WHERE id = $1`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Feedback form not found' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching public feedback form:', error);
+    res.status(500).json({ error: 'Failed to fetch feedback form' });
+  }
+});
+
+app.post('/api/public-feedback/:id/responses', async (req, res) => {
+  try {
+    const pool = getPool();
+    const formResult = await pool.query('SELECT * FROM feedback_forms WHERE id = $1', [req.params.id]);
+    if (formResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Feedback form not found' });
+    }
+
+    const form = formResult.rows[0];
+    if (form.is_closed || (form.timer_end && new Date() > new Date(form.timer_end))) {
+      return res.status(400).json({ error: 'This feedback form is closed' });
+    }
+
+    const { respondent_name, respondent_email, answers } = req.body;
+    if (!form.is_anonymous && (!respondent_name?.trim() || !respondent_email?.trim())) {
+      return res.status(400).json({ error: 'Name and email are required' });
+    }
+    if (!answers || typeof answers !== 'object' || Array.isArray(answers)) {
+      return res.status(400).json({ error: 'Answers are required' });
+    }
+
+    const questions = form.questions || [];
+    const cleanAnswers = {};
+    for (const question of questions) {
+      const answer = answers[question.id];
+      if (question.type === 'multiple_select') {
+        if (answer !== undefined && !Array.isArray(answer)) {
+          return res.status(400).json({ error: `Invalid answer for "${question.text}"` });
+        }
+        const selected = answer || [];
+        if (selected.some(option => !question.options.includes(option))) {
+          return res.status(400).json({ error: `Invalid option selected for "${question.text}"` });
+        }
+        const otherOption = question.options.find(option => option.toLowerCase() === 'other');
+        if (otherOption && selected.includes(otherOption)) {
+          const otherText = String(answers[`${question.id}_other`] || '').trim();
+          if (!otherText) {
+            return res.status(400).json({ error: `Please specify the "Other" answer for "${question.text}"` });
+          }
+          cleanAnswers[question.id] = selected.map(option =>
+            option === otherOption ? `Other: ${otherText}` : option
+          );
+        } else {
+          cleanAnswers[question.id] = selected;
+        }
+      } else if (question.type === 'checkbox') {
+        cleanAnswers[question.id] = answer === true;
+      } else {
+        cleanAnswers[question.id] = answer === undefined ? '' : String(answer);
+      }
+    }
+
+    const missingRequired = questions.some(question => {
+      if (!question.required) return false;
+      const answer = cleanAnswers[question.id];
+      if (question.type === 'multiple_select') return !Array.isArray(answer) || answer.length === 0;
+      if (question.type === 'checkbox') return answer !== true;
+      return answer === undefined || String(answer).trim() === '';
+    });
+    if (missingRequired) {
+      return res.status(400).json({ error: 'Please answer all required questions' });
+    }
+
+    await pool.query(
+      `INSERT INTO feedback_responses (feedback_id, respondent_name, respondent_email, answers)
+       VALUES ($1, $2, $3, $4::jsonb)`,
+      [
+        req.params.id,
+        form.is_anonymous ? null : respondent_name.trim(),
+        form.is_anonymous ? null : respondent_email.trim(),
+        JSON.stringify(cleanAnswers)
+      ]
+    );
+    res.json({ message: 'Thank you for your feedback!' });
+  } catch (error) {
+    console.error('Error saving feedback response:', error);
+    res.status(500).json({ error: 'Failed to save feedback' });
   }
 });
 

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .content { width: 100%; max-width: 100%; }
+    .panel { background: #f8f9fa; padding: 30px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #e5e7eb; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 6px; font: inherit; background: white;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .question-row { display: grid; grid-template-columns: 1fr 160px auto auto; gap: 10px; align-items: center; margin-bottom: 10px; }
+    .question-options { display: none; grid-column: 1 / -1; }
+    .switch-row { display: flex; align-items: center; gap: 10px; padding: 12px; background: white; border-radius: 6px; }
+    .switch-row label { margin: 0; }
+    button { border: none; border-radius: 6px; padding: 10px 16px; cursor: pointer; font-weight: 700; }
+    .primary { background: #667eea; color: white; }
+    .secondary { background: #e5e7eb; color: #333; }
+    .danger { background: #e74c3c; color: white; }
+    .small { padding: 7px 10px; font-size: 12px; }
+    .feedback-table { width: 100%; border-collapse: collapse; background: white; }
+    .feedback-table th, .feedback-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
+    .feedback-table th { background: #f8f9fa; }
+    .actions { display: flex; gap: 7px; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: #e8ecff; color: #4f46e5; }
+    .badge.closed { background: #fee2e2; color: #991b1b; }
+    .message { display: none; margin-bottom: 20px; padding: 12px; border-radius: 6px; }
+    .message.success { display: block; color: #155724; background: #d4edda; }
+    .message.error { display: block; color: #721c24; background: #f8d7da; }
+    .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; padding: 30px; overflow: auto; }
+    .modal-card { background: white; max-width: 900px; margin: 30px auto; border-radius: 12px; padding: 28px; }
+    .modal-header { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 20px; }
+    .response-card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
+    .answer { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-top: 6px; white-space: pre-wrap; }
+    .html-box { width: 100%; min-height: 190px; font-family: monospace; font-size: 12px; }
+    @media (max-width: 800px) {
+      .form-row, .question-row { grid-template-columns: 1fr; }
+      .feedback-table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-bg grid-bg"></div>
+    <div class="container">
+      <header class="header">
+        <div>
+          <div style="display:flex;align-items:center;gap:1rem">
+            <img src="images/DDA-logo.png" alt="DDA Logo" style="height:50px;width:auto">
+            <h1>Duck Playspace</h1>
+          </div>
+          <div class="header-subtitle">Feedback Management</div>
+        </div>
+        <div style="display:flex;gap:1rem;align-items:center">
+          <a href="/dashboard" class="btn btn-primary" style="padding:8px 16px;text-decoration:none;font-weight:600;border-radius:5px">Dashboard</a>
+          <button id="logoutBtn" class="btn btn-logout">Logout</button>
+        </div>
+      </header>
+
+      <nav class="navbar">
+        <a href="/home" class="nav-link">Home</a>
+        <a href="/upload-data" class="nav-link">Upload Data</a>
+        <a href="/data-filters" class="nav-link">Data</a>
+        <a href="/groups" class="nav-link">Groups</a>
+        <a href="/events" class="nav-link">Events</a>
+        <a href="/poll" class="nav-link">Polls</a>
+        <a href="/feedback" class="nav-link active">Feedback</a>
+        <a href="/communication" class="nav-link">Communication</a>
+      </nav>
+
+      <main class="content">
+        <div id="message" class="message"></div>
+        <section class="panel">
+          <h2 style="margin-bottom:20px">Create Custom Feedback Form</h2>
+          <form id="feedbackForm">
+            <div class="form-group">
+              <label for="title">Title *</label>
+              <input id="title" type="text" required placeholder="How was your Duck Playspace event?">
+            </div>
+            <div class="form-group">
+              <label for="description">Description text</label>
+              <textarea id="description" placeholder="Tell participants what kind of feedback you are looking for."></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="timerMinutes">Timer in minutes</label>
+                <input id="timerMinutes" type="number" min="1" placeholder="Leave empty for no timer">
+              </div>
+              <div class="form-group">
+                <label>Response identity</label>
+                <div class="switch-row">
+                  <input id="isAnonymous" type="checkbox" checked>
+                  <label for="isAnonymous">Anonymous responses</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <label style="margin:0">Questions *</label>
+                <button type="button" class="secondary small" onclick="addQuestion()">+ Add question</button>
+              </div>
+              <div id="questions"></div>
+            </div>
+            <button class="primary" type="submit">Create Feedback Form</button>
+          </form>
+        </section>
+
+        <section class="panel">
+          <h2 style="margin-bottom:20px">Your Feedback Forms</h2>
+          <div id="feedbackList">Loading feedback forms...</div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="htmlModal" class="modal">
+    <div class="modal-card">
+      <div class="modal-header"><h2>Copy HTML Text</h2><button class="secondary" onclick="closeModal('htmlModal')">Close</button></div>
+      <p style="margin-bottom:12px;color:#666">Paste this HTML into your email or communication tool.</p>
+      <textarea id="htmlOutput" class="html-box" readonly></textarea>
+      <button class="primary" style="margin-top:12px" onclick="copyHtml()">Copy HTML</button>
+    </div>
+  </div>
+
+  <div id="resultsModal" class="modal">
+    <div class="modal-card">
+      <div class="modal-header"><h2 id="resultsTitle">Feedback Results</h2><button class="secondary" onclick="closeModal('resultsModal')">Close</button></div>
+      <div id="resultsContent"></div>
+    </div>
+  </div>
+
+  <script>
+    const questionsContainer = document.getElementById('questions');
+    let forms = [];
+
+    function addQuestion(question = {}) {
+      const row = document.createElement('div');
+      row.className = 'question-row';
+      row.innerHTML = `
+        <input class="question-text" type="text" required placeholder="Your feedback question" value="${escapeAttribute(question.text || '')}">
+        <select class="question-type">
+          <option value="text">Written answer</option>
+          <option value="rating">Rating (1–5)</option>
+          <option value="yes_no">Yes / No</option>
+          <option value="multiple_select">Multiple select</option>
+          <option value="checkbox">Single checkbox</option>
+        </select>
+        <label style="display:flex;gap:5px;align-items:center;margin:0;font-size:13px"><input class="question-required" type="checkbox" ${question.required === false ? '' : 'checked'}> Required</label>
+        <button type="button" class="danger small" onclick="this.parentElement.remove()">Remove</button>
+        <input class="question-options" type="text" placeholder="Options separated by commas, e.g. Music, Venue, Food" value="${escapeAttribute((question.options || []).join(', '))}">
+      `;
+      const typeSelect = row.querySelector('.question-type');
+      typeSelect.value = question.type || 'text';
+      const updateOptionsVisibility = () => {
+        row.querySelector('.question-options').style.display = typeSelect.value === 'multiple_select' ? 'block' : 'none';
+      };
+      typeSelect.addEventListener('change', updateOptionsVisibility);
+      updateOptionsVisibility();
+      questionsContainer.appendChild(row);
+    }
+
+    addQuestion();
+
+    document.getElementById('feedbackForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      const questions = [...document.querySelectorAll('.question-row')].map(row => ({
+        text: row.querySelector('.question-text').value.trim(),
+        type: row.querySelector('.question-type').value,
+        required: row.querySelector('.question-required').checked,
+        options: row.querySelector('.question-options').value.split(',').map(option => option.trim()).filter(Boolean)
+      }));
+      if (!questions.length) return showMessage('Add at least one question.', 'error');
+
+      try {
+        const response = await fetch('/api/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: document.getElementById('title').value,
+            description: document.getElementById('description').value,
+            timer_minutes: document.getElementById('timerMinutes').value,
+            is_anonymous: document.getElementById('isAnonymous').checked,
+            questions
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not create feedback form');
+        showMessage('Feedback form created successfully.', 'success');
+        event.target.reset();
+        document.getElementById('isAnonymous').checked = true;
+        questionsContainer.innerHTML = '';
+        addQuestion();
+        await loadForms();
+        showHtml(data.id);
+      } catch (error) {
+        showMessage(error.message, 'error');
+      }
+    });
+
+    async function loadForms() {
+      try {
+        const response = await fetch('/api/feedback');
+        if (!response.ok) throw new Error('Could not load feedback forms');
+        forms = await response.json();
+        renderForms();
+      } catch (error) {
+        document.getElementById('feedbackList').textContent = error.message;
+      }
+    }
+
+    function renderForms() {
+      const list = document.getElementById('feedbackList');
+      if (!forms.length) {
+        list.innerHTML = '<p style="color:#777">No feedback forms created yet.</p>';
+        return;
+      }
+      list.innerHTML = `
+        <table class="feedback-table">
+          <thead><tr><th>Title</th><th>Type</th><th>Timer</th><th>Responses</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${forms.map(form => `
+            <tr>
+              <td><strong>${escapeHtml(form.title)}</strong><br><small>${formatDate(form.created_at)}</small></td>
+              <td>${form.is_anonymous ? 'Anonymous' : 'Named'}</td>
+              <td>${form.timer_end ? formatDate(form.timer_end) : 'No timer'}</td>
+              <td>${form.response_count}</td>
+              <td><span class="badge ${form.is_closed ? 'closed' : ''}">${form.is_closed ? 'Closed' : isExpired(form) ? 'Expired' : 'Open'}</span></td>
+              <td><div class="actions">
+                <button class="primary small" onclick="showResults('${form.id}')">Results</button>
+                <button class="secondary small" onclick="showHtml('${form.id}')">Copy HTML</button>
+                <button class="secondary small" onclick="window.open('/feedback-response?token=${form.id}', '_blank')">Open</button>
+                ${form.is_closed ? '' : `<button class="secondary small" onclick="closeForm('${form.id}')">Close</button>`}
+                <button class="danger small" onclick="deleteForm('${form.id}')">Delete</button>
+              </div></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function showHtml(id) {
+      const form = forms.find(item => item.id === id);
+      if (!form) return;
+      const url = `${window.location.origin}/feedback-response?token=${id}`;
+      document.getElementById('htmlOutput').value =
+`<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#222;">
+  <h2 style="color:#667eea;">${escapeHtml(form.title)}</h2>
+  <p>${escapeHtml(form.description || 'We would love to hear your feedback.')}</p>
+  <a href="${url}" style="display:inline-block;background:#667eea;color:white;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:bold;">Share your feedback</a>
+</div>`;
+      document.getElementById('htmlModal').style.display = 'block';
+    }
+
+    async function showResults(id) {
+      try {
+        const response = await fetch(`/api/feedback/${id}/results`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not load results');
+        document.getElementById('resultsTitle').textContent = `${data.form.title} — Results`;
+        document.getElementById('resultsContent').innerHTML = data.responses.length
+          ? data.responses.map(item => `
+              <div class="response-card">
+                <div style="display:flex;justify-content:space-between;gap:15px">
+                  <strong>${data.form.is_anonymous ? 'Anonymous' : escapeHtml(item.respondent_name || 'Unknown')}</strong>
+                  <small>${formatDate(item.submitted_at)}</small>
+                </div>
+                ${data.form.is_anonymous ? '' : `<small>${escapeHtml(item.respondent_email || '')}</small>`}
+                ${(data.form.questions || []).map(question => `
+                  <div style="margin-top:12px"><strong>${escapeHtml(question.text)}</strong>
+                  <div class="answer">${formatAnswer(item.answers?.[question.id])}</div></div>`).join('')}
+              </div>`).join('')
+          : '<p>No responses yet.</p>';
+        document.getElementById('resultsModal').style.display = 'block';
+      } catch (error) {
+        showMessage(error.message, 'error');
+      }
+    }
+
+    async function closeForm(id) {
+      if (!confirm('Close this feedback form? It will stop accepting new responses.')) return;
+      await mutate(`/api/feedback/${id}/close`, 'PATCH', 'Feedback form closed.');
+    }
+
+    async function deleteForm(id) {
+      if (!confirm('Delete this feedback form and all of its responses? This cannot be undone.')) return;
+      await mutate(`/api/feedback/${id}`, 'DELETE', 'Feedback form deleted.');
+    }
+
+    async function mutate(url, method, successMessage) {
+      try {
+        const response = await fetch(url, { method });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Action failed');
+        showMessage(successMessage, 'success');
+        await loadForms();
+      } catch (error) {
+        showMessage(error.message, 'error');
+      }
+    }
+
+    async function copyHtml() {
+      try {
+        await navigator.clipboard.writeText(document.getElementById('htmlOutput').value);
+        showMessage('HTML copied to clipboard.', 'success');
+      } catch {
+        document.getElementById('htmlOutput').select();
+        document.execCommand('copy');
+        showMessage('HTML copied to clipboard.', 'success');
+      }
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function isExpired(form) { return form.timer_end && new Date(form.timer_end) < new Date(); }
+    function formatDate(value) { return new Date(value).toLocaleString(); }
+    function showMessage(text, type) {
+      const message = document.getElementById('message');
+      message.textContent = text;
+      message.className = `message ${type}`;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = value ?? '';
+      return div.innerHTML;
+    }
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/"/g, '&quot;');
+    }
+    function formatAnswer(value) {
+      if (Array.isArray(value)) return value.length ? value.map(escapeHtml).join(', ') : 'No answer';
+      if (value === true) return 'Checked';
+      if (value === false) return 'Not checked';
+      return escapeHtml(String(value ?? 'No answer'));
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      const response = await fetch('/logout', { method: 'POST' });
+      const data = await response.json();
+      if (data.success) window.location.href = '/';
+    });
+    loadForms();
+  </script>
+</body>
+</html>

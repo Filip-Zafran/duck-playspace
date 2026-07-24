@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Share Feedback - Duck Playspace</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { align-items: flex-start; }
+    .feedback-shell { width: 100%; max-width: 760px; margin: 40px auto; padding: 20px; position: relative; z-index: 2; }
+    .feedback-card { background: white; border: 2px solid #667eea; border-radius: 16px; padding: 32px; box-shadow: 0 10px 35px rgba(0,0,0,.1); }
+    .brand { text-align: center; margin-bottom: 25px; }
+    .brand img { height: 60px; }
+    h1 { margin: 12px 0; font-size: 30px; }
+    .description { color: #555; line-height: 1.6; white-space: pre-wrap; }
+    .timer { background: #f0f2ff; color: #4338ca; border-radius: 8px; padding: 12px; text-align: center; font-weight: 800; margin: 20px 0; }
+    .question { margin: 25px 0; }
+    .question label { font-weight: 700; display: block; margin-bottom: 9px; }
+    textarea, input[type="text"], input[type="email"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font: inherit; }
+    textarea { min-height: 120px; resize: vertical; }
+    .choices { display: flex; flex-wrap: wrap; gap: 10px; }
+    .choice { display: flex; align-items: center; gap: 6px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; }
+    .other-input { display: none; margin-top: 10px; }
+    .submit { width: 100%; background: #667eea; color: white; padding: 14px; border: none; border-radius: 999px; font-weight: 900; font-size: 16px; cursor: pointer; }
+    .submit:disabled { opacity: .5; cursor: not-allowed; }
+    .notice { padding: 25px; text-align: center; border-radius: 10px; background: #f8f9fa; }
+    .error { color: #b91c1c; background: #fee2e2; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
+    .required { color: #e74c3c; }
+  </style>
+</head>
+<body>
+  <div class="page-bg grid-bg"></div>
+  <main class="feedback-shell">
+    <div id="app" class="feedback-card"><div class="notice">Loading feedback form...</div></div>
+  </main>
+  <script>
+    const token = new URLSearchParams(window.location.search).get('token');
+    let feedbackForm;
+    let timerInterval;
+
+    async function loadForm() {
+      if (!token) return renderError('Feedback form link is missing.');
+      try {
+        const response = await fetch(`/api/public-feedback/${token}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Feedback form not found');
+        feedbackForm = data;
+        renderForm();
+      } catch (error) {
+        renderError(error.message);
+      }
+    }
+
+    function renderForm() {
+      const expired = feedbackForm.timer_end && new Date(feedbackForm.timer_end) <= new Date();
+      if (feedbackForm.is_closed || expired) {
+        document.getElementById('app').innerHTML = brandHtml() + '<div class="notice"><h2>This feedback form is closed</h2><p>Thank you for your interest.</p></div>';
+        return;
+      }
+
+      document.getElementById('app').innerHTML = `
+        ${brandHtml()}
+        <h1>${escapeHtml(feedbackForm.title)}</h1>
+        <div class="description">${escapeHtml(feedbackForm.description || 'We would love to hear your feedback.')}</div>
+        ${feedbackForm.timer_end ? '<div id="timer" class="timer"></div>' : ''}
+        <div id="formError"></div>
+        <form id="responseForm">
+          ${feedbackForm.is_anonymous ? '<p style="margin-top:22px;color:#666;font-size:14px">Your response is anonymous.</p>' : `
+            <div class="question"><label for="respondentName">Name <span class="required">*</span></label><input id="respondentName" type="text" required></div>
+            <div class="question"><label for="respondentEmail">Email <span class="required">*</span></label><input id="respondentEmail" type="email" required></div>`}
+          ${(feedbackForm.questions || []).map(renderQuestion).join('')}
+          <button class="submit" type="submit">Submit Feedback</button>
+        </form>`;
+      document.getElementById('responseForm').addEventListener('submit', submitResponse);
+      setupOtherInputs();
+      if (feedbackForm.timer_end) startTimer();
+    }
+
+    function renderQuestion(question) {
+      const required = question.required ? 'required' : '';
+      const mark = question.required ? '<span class="required">*</span>' : '';
+      let input;
+      if (question.type === 'rating') {
+        input = `<div class="choices">${[1,2,3,4,5].map(number =>
+          `<label class="choice"><input type="radio" name="${question.id}" value="${number}" ${required}> ${number}</label>`).join('')}</div>`;
+      } else if (question.type === 'yes_no') {
+        input = `<div class="choices">
+          <label class="choice"><input type="radio" name="${question.id}" value="Yes" ${required}> Yes</label>
+          <label class="choice"><input type="radio" name="${question.id}" value="No" ${required}> No</label>
+        </div>`;
+      } else if (question.type === 'multiple_select') {
+        const hasOther = (question.options || []).some(option => option.toLowerCase() === 'other');
+        input = `<div class="choices">${(question.options || []).map(option =>
+          `<label class="choice"><input type="checkbox" name="${question.id}" value="${escapeAttribute(option)}" ${option.toLowerCase() === 'other' ? `data-other-target="${question.id}_other"` : ''}> ${escapeHtml(option)}</label>`).join('')}</div>
+          ${hasOther ? `<input class="other-input" id="${question.id}_other" name="${question.id}_other" type="text" placeholder="Please specify your other answer">` : ''}`;
+      } else if (question.type === 'checkbox') {
+        input = `<label class="choice"><input type="checkbox" name="${question.id}" value="true" ${required}> ${escapeHtml(question.text)} ${mark}</label>`;
+      } else {
+        input = `<textarea name="${question.id}" ${required}></textarea>`;
+      }
+      const questionLabel = question.type === 'checkbox' ? '' : `<label>${escapeHtml(question.text)} ${mark}</label>`;
+      return `<div class="question">${questionLabel}${input}</div>`;
+    }
+
+    async function submitResponse(event) {
+      event.preventDefault();
+      const answers = {};
+      for (const question of feedbackForm.questions || []) {
+        if (question.type === 'text') {
+          answers[question.id] = event.target.elements[question.id].value;
+        } else if (question.type === 'multiple_select') {
+          answers[question.id] = [...event.target.querySelectorAll(`input[name="${question.id}"]:checked`)].map(input => input.value);
+          const otherInput = event.target.elements[`${question.id}_other`];
+          if (otherInput) answers[`${question.id}_other`] = otherInput.value;
+        } else if (question.type === 'checkbox') {
+          answers[question.id] = event.target.querySelector(`input[name="${question.id}"]`).checked;
+        } else {
+          answers[question.id] = event.target.querySelector(`input[name="${question.id}"]:checked`)?.value || '';
+        }
+      }
+
+      try {
+        const response = await fetch(`/api/public-feedback/${token}/responses`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            respondent_name: feedbackForm.is_anonymous ? null : document.getElementById('respondentName').value,
+            respondent_email: feedbackForm.is_anonymous ? null : document.getElementById('respondentEmail').value,
+            answers
+          })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Could not submit feedback');
+        clearInterval(timerInterval);
+        document.getElementById('app').innerHTML = brandHtml() + `<div class="notice"><h2>Thank you!</h2><p>${escapeHtml(data.message)}</p></div>`;
+      } catch (error) {
+        document.getElementById('formError').innerHTML = `<div class="error">${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function startTimer() {
+      const update = () => {
+        const remaining = new Date(feedbackForm.timer_end) - new Date();
+        if (remaining <= 0) {
+          clearInterval(timerInterval);
+          renderForm();
+          return;
+        }
+        const hours = Math.floor(remaining / 3600000);
+        const minutes = Math.floor((remaining % 3600000) / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        document.getElementById('timer').textContent = `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
+      };
+      update();
+      timerInterval = setInterval(update, 1000);
+    }
+
+    function setupOtherInputs() {
+      document.querySelectorAll('input[type="checkbox"][data-other-target]').forEach(checkbox => {
+        const otherInput = document.getElementById(checkbox.dataset.otherTarget);
+        const update = () => {
+          otherInput.style.display = checkbox.checked ? 'block' : 'none';
+          otherInput.required = checkbox.checked;
+          if (!checkbox.checked) otherInput.value = '';
+        };
+        checkbox.addEventListener('change', update);
+        update();
+      });
+    }
+
+    function brandHtml() {
+      return '<div class="brand"><img src="images/DDA-logo.png" alt="Duck Dating Apps logo"><div style="font-weight:900;color:#ff5b92">Duck Playspace Feedback</div></div>';
+    }
+    function renderError(message) {
+      document.getElementById('app').innerHTML = brandHtml() + `<div class="error">${escapeHtml(message)}</div>`;
+    }
+    function escapeHtml(value) {
+      const div = document.createElement('div');
+      div.textContent = value ?? '';
+      return div.innerHTML;
+    }
+    function escapeAttribute(value) {
+      return escapeHtml(value).replace(/"/g, '&quot;');
+    }
+    loadForm();
+  </script>
+</body>
+</html>

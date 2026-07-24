@@ -92,6 +92,30 @@ export async function initializeDatabase() {
       )
     `);
 
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feedback_forms (
+        id VARCHAR(36) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        description TEXT,
+        is_anonymous BOOLEAN DEFAULT TRUE,
+        questions JSONB NOT NULL DEFAULT '[]'::jsonb,
+        timer_end TIMESTAMP,
+        is_closed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS feedback_responses (
+        id SERIAL PRIMARY KEY,
+        feedback_id VARCHAR(36) REFERENCES feedback_forms(id) ON DELETE CASCADE,
+        respondent_name VARCHAR(255),
+        respondent_email VARCHAR(255),
+        answers JSONB NOT NULL DEFAULT '{}'::jsonb,
+        submitted_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
     // Add missing columns if they don't exist
     const voteColumnChecks = [
       { column: 'location_choice', type: 'VARCHAR(255)' },
