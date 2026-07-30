@@ -119,6 +119,10 @@ app.get('/feedback-response', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'feedback-response.html'));
 });
 
+app.get('/feedback-results', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'feedback-results.html'));
+});
+
 app.get('/upload-data', (req, res) => {
   if (!req.session.authenticated) {
     res.redirect('/');
@@ -415,18 +419,18 @@ app.patch('/api/polls/:id', requireAuth, async (req, res) => {
 
 app.post('/api/feedback', requireAuth, async (req, res) => {
   try {
-    const { title, description, is_anonymous, questions, timer_minutes } = req.body;
+    const { title, description, event_name, submission_message, is_anonymous, questions, timer_minutes } = req.body;
     if (!title || !Array.isArray(questions) || questions.length === 0) {
       return res.status(400).json({ error: 'A title and at least one question are required' });
     }
 
-    const allowedTypes = ['text', 'rating', 'yes_no', 'multiple_select', 'checkbox'];
+    const allowedTypes = ['text', 'rating', 'yes_no', 'single_select', 'multiple_select', 'checkbox'];
     const cleanQuestions = questions.map((question, index) => ({
       id: `q${index + 1}`,
       text: String(question.text || '').trim(),
       type: allowedTypes.includes(question.type) ? question.type : 'text',
       required: Boolean(question.required),
-      options: question.type === 'multiple_select'
+      options: ['single_select', 'multiple_select'].includes(question.type)
         ? (Array.isArray(question.options) ? question.options : [])
             .map(option => String(option).trim())
             .filter(Boolean)
@@ -436,11 +440,12 @@ app.post('/api/feedback', requireAuth, async (req, res) => {
     if (cleanQuestions.some(question => !question.text)) {
       return res.status(400).json({ error: 'Every question must have text' });
     }
-    if (cleanQuestions.some(question => question.type === 'multiple_select' && question.options.length < 2)) {
-      return res.status(400).json({ error: 'Multiple-select questions need at least two options' });
+    if (cleanQuestions.some(question => ['single_select', 'multiple_select'].includes(question.type) && question.options.length < 2)) {
+      return res.status(400).json({ error: 'Choice questions need at least two options' });
     }
 
     const feedbackId = uuidv4();
+    const resultsShareToken = crypto.randomBytes(24).toString('hex');
     const timerMinutes = Number(timer_minutes);
     const timerEnd = Number.isFinite(timerMinutes) && timerMinutes > 0
       ? new Date(Date.now() + timerMinutes * 60000)
@@ -448,15 +453,19 @@ app.post('/api/feedback', requireAuth, async (req, res) => {
     const pool = getPool();
 
     await pool.query(
-      `INSERT INTO feedback_forms (id, title, description, is_anonymous, questions, timer_end)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6)`,
-      [feedbackId, title.trim(), description?.trim() || null, Boolean(is_anonymous), JSON.stringify(cleanQuestions), timerEnd]
+      `INSERT INTO feedback_forms
+       (id, title, description, event_name, submission_message, results_share_token, is_anonymous, questions, timer_end)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9)`,
+      [feedbackId, title.trim(), description?.trim() || null, event_name?.trim() || null,
+        submission_message?.trim() || null, resultsShareToken, true,
+        JSON.stringify(cleanQuestions), timerEnd]
     );
 
     const origin = `${req.protocol}://${req.get('host')}`;
     res.json({
       id: feedbackId,
-      response_url: `${origin}/feedback-response?token=${feedbackId}`
+      response_url: `${origin}/feedback-response?token=${feedbackId}`,
+      results_url: `${origin}/feedback-results?token=${resultsShareToken}`
     });
   } catch (error) {
     console.error('Error creating feedback form:', error);
@@ -500,6 +509,57 @@ app.get('/api/feedback/:id/results', requireAuth, async (req, res) => {
   }
 });
 
+app.get('/api/public-feedback-results/:token', async (req, res) => {
+  try {
+    const pool = getPool();
+    const formResult = await pool.query(
+      `SELECT * FROM feedback_forms WHERE results_share_token = $1`,
+      [req.params.token]
+    );
+    if (!formResult.rows.length) return res.status(404).json({ error: 'Results link not found' });
+    const form = formResult.rows[0];
+    const responsesResult = await pool.query(
+      `SELECT id, answers, submitted_at FROM feedback_responses
+       WHERE feedback_id = $1 ORDER BY submitted_at DESC`,
+      [form.id]
+    );
+    delete form.results_share_token;
+    res.json({ form, responses: responsesResult.rows });
+  } catch (error) {
+    console.error('Error fetching shared feedback results:', error);
+    res.status(500).json({ error: 'Failed to fetch results' });
+  }
+});
+
+app.get('/api/feedback/:id/export.xlsx', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const formResult = await pool.query('SELECT * FROM feedback_forms WHERE id = $1', [req.params.id]);
+    if (!formResult.rows.length) return res.status(404).json({ error: 'Feedback form not found' });
+    const form = formResult.rows[0];
+    const result = await pool.query(
+      'SELECT id, answers, submitted_at FROM feedback_responses WHERE feedback_id = $1 ORDER BY submitted_at',
+      [req.params.id]
+    );
+    const rows = result.rows.map((response, index) => {
+      const row = { 'Response #': index + 1, Submitted: response.submitted_at };
+      for (const question of form.questions || []) {
+        const value = response.answers?.[question.id];
+        row[question.text] = Array.isArray(value) ? value.join('; ') : (value ?? '');
+      }
+      return row;
+    });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), 'Responses');
+    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', `attachment; filename="duck-feedback-${req.params.id}.xlsx"`);
+    res.type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet').send(buffer);
+  } catch (error) {
+    console.error('Error exporting feedback:', error);
+    res.status(500).json({ error: 'Failed to export feedback' });
+  }
+});
+
 app.patch('/api/feedback/:id/close', requireAuth, async (req, res) => {
   try {
     const pool = getPool();
@@ -535,7 +595,7 @@ app.get('/api/public-feedback/:id', async (req, res) => {
   try {
     const pool = getPool();
     const result = await pool.query(
-      `SELECT id, title, description, is_anonymous, questions, timer_end, is_closed
+      `SELECT id, title, description, event_name, submission_message, is_anonymous, questions, timer_end, is_closed
        FROM feedback_forms WHERE id = $1`,
       [req.params.id]
     );
@@ -594,6 +654,12 @@ app.post('/api/public-feedback/:id/responses', async (req, res) => {
         } else {
           cleanAnswers[question.id] = selected;
         }
+      } else if (question.type === 'single_select') {
+        const selected = answer === undefined ? '' : String(answer);
+        if (selected && !question.options.includes(selected)) {
+          return res.status(400).json({ error: `Invalid option selected for "${question.text}"` });
+        }
+        cleanAnswers[question.id] = selected;
       } else if (question.type === 'checkbox') {
         cleanAnswers[question.id] = answer === true;
       } else {
@@ -622,7 +688,7 @@ app.post('/api/public-feedback/:id/responses', async (req, res) => {
         JSON.stringify(cleanAnswers)
       ]
     );
-    res.json({ message: 'Thank you for your feedback!' });
+    res.json({ message: form.submission_message || 'Thank you for your feedback!' });
   } catch (error) {
     console.error('Error saving feedback response:', error);
     res.status(500).json({ error: 'Failed to save feedback' });

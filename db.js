@@ -97,6 +97,9 @@ export async function initializeDatabase() {
         id VARCHAR(36) PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         description TEXT,
+        event_name VARCHAR(255),
+        submission_message TEXT,
+        results_share_token VARCHAR(64) UNIQUE,
         is_anonymous BOOLEAN DEFAULT TRUE,
         questions JSONB NOT NULL DEFAULT '[]'::jsonb,
         timer_end TIMESTAMP,
@@ -104,6 +107,21 @@ export async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    const feedbackColumnChecks = [
+      { column: 'event_name', type: 'VARCHAR(255)' },
+      { column: 'submission_message', type: 'TEXT' },
+      { column: 'results_share_token', type: 'VARCHAR(64) UNIQUE' }
+    ];
+    for (const { column, type } of feedbackColumnChecks) {
+      try {
+        await pool.query(`ALTER TABLE feedback_forms ADD COLUMN ${column} ${type}`);
+      } catch (err) {
+        if (!err.message.includes('already exists')) {
+          console.log(`Could not add feedback column ${column}: ${err.message}`);
+        }
+      }
+    }
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS feedback_responses (

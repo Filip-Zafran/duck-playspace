@@ -39,6 +39,11 @@
     .response-card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 12px; }
     .answer { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-top: 6px; white-space: pre-wrap; }
     .html-box { width: 100%; min-height: 190px; font-family: monospace; font-size: 12px; }
+    .chart { margin: 18px 0 24px; }
+    .chart-row { margin: 10px 0; }
+    .chart-label { display:flex; justify-content:space-between; gap:12px; font-size:13px; margin-bottom:4px; }
+    .chart-track { height:10px; background:#ebecef; border-radius:10px; overflow:hidden; }
+    .chart-fill { height:100%; background:linear-gradient(90deg,#f2c94c,#ef7192); border-radius:10px; }
     @media (max-width: 800px) {
       .form-row, .question-row { grid-template-columns: 1fr; }
       .feedback-table { display: block; overflow-x: auto; }
@@ -80,12 +85,26 @@
           <h2 style="margin-bottom:20px">Create Custom Feedback Form</h2>
           <form id="feedbackForm">
             <div class="form-group">
+              <label for="eventName">Event name / filter label *</label>
+              <input id="eventName" type="text" required value="Yesterday's Duck Dating Apps Meetup">
+            </div>
+            <div class="form-group">
               <label for="title">Title *</label>
-              <input id="title" type="text" required placeholder="How was your Duck Playspace event?">
+              <input id="title" type="text" required value="Thank You for Joining Yesterday's Duck Dating Apps Meetup!">
             </div>
             <div class="form-group">
               <label for="description">Description text</label>
-              <textarea id="description" placeholder="Tell participants what kind of feedback you are looking for."></textarea>
+              <textarea id="description">Thank you for joining yesterday's event!
+
+We're constantly improving the Duck Dating Apps experience, and your feedback helps us create better groups, better conversations and better events.
+
+This survey is completely anonymous and takes about one minute to complete.</textarea>
+            </div>
+            <div class="form-group">
+              <label for="submissionMessage">Message after submission</label>
+              <textarea id="submissionMessage">Thank you for helping us improve Duck Dating Apps!
+
+Your feedback directly influences future events, matching and new features. We hope to see you again soon. 🦆</textarea>
             </div>
             <div class="form-row">
               <div class="form-group">
@@ -95,8 +114,8 @@
               <div class="form-group">
                 <label>Response identity</label>
                 <div class="switch-row">
-                  <input id="isAnonymous" type="checkbox" checked>
-                  <label for="isAnonymous">Anonymous responses</label>
+                  <input id="isAnonymous" type="checkbox" checked disabled>
+                  <label for="isAnonymous">Always anonymous — no names or emails</label>
                 </div>
               </div>
             </div>
@@ -114,6 +133,10 @@
 
         <section class="panel">
           <h2 style="margin-bottom:20px">Your Feedback Forms</h2>
+          <div class="form-group" style="max-width:360px">
+            <label for="eventFilter">Filter by event</label>
+            <select id="eventFilter" onchange="renderForms()"><option value="">All events</option></select>
+          </div>
           <div id="feedbackList">Loading feedback forms...</div>
         </section>
       </main>
@@ -149,6 +172,7 @@
           <option value="text">Written answer</option>
           <option value="rating">Rating (1–5)</option>
           <option value="yes_no">Yes / No</option>
+          <option value="single_select">Single select</option>
           <option value="multiple_select">Multiple select</option>
           <option value="checkbox">Single checkbox</option>
         </select>
@@ -159,14 +183,23 @@
       const typeSelect = row.querySelector('.question-type');
       typeSelect.value = question.type || 'text';
       const updateOptionsVisibility = () => {
-        row.querySelector('.question-options').style.display = typeSelect.value === 'multiple_select' ? 'block' : 'none';
+        row.querySelector('.question-options').style.display = ['single_select', 'multiple_select'].includes(typeSelect.value) ? 'block' : 'none';
       };
       typeSelect.addEventListener('change', updateOptionsVisibility);
       updateOptionsVisibility();
       questionsContainer.appendChild(row);
     }
 
-    addQuestion();
+    const presetQuestions = [
+      { text: "Overall, how would you rate yesterday's event?", type: 'single_select', options: ['⭐⭐⭐⭐⭐ Excellent','⭐⭐⭐⭐ Good','⭐⭐⭐ Average','⭐⭐ Below expectations','⭐ Poor'] },
+      { text: 'Which part of the experience did you enjoy the most?', type: 'single_select', options: ['Meeting new people','The matching concept (The Jewel)','The conversations','The venue','The group size','The poly-focused atmosphere'] },
+      { text: 'Did the event feel well organised?', type: 'single_select', options: ['Yes, very organised','Mostly yes','It was okay','Somewhat confusing','No'] },
+      { text: 'Would you attend another Duck Dating Apps event?', type: 'single_select', options: ['Definitely','Probably','Maybe','Probably not','No'] },
+      { text: 'How accurately did the group match your expectations?', type: 'single_select', options: ['Perfect match','Better than expected','About what I expected','Somewhat different','Completely different'] },
+      { text: 'Which improvements would have made the event even better?', type: 'multiple_select', options: ['Smaller group','Larger group','More structured icebreakers','Moderator/facilitator','Longer event','Different venue','Better pre-event information','More time for introductions','Nothing, I liked it as it was'] },
+      { text: "Anything you'd like to tell us?", type: 'text', required: false }
+    ];
+    presetQuestions.forEach(addQuestion);
 
     document.getElementById('feedbackForm').addEventListener('submit', async event => {
       event.preventDefault();
@@ -185,6 +218,8 @@
           body: JSON.stringify({
             title: document.getElementById('title').value,
             description: document.getElementById('description').value,
+            event_name: document.getElementById('eventName').value,
+            submission_message: document.getElementById('submissionMessage').value,
             timer_minutes: document.getElementById('timerMinutes').value,
             is_anonymous: document.getElementById('isAnonymous').checked,
             questions
@@ -193,10 +228,6 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Could not create feedback form');
         showMessage('Feedback form created successfully.', 'success');
-        event.target.reset();
-        document.getElementById('isAnonymous').checked = true;
-        questionsContainer.innerHTML = '';
-        addQuestion();
         await loadForms();
         showHtml(data.id);
       } catch (error) {
@@ -209,6 +240,11 @@
         const response = await fetch('/api/feedback');
         if (!response.ok) throw new Error('Could not load feedback forms');
         forms = await response.json();
+        const filter = document.getElementById('eventFilter');
+        const selected = filter.value;
+        filter.innerHTML = '<option value="">All events</option>' + [...new Set(forms.map(form => form.event_name || form.title))]
+          .map(name => `<option value="${escapeAttribute(name)}">${escapeHtml(name)}</option>`).join('');
+        filter.value = selected;
         renderForms();
       } catch (error) {
         document.getElementById('feedbackList').textContent = error.message;
@@ -217,22 +253,26 @@
 
     function renderForms() {
       const list = document.getElementById('feedbackList');
-      if (!forms.length) {
+      const eventFilter = document.getElementById('eventFilter').value;
+      const visibleForms = eventFilter ? forms.filter(form => (form.event_name || form.title) === eventFilter) : forms;
+      if (!visibleForms.length) {
         list.innerHTML = '<p style="color:#777">No feedback forms created yet.</p>';
         return;
       }
       list.innerHTML = `
         <table class="feedback-table">
-          <thead><tr><th>Title</th><th>Type</th><th>Timer</th><th>Responses</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>${forms.map(form => `
+          <thead><tr><th>Event</th><th>Privacy</th><th>Timer</th><th>Responses</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody>${visibleForms.map(form => `
             <tr>
-              <td><strong>${escapeHtml(form.title)}</strong><br><small>${formatDate(form.created_at)}</small></td>
-              <td>${form.is_anonymous ? 'Anonymous' : 'Named'}</td>
+              <td><strong>${escapeHtml(form.event_name || form.title)}</strong><br><small>${formatDate(form.created_at)}</small></td>
+              <td>🔒 Anonymous</td>
               <td>${form.timer_end ? formatDate(form.timer_end) : 'No timer'}</td>
               <td>${form.response_count}</td>
               <td><span class="badge ${form.is_closed ? 'closed' : ''}">${form.is_closed ? 'Closed' : isExpired(form) ? 'Expired' : 'Open'}</span></td>
               <td><div class="actions">
                 <button class="primary small" onclick="showResults('${form.id}')">Results</button>
+                <button class="secondary small" onclick="copyResultsLink('${form.id}')">Share results</button>
+                <button class="secondary small" onclick="location.href='/api/feedback/${form.id}/export.xlsx'">Export Excel</button>
                 <button class="secondary small" onclick="showHtml('${form.id}')">Copy HTML</button>
                 <button class="secondary small" onclick="window.open('/feedback-response?token=${form.id}', '_blank')">Open</button>
                 ${form.is_closed ? '' : `<button class="secondary small" onclick="closeForm('${form.id}')">Close</button>`}
@@ -262,11 +302,12 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Could not load results');
         document.getElementById('resultsTitle').textContent = `${data.form.title} — Results`;
-        document.getElementById('resultsContent').innerHTML = data.responses.length
-          ? data.responses.map(item => `
+        const charts = (data.form.questions || []).filter(q => ['rating','yes_no','single_select','multiple_select'].includes(q.type)).map(q => renderChart(q, data.responses)).join('');
+        document.getElementById('resultsContent').innerHTML = `<p><strong>${data.responses.length}</strong> anonymous response${data.responses.length === 1 ? '' : 's'} · refreshes when reopened</p>${charts}<h3>Every anonymous response</h3>` + (data.responses.length
+          ? data.responses.map((item, index) => `
               <div class="response-card">
                 <div style="display:flex;justify-content:space-between;gap:15px">
-                  <strong>${data.form.is_anonymous ? 'Anonymous' : escapeHtml(item.respondent_name || 'Unknown')}</strong>
+                  <strong>Anonymous response ${data.responses.length - index}</strong>
                   <small>${formatDate(item.submitted_at)}</small>
                 </div>
                 ${data.form.is_anonymous ? '' : `<small>${escapeHtml(item.respondent_email || '')}</small>`}
@@ -274,11 +315,33 @@
                   <div style="margin-top:12px"><strong>${escapeHtml(question.text)}</strong>
                   <div class="answer">${formatAnswer(item.answers?.[question.id])}</div></div>`).join('')}
               </div>`).join('')
-          : '<p>No responses yet.</p>';
+          : '<p>No responses yet.</p>');
         document.getElementById('resultsModal').style.display = 'block';
       } catch (error) {
         showMessage(error.message, 'error');
       }
+    }
+
+    function renderChart(question, responses) {
+      const options = question.type === 'rating' ? ['5','4','3','2','1'] : (question.options || []);
+      const counts = Object.fromEntries(options.map(option => [option, 0]));
+      responses.forEach(response => {
+        const value = response.answers?.[question.id];
+        const values = Array.isArray(value) ? value : [value];
+        values.forEach(item => { if (item in counts) counts[item]++; });
+      });
+      return `<div class="chart"><strong>${escapeHtml(question.text)}</strong>${options.map(option => {
+        const count = counts[option] || 0;
+        const percent = responses.length ? Math.round(count / responses.length * 100) : 0;
+        return `<div class="chart-row"><div class="chart-label"><span>${escapeHtml(option)}</span><span>${percent}% (${count})</span></div><div class="chart-track"><div class="chart-fill" style="width:${percent}%"></div></div></div>`;
+      }).join('')}</div>`;
+    }
+
+    async function copyResultsLink(id) {
+      const form = forms.find(item => item.id === id);
+      const url = `${location.origin}/feedback-results?token=${form.results_share_token}`;
+      await navigator.clipboard.writeText(url);
+      showMessage('Shareable, read-only results link copied.', 'success');
     }
 
     async function closeForm(id) {

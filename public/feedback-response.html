@@ -1,188 +1,67 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Share Feedback - Duck Playspace</title>
-  <link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Event feedback · Duck Dating Apps</title>
   <style>
-    body { align-items: flex-start; }
-    .feedback-shell { width: 100%; max-width: 760px; margin: 40px auto; padding: 20px; position: relative; z-index: 2; }
-    .feedback-card { background: white; border: 2px solid #667eea; border-radius: 16px; padding: 32px; box-shadow: 0 10px 35px rgba(0,0,0,.1); }
-    .brand { text-align: center; margin-bottom: 25px; }
-    .brand img { height: 60px; }
-    h1 { margin: 12px 0; font-size: 30px; }
-    .description { color: #555; line-height: 1.6; white-space: pre-wrap; }
-    .timer { background: #f0f2ff; color: #4338ca; border-radius: 8px; padding: 12px; text-align: center; font-weight: 800; margin: 20px 0; }
-    .question { margin: 25px 0; }
-    .question label { font-weight: 700; display: block; margin-bottom: 9px; }
-    textarea, input[type="text"], input[type="email"] { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font: inherit; }
-    textarea { min-height: 120px; resize: vertical; }
-    .choices { display: flex; flex-wrap: wrap; gap: 10px; }
-    .choice { display: flex; align-items: center; gap: 6px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; padding: 10px 14px; }
-    .other-input { display: none; margin-top: 10px; }
-    .submit { width: 100%; background: #667eea; color: white; padding: 14px; border: none; border-radius: 999px; font-weight: 900; font-size: 16px; cursor: pointer; }
-    .submit:disabled { opacity: .5; cursor: not-allowed; }
-    .notice { padding: 25px; text-align: center; border-radius: 10px; background: #f8f9fa; }
-    .error { color: #b91c1c; background: #fee2e2; padding: 12px; border-radius: 8px; margin-bottom: 15px; }
-    .required { color: #e74c3c; }
+    :root{--ink:#24231f;--muted:#6e6b63;--cream:#fbfaf4;--card:#fff;--yellow:#f4c948;--pink:#eb7192;--line:#e8e3d7}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--cream);color:var(--ink);font:16px/1.5 Inter,ui-sans-serif,system-ui,sans-serif}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 8% 5%,#f7d45655,transparent 25%),radial-gradient(circle at 95% 35%,#ef8fa733,transparent 28%)}
+    main{position:relative;width:min(680px,calc(100% - 24px));margin:20px auto 60px}.hero{text-align:center;padding:24px 16px 20px}
+    .logo{width:82px;height:auto}.kicker{font-size:12px;font-weight:850;letter-spacing:.13em;text-transform:uppercase;color:#a34d67;margin-top:10px}
+    h1{font-size:clamp(28px,7vw,44px);line-height:1.08;margin:10px auto 16px;max-width:650px}.intro{color:var(--muted);max-width:590px;margin:auto;white-space:pre-line}.privacy{display:inline-flex;align-items:center;gap:7px;margin-top:16px;padding:8px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px;font-weight:700}
+    form{display:grid;gap:12px}.question{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;box-shadow:0 7px 28px #544b2d0c}.question-title{display:flex;gap:10px;font-weight:780;margin-bottom:14px}.number{color:#ad536c}
+    .choices{display:grid;gap:8px}.choice{position:relative;display:flex;align-items:center;gap:11px;border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;cursor:pointer;transition:.15s;background:#fff}.choice:hover{border-color:#d9a840;background:#fffdf5}.choice:has(input:checked){border-color:#dba831;background:#fff8dc;box-shadow:0 0 0 2px #f8d86c55}.choice input{accent-color:#c9772c;width:18px;height:18px;margin:0}
+    textarea{width:100%;min-height:145px;border:1.5px solid var(--line);border-radius:12px;padding:13px;font:inherit;resize:vertical;outline:0}textarea:focus{border-color:#dba831;box-shadow:0 0 0 3px #f8d86c44}.optional{color:var(--muted);font-weight:500;font-size:13px}
+    .submit{border:0;border-radius:999px;background:var(--ink);color:#fff;font:inherit;font-size:16px;font-weight:800;padding:16px 24px;margin-top:8px;cursor:pointer;box-shadow:0 8px 0 #e5b43a;transition:.15s}.submit:hover{transform:translateY(-2px);box-shadow:0 10px 0 #e5b43a}.submit:disabled{opacity:.55}
+    .notice,.error{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;text-align:center}.notice h2{font-size:30px;margin:6px 0}.duck{font-size:52px}.error{color:#a52929}.fine{text-align:center;color:var(--muted);font-size:12px;margin-top:15px}
+    @media(max-width:520px){main{margin-top:5px}.hero{padding-inline:8px}.question{padding:17px}.choice{padding:11px}h1{font-size:30px}}
   </style>
 </head>
 <body>
-  <div class="page-bg grid-bg"></div>
-  <main class="feedback-shell">
-    <div id="app" class="feedback-card"><div class="notice">Loading feedback form...</div></div>
-  </main>
-  <script>
-    const token = new URLSearchParams(window.location.search).get('token');
-    let feedbackForm;
-    let timerInterval;
-
-    async function loadForm() {
-      if (!token) return renderError('Feedback form link is missing.');
-      try {
-        const response = await fetch(`/api/public-feedback/${token}`);
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Feedback form not found');
-        feedbackForm = data;
-        renderForm();
-      } catch (error) {
-        renderError(error.message);
-      }
+<main id="app"><div class="notice">Loading your one-minute survey…</div></main>
+<script>
+  const token=new URLSearchParams(location.search).get('token');
+  let form;
+  const esc=v=>{const d=document.createElement('div');d.textContent=v??'';return d.innerHTML};
+  const attr=v=>esc(v).replace(/"/g,'&quot;');
+  function brand(){return `<section class="hero"><img class="logo" src="images/DDA-logo.png" alt="Duck Dating Apps"><div class="kicker">One-minute event check-in</div></section>`}
+  async function load(){
+    if(!token)return fail('This survey link is missing.');
+    try{const r=await fetch(`/api/public-feedback/${token}`),d=await r.json();if(!r.ok)throw Error(d.error);form=d;render()}catch(e){fail(e.message)}
+  }
+  function render(){
+    if(form.is_closed||(form.timer_end&&new Date(form.timer_end)<=new Date()))return fail('This survey is now closed. Thank you for your interest.');
+    document.getElementById('app').innerHTML=`${brand()}<section class="hero" style="padding-top:0"><h1>${esc(form.title)}</h1><div class="intro">${esc(form.description)}</div><div class="privacy">🔒 Completely anonymous · about 1 minute</div></section><form id="survey">${(form.questions||[]).map(question).join('')}<button class="submit">Send anonymous feedback →</button><div class="fine">No names, email addresses or identifying information are collected.</div></form>`;
+    document.getElementById('survey').addEventListener('submit',submit);
+  }
+  function question(q,i){
+    let input='';
+    if(q.type==='single_select'||q.type==='rating'||q.type==='yes_no'){
+      const opts=q.type==='rating'?['5','4','3','2','1']:(q.type==='yes_no'?['Yes','No']:(q.options||[]));
+      input=`<div class="choices">${opts.map(o=>`<label class="choice"><input type="radio" name="${q.id}" value="${attr(o)}" ${q.required?'required':''}><span>${esc(o)}</span></label>`).join('')}</div>`;
+    }else if(q.type==='multiple_select'){
+      input=`<div class="choices">${(q.options||[]).map(o=>`<label class="choice"><input type="checkbox" name="${q.id}" value="${attr(o)}"><span>${esc(o)}</span></label>`).join('')}</div>`;
+    }else if(q.type==='checkbox'){
+      input=`<label class="choice"><input type="checkbox" name="${q.id}" value="true" ${q.required?'required':''}><span>${esc(q.text)}</span></label>`;
+    }else input=`<textarea name="${q.id}" placeholder="We'd love to hear your honest feedback. What worked well? What didn't? Any ideas for improving the experience, the matching process or the app?" ${q.required?'required':''}></textarea>`;
+    const title=q.type==='checkbox'?'':`<div class="question-title"><span class="number">${String(i+1).padStart(2,'0')}</span><span>${esc(q.text)} ${q.required?'':'<span class="optional">Optional</span>'}</span></div>`;
+    return `<section class="question">${title}${input}</section>`;
+  }
+  async function submit(e){
+    e.preventDefault();const answers={};
+    for(const q of form.questions||[]){
+      if(q.type==='multiple_select')answers[q.id]=[...e.target.querySelectorAll(`[name="${q.id}"]:checked`)].map(x=>x.value);
+      else if(q.type==='checkbox')answers[q.id]=!!e.target.querySelector(`[name="${q.id}"]`)?.checked;
+      else if(q.type==='text')answers[q.id]=e.target.elements[q.id]?.value||'';
+      else answers[q.id]=e.target.querySelector(`[name="${q.id}"]:checked`)?.value||'';
     }
-
-    function renderForm() {
-      const expired = feedbackForm.timer_end && new Date(feedbackForm.timer_end) <= new Date();
-      if (feedbackForm.is_closed || expired) {
-        document.getElementById('app').innerHTML = brandHtml() + '<div class="notice"><h2>This feedback form is closed</h2><p>Thank you for your interest.</p></div>';
-        return;
-      }
-
-      document.getElementById('app').innerHTML = `
-        ${brandHtml()}
-        <h1>${escapeHtml(feedbackForm.title)}</h1>
-        <div class="description">${escapeHtml(feedbackForm.description || 'We would love to hear your feedback.')}</div>
-        ${feedbackForm.timer_end ? '<div id="timer" class="timer"></div>' : ''}
-        <div id="formError"></div>
-        <form id="responseForm">
-          ${feedbackForm.is_anonymous ? '<p style="margin-top:22px;color:#666;font-size:14px">Your response is anonymous.</p>' : `
-            <div class="question"><label for="respondentName">Name <span class="required">*</span></label><input id="respondentName" type="text" required></div>
-            <div class="question"><label for="respondentEmail">Email <span class="required">*</span></label><input id="respondentEmail" type="email" required></div>`}
-          ${(feedbackForm.questions || []).map(renderQuestion).join('')}
-          <button class="submit" type="submit">Submit Feedback</button>
-        </form>`;
-      document.getElementById('responseForm').addEventListener('submit', submitResponse);
-      setupOtherInputs();
-      if (feedbackForm.timer_end) startTimer();
-    }
-
-    function renderQuestion(question) {
-      const required = question.required ? 'required' : '';
-      const mark = question.required ? '<span class="required">*</span>' : '';
-      let input;
-      if (question.type === 'rating') {
-        input = `<div class="choices">${[1,2,3,4,5].map(number =>
-          `<label class="choice"><input type="radio" name="${question.id}" value="${number}" ${required}> ${number}</label>`).join('')}</div>`;
-      } else if (question.type === 'yes_no') {
-        input = `<div class="choices">
-          <label class="choice"><input type="radio" name="${question.id}" value="Yes" ${required}> Yes</label>
-          <label class="choice"><input type="radio" name="${question.id}" value="No" ${required}> No</label>
-        </div>`;
-      } else if (question.type === 'multiple_select') {
-        const hasOther = (question.options || []).some(option => option.toLowerCase() === 'other');
-        input = `<div class="choices">${(question.options || []).map(option =>
-          `<label class="choice"><input type="checkbox" name="${question.id}" value="${escapeAttribute(option)}" ${option.toLowerCase() === 'other' ? `data-other-target="${question.id}_other"` : ''}> ${escapeHtml(option)}</label>`).join('')}</div>
-          ${hasOther ? `<input class="other-input" id="${question.id}_other" name="${question.id}_other" type="text" placeholder="Please specify your other answer">` : ''}`;
-      } else if (question.type === 'checkbox') {
-        input = `<label class="choice"><input type="checkbox" name="${question.id}" value="true" ${required}> ${escapeHtml(question.text)} ${mark}</label>`;
-      } else {
-        input = `<textarea name="${question.id}" ${required}></textarea>`;
-      }
-      const questionLabel = question.type === 'checkbox' ? '' : `<label>${escapeHtml(question.text)} ${mark}</label>`;
-      return `<div class="question">${questionLabel}${input}</div>`;
-    }
-
-    async function submitResponse(event) {
-      event.preventDefault();
-      const answers = {};
-      for (const question of feedbackForm.questions || []) {
-        if (question.type === 'text') {
-          answers[question.id] = event.target.elements[question.id].value;
-        } else if (question.type === 'multiple_select') {
-          answers[question.id] = [...event.target.querySelectorAll(`input[name="${question.id}"]:checked`)].map(input => input.value);
-          const otherInput = event.target.elements[`${question.id}_other`];
-          if (otherInput) answers[`${question.id}_other`] = otherInput.value;
-        } else if (question.type === 'checkbox') {
-          answers[question.id] = event.target.querySelector(`input[name="${question.id}"]`).checked;
-        } else {
-          answers[question.id] = event.target.querySelector(`input[name="${question.id}"]:checked`)?.value || '';
-        }
-      }
-
-      try {
-        const response = await fetch(`/api/public-feedback/${token}/responses`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            respondent_name: feedbackForm.is_anonymous ? null : document.getElementById('respondentName').value,
-            respondent_email: feedbackForm.is_anonymous ? null : document.getElementById('respondentEmail').value,
-            answers
-          })
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || 'Could not submit feedback');
-        clearInterval(timerInterval);
-        document.getElementById('app').innerHTML = brandHtml() + `<div class="notice"><h2>Thank you!</h2><p>${escapeHtml(data.message)}</p></div>`;
-      } catch (error) {
-        document.getElementById('formError').innerHTML = `<div class="error">${escapeHtml(error.message)}</div>`;
-      }
-    }
-
-    function startTimer() {
-      const update = () => {
-        const remaining = new Date(feedbackForm.timer_end) - new Date();
-        if (remaining <= 0) {
-          clearInterval(timerInterval);
-          renderForm();
-          return;
-        }
-        const hours = Math.floor(remaining / 3600000);
-        const minutes = Math.floor((remaining % 3600000) / 60000);
-        const seconds = Math.floor((remaining % 60000) / 1000);
-        document.getElementById('timer').textContent = `Time remaining: ${hours}h ${minutes}m ${seconds}s`;
-      };
-      update();
-      timerInterval = setInterval(update, 1000);
-    }
-
-    function setupOtherInputs() {
-      document.querySelectorAll('input[type="checkbox"][data-other-target]').forEach(checkbox => {
-        const otherInput = document.getElementById(checkbox.dataset.otherTarget);
-        const update = () => {
-          otherInput.style.display = checkbox.checked ? 'block' : 'none';
-          otherInput.required = checkbox.checked;
-          if (!checkbox.checked) otherInput.value = '';
-        };
-        checkbox.addEventListener('change', update);
-        update();
-      });
-    }
-
-    function brandHtml() {
-      return '<div class="brand"><img src="images/DDA-logo.png" alt="Duck Dating Apps logo"><div style="font-weight:900;color:#ff5b92">Duck Playspace Feedback</div></div>';
-    }
-    function renderError(message) {
-      document.getElementById('app').innerHTML = brandHtml() + `<div class="error">${escapeHtml(message)}</div>`;
-    }
-    function escapeHtml(value) {
-      const div = document.createElement('div');
-      div.textContent = value ?? '';
-      return div.innerHTML;
-    }
-    function escapeAttribute(value) {
-      return escapeHtml(value).replace(/"/g, '&quot;');
-    }
-    loadForm();
-  </script>
+    const button=e.target.querySelector('button');button.disabled=true;button.textContent='Sending…';
+    try{const r=await fetch(`/api/public-feedback/${token}/responses`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({answers})}),d=await r.json();if(!r.ok)throw Error(d.error);document.getElementById('app').innerHTML=`${brand()}<div class="notice"><div class="duck">🦆</div><h2>Thank you!</h2><p>${esc(d.message)}</p></div>`;scrollTo(0,0)}catch(err){button.disabled=false;button.textContent='Send anonymous feedback →';alert(err.message)}
+  }
+  function fail(msg){document.getElementById('app').innerHTML=`${brand()}<div class="error">${esc(msg)}</div>`}
+  load();
+</script>
 </body>
 </html>
