@@ -247,6 +247,25 @@
       margin: 0;
     }
 
+    .feedback-choice input[type="text"] {
+      margin-left: 8px;
+      min-width: 200px;
+      border: 1px solid #c7d9f2;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 14px;
+      background: #f9fcff;
+    }
+
+    .feedback-other-input {
+      display: none;
+    }
+
+    .feedback-choice input[type="radio"]:checked + .feedback-other-input,
+    .feedback-other-input.active {
+      display: inline-flex;
+    }
+
     .feedback-email-sample {
       background: white;
       border: 1px solid #d8e9fb;
@@ -678,6 +697,7 @@
             <label class="feedback-choice"><input type="radio" name="question1" value="very_easy" required> Very easy</label>
             <label class="feedback-choice"><input type="radio" name="question1" value="somewhat_easy"> Somewhat easy</label>
             <label class="feedback-choice"><input type="radio" name="question1" value="hard"> Hard</label>
+            <label class="feedback-choice"><input type="radio" name="question1" value="other"> Other <input type="text" name="question1_other" class="feedback-other-input" placeholder="Please specify"></label>
           </div>
         </div>
 
@@ -687,12 +707,23 @@
             <label class="feedback-choice"><input type="radio" name="question2" value="clearer_dates"> Clearer dates/times</label>
             <label class="feedback-choice"><input type="radio" name="question2" value="faster_reminders"> Faster reminders</label>
             <label class="feedback-choice"><input type="radio" name="question2" value="more_event_info"> More event details</label>
+            <label class="feedback-choice"><input type="radio" name="question2" value="other"> Other <input type="text" name="question2_other" class="feedback-other-input" placeholder="Please specify"></label>
           </div>
         </div>
 
         <div class="feedback-question">
-          <label>3. Anything else we should improve for the next event?</label>
-          <textarea id="feedbackComment" name="question3" placeholder="Your open comment..." rows="4"></textarea>
+          <label>3. What was the reason you couldn’t respond?</label>
+          <div class="feedback-choices">
+            <label class="feedback-choice"><input type="radio" name="question3" value="busy_schedule" required> Busy schedule</label>
+            <label class="feedback-choice"><input type="radio" name="question3" value="not_interested"> Not interested</label>
+            <label class="feedback-choice"><input type="radio" name="question3" value="unclear_details"> Details were unclear</label>
+            <label class="feedback-choice"><input type="radio" name="question3" value="other"> Other <input type="text" name="question3_other" class="feedback-other-input" placeholder="Please specify"></label>
+          </div>
+        </div>
+
+        <div class="feedback-question">
+          <label>4. Anything else we should improve for the next event?</label>
+          <textarea id="feedbackComment" name="question4" placeholder="Your open comment..." rows="4"></textarea>
         </div>
 
         <button type="submit" style="background: #27ae60; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer;">Submit Feedback Example</button>
@@ -704,10 +735,13 @@
         <p><strong>1.</strong> How easy was it to understand the event details?<br>
           <a href="#">Very easy</a> · <a href="#">Somewhat easy</a> · <a href="#">Hard</a>
         </p>
-        <p><strong>2.</strong> What would make our planning faster for you?<br>
-          <a href="#">Clearer dates/times</a> · <a href="#">Faster reminders</a> · <a href="#">More event info</a>
+        <p><strong>2.</strong> What would make our planning process smoother for you?<br>
+          <a href="#">Clearer dates/times</a> · <a href="#">Faster reminders</a> · <a href="#">More event info</a> · <a href="#">Other</a>
         </p>
-        <p><strong>3.</strong> Anything else we should improve?<br>
+        <p><strong>3.</strong> What was the reason you couldn’t respond?<br>
+          <a href="#">Busy schedule</a> · <a href="#">Not interested</a> · <a href="#">Details were unclear</a> · <a href="#">Other</a>
+        </p>
+        <p><strong>4.</strong> Anything else we should improve?<br>
           <em>Reply with a quick comment.</em>
         </p>
         <div class="feedback-email-actions">
@@ -1320,6 +1354,23 @@
     document.getElementById('feedbackForm').addEventListener('submit', (event) => {
       event.preventDefault();
       showMessage('This feedback form is a sample layout for non-responders. Use the email links above to collect one-click answers.', 'success');
+    });
+
+    document.querySelectorAll('.feedback-choice input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', (event) => {
+        const group = event.target.name;
+        const inputs = document.querySelectorAll(`input[name="${group}_other"]`);
+        inputs.forEach(input => {
+          input.style.display = 'none';
+          input.value = '';
+        });
+
+        const otherInput = event.target.closest('.feedback-choice')?.querySelector('.feedback-other-input');
+        if (otherInput) {
+          otherInput.style.display = 'inline-flex';
+          otherInput.focus();
+        }
+      });
     });
 
     function copyFeedbackEmailSnippet() {
