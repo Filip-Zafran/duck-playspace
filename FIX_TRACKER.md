@@ -26,6 +26,7 @@ Last updated: 2026-10-07
 - [x] **Events availability labels.** Availability dropdowns now explain that A, B, and C are available choices (Options A–C), while D means not attending; stored values remain compatible with existing event data.
 - [x] **Events participant ordering.** Within each gender column, primary cards and backup lists sort by age ascending; ties put D (Not Attending) first, then sort by last attended-event timestamp oldest to newest, with no attendance record first. Sorting changes display order while preserving each participant’s saved slot assignment.
 - [x] **Events page load failure on activity API errors.** Activity timestamps now load as optional enrichment, so a failed activity request no longer prevents participant groups from rendering. Cast event dates to text in the activity query so date-typed legacy schemas can be sorted safely.
+- [x] **Events groups split by sexuality.** Every qualifying existing group now has separate Straight and LGBTQ+ participant sections and a page filter. Straight includes Straight and Bi/Pan; LGBTQ+ includes Gay, Lesbian, Queer, and Bi/Pan. Unmatched or missing sexuality labels remain visible under Other / Not specified; gender identity alone does not assign orientation.
 
 ## Remaining
 

@@ -567,6 +567,22 @@
       background: white;
     }
 
+    .orientation-filter {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 0 0 18px;
+      padding: 12px 14px;
+      background: #f5f6ff;
+      border: 1px solid #d7dcff;
+      border-radius: 8px;
+    }
+
+    .orientation-filter label { font-weight: 700; color: #333; }
+    .orientation-filter select { padding: 8px 10px; border: 1px solid #b8c2ff; border-radius: 6px; }
+    .orientation-filter-note { color: #666; font-size: 12px; }
+
     .event-group-content.collapsed {
       display: none;
       padding: 0 20px;
@@ -818,6 +834,16 @@
           </div>
 
           <div id="datesContent" style="display: none;">
+            <div class="orientation-filter">
+              <label for="orientationFilter">Show group:</label>
+              <select id="orientationFilter" onchange="setOrientationFilter(this.value)">
+                <option value="all">All orientations</option>
+                <option value="Straight">Straight only</option>
+                <option value="LGBTQ+">LGBTQ+ only</option>
+                <option value="Other / Not specified">Other / not specified only</option>
+              </select>
+              <span class="orientation-filter-note">Bi/Pan participants appear in both groups. Other or missing sexuality labels stay visible in their own section.</span>
+            </div>
             <div class="dates-container" id="datesContainer"></div>
             <div class="no-dates" id="noDates" style="display: none;">
               No valid events found. Regular groups need at least 6 women and 6 men; orientation groups need at least 12 people.
@@ -894,6 +920,7 @@
     let dates = {};
     let selections = {};
     let personData = {}; // { email: { paid: boolean, amount: number, availability: string } }
+    let selectedOrientationFilter = 'all';
 
     function saveToLocalStorage() {
       localStorage.setItem('selections', JSON.stringify(selections));
@@ -1002,6 +1029,21 @@
       return getAttendanceSortTime(a) - getAttendanceSortTime(b);
     }
 
+    function getOrientationFlags(person) {
+      const sexuality = String(person?.['Sexuality'] || person?.sexuality || '').toLowerCase();
+      const isBiOrPan = /\bbi(?:sexual)?\b|\bpan(?:sexual)?\b/.test(sexuality);
+      return {
+        straight: /\bstraight\b/.test(sexuality) || isBiOrPan,
+        lgbtq: /\bgay\b|\blesbian\b|\bqueer\b/.test(sexuality) || isBiOrPan,
+        other: !(/\bstraight\b/.test(sexuality) || isBiOrPan || /\bgay\b|\blesbian\b|\bqueer\b/.test(sexuality))
+      };
+    }
+
+    function setOrientationFilter(value) {
+      selectedOrientationFilter = value;
+      displayDates();
+    }
+
     function generateDates() {
       const dateGroups = {
         'Mono Long-Term': [],
@@ -1017,7 +1059,6 @@
       allData.forEach(person => {
         const relationshipStyle = person['Relationship Style'] || '';
         const mainIntention = person['Main Intention'] || '';
-        const gender = String(person['Gender'] || '');
         const sexuality = person['Sexuality'] || '';
 
         const isMono = relationshipStyle.toLowerCase().includes('mono');
@@ -1025,36 +1066,55 @@
         const isLongTerm = mainIntention.toLowerCase().includes('long');
         const isCasual = mainIntention.toLowerCase().includes('casual');
         const isFriends = mainIntention.toLowerCase().includes('friend');
-        const normalizedGender = gender.trim().toLowerCase();
-        const isGenderDiverse = !['', 'man', 'woman', 'male', 'female'].includes(normalizedGender);
-        const normalizedSexuality = sexuality.toLowerCase();
-        const isBi = /\bbi(?:sexual)?\b|\bpan(?:sexual)?\b/.test(normalizedSexuality);
-        const isGayLesbianQueer = isGenderDiverse || ['gay', 'lesbian', 'queer'].some(label => normalizedSexuality.includes(label)) || isBi;
-        const isStraightBi = normalizedSexuality.includes('straight') || isBi;
+        const orientation = getOrientationFlags(person);
 
         if (isMono && isLongTerm) dateGroups['Mono Long-Term'].push(person);
         if (isMono && isCasual) dateGroups['Mono Casual'].push(person);
         if (isPoly && isLongTerm) dateGroups['Poly/ENM Long-Term'].push(person);
         if (isPoly && isCasual) dateGroups['Poly/ENM Casual'].push(person);
         if (isFriends) dateGroups['Friends'].push(person);
-        if (isGayLesbianQueer) dateGroups['Gay/Lesbian/Bi/Queer'].push(person);
-        if (isStraightBi) dateGroups['Straight/Bi'].push(person);
+        if (orientation.lgbtq) dateGroups['Gay/Lesbian/Bi/Queer'].push(person);
+        if (orientation.straight) dateGroups['Straight/Bi'].push(person);
       });
 
       // Check which groups qualify as dates
       Object.entries(dateGroups).forEach(([groupName, people]) => {
+        let qualifies = false;
         if (groupName === 'Gay/Lesbian/Bi/Queer' || groupName === 'Straight/Bi') {
-          if (people.length >= 12) {
-            dates[groupName] = people;
-          }
+          qualifies = people.length >= 12;
         } else {
           const womenCount = people.filter(p => getEventGender(p) === 'Woman').length;
           const menCount = people.filter(p => getEventGender(p) === 'Man').length;
-          if (womenCount >= 6 && menCount >= 6) {
-            dates[groupName] = people;
-          }
+          qualifies = womenCount >= 6 && menCount >= 6;
+        }
+
+        if (qualifies) {
+          const orientationGroups = [
+            ['Straight', person => getOrientationFlags(person).straight],
+            ['LGBTQ+', person => getOrientationFlags(person).lgbtq],
+            ['Other / Not specified', person => getOrientationFlags(person).other]
+          ];
+          orientationGroups.forEach(([label, includesPerson]) => {
+            const matchingPeople = people.filter(includesPerson);
+            if (matchingPeople.length) dates[`${groupName} — ${label}`] = matchingPeople;
+          });
         }
       });
+
+      migrateLegacySelections(new Set(Object.keys(dateGroups)));
+    }
+
+    function migrateLegacySelections(baseGroupNames) {
+      Object.entries(selections).forEach(([key, person]) => {
+        const match = key.match(/^(.*):(Woman|Man|Other):(\d+)$/);
+        if (!match || !baseGroupNames.has(match[1])) return;
+        const flags = getOrientationFlags(person);
+        const orientation = flags.lgbtq ? 'LGBTQ+' : flags.straight ? 'Straight' : 'Other / Not specified';
+        const migratedKey = `${match[1]} — ${orientation}:${match[2]}:${match[3]}`;
+        if (!selections[migratedKey]) selections[migratedKey] = person;
+        delete selections[key];
+      });
+      saveToLocalStorage();
     }
 
     function displayDates() {
@@ -1067,8 +1127,12 @@
       }
 
       container.innerHTML = '';
+      let displayedGroupCount = 0;
 
       Object.entries(dates).forEach(([dateName, people]) => {
+        const orientation = ['Straight', 'LGBTQ+', 'Other / Not specified'].find(label => dateName.endsWith(` — ${label}`));
+        if (selectedOrientationFilter !== 'all' && selectedOrientationFilter !== orientation) return;
+        displayedGroupCount++;
         const eventGroup = document.createElement('div');
         eventGroup.className = 'event-group';
 
@@ -1132,6 +1196,13 @@
         eventGroup.appendChild(contentDiv);
         container.appendChild(eventGroup);
       });
+
+      noDates.style.display = displayedGroupCount === 0 ? 'block' : 'none';
+      if (displayedGroupCount === 0 && selectedOrientationFilter !== 'all') {
+        noDates.textContent = `No qualifying event groups have participants in the ${selectedOrientationFilter} category.`;
+      } else {
+        noDates.textContent = 'No valid events found. Regular groups need at least 6 women and 6 men; orientation groups need at least 12 people.';
+      }
     }
 
     function getVenueStats(people) {
