@@ -25,6 +25,7 @@ Last updated: 2026-10-07
 - [x] **Events gender totals and orientation groups.** Events now displays a Diverse counter in group and custom-event totals, labels the non-Woman/non-Man column Diverse, and separates orientation groups into Gay/Lesbian/Bi/Queer and Straight/Bi. Bi/Pan participants appear in both overlapping groups.
 - [x] **Events availability labels.** Availability dropdowns now explain that A, B, and C are available choices (Options A–C), while D means not attending; stored values remain compatible with existing event data.
 - [x] **Events participant ordering.** Within each gender column, primary cards and backup lists sort by age ascending; ties put D (Not Attending) first, then sort by last attended-event timestamp oldest to newest, with no attendance record first. Sorting changes display order while preserving each participant’s saved slot assignment.
+- [x] **Events page load failure on activity API errors.** Activity timestamps now load as optional enrichment, so a failed activity request no longer prevents participant groups from rendering. Cast event dates to text in the activity query so date-typed legacy schemas can be sorted safely.
 
 ## Remaining
 

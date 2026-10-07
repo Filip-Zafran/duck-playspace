@@ -1749,7 +1749,7 @@ app.get('/api/participants/activity', requireAuth, async (req, res) => {
         SELECT LOWER(ep.email) AS email_key, e.date AS last_attended_at,
           ROW_NUMBER() OVER (
             PARTITION BY LOWER(ep.email)
-            ORDER BY CASE WHEN e.date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(e.date, 10) END DESC NULLS LAST,
+            ORDER BY CASE WHEN e.date::text ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(e.date::text, 10) END DESC NULLS LAST,
               ep.updated_at DESC
           ) AS position
         FROM event_participation ep

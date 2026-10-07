@@ -909,17 +909,26 @@
 
     async function loadDates() {
       try {
-        const [response, activityResponse] = await Promise.all([
-          fetch('/api/dashboard-data'), fetch('/api/participants/activity')
-        ]);
+        const response = await fetch('/api/dashboard-data');
+        if (!response.ok) throw new Error(`Dashboard data request failed (${response.status})`);
         allData = await response.json();
-        const activityRows = await activityResponse.json();
-        const activityByEmail = Object.fromEntries(activityRows.map(row => [String(row.email).toLowerCase(), row]));
-        allData = allData.map(person => {
-          const email = String(person['Email'] || person.email || '').toLowerCase();
-          const activity = activityByEmail[email] || {};
-          return { ...person, lastInvitedAt: activity.last_invited_at, lastAttendedAt: activity.last_attended_at };
-        });
+        if (!Array.isArray(allData)) throw new Error('Dashboard data response was not a list');
+
+        // Activity timestamps enrich participant cards, but must not block the event list.
+        try {
+          const activityResponse = await fetch('/api/participants/activity');
+          if (!activityResponse.ok) throw new Error(`Activity request failed (${activityResponse.status})`);
+          const activityRows = await activityResponse.json();
+          if (!Array.isArray(activityRows)) throw new Error('Activity response was not a list');
+          const activityByEmail = Object.fromEntries(activityRows.map(row => [String(row.email).toLowerCase(), row]));
+          allData = allData.map(person => {
+            const email = String(person['Email'] || person.email || '').toLowerCase();
+            const activity = activityByEmail[email] || {};
+            return { ...person, lastInvitedAt: activity.last_invited_at, lastAttendedAt: activity.last_attended_at };
+          });
+        } catch (activityError) {
+          console.error('Could not load participant activity dates:', activityError);
+        }
 
         loadFromLocalStorage();
         generateDates();
