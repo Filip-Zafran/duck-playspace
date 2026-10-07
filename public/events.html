@@ -960,6 +960,39 @@
         <div class="meta-item"><span class="meta-label">Last attended:</span> ${formatActivityDate(current.lastAttendedAt)}</div>`;
     }
 
+    function getParticipantAvailability(person) {
+      const email = String(person?.['Email'] || person?.email || '').toLowerCase();
+      const entry = Object.entries(personData).find(([key]) => key.toLowerCase() === email)?.[1];
+      return String(entry?.availability || '').toUpperCase();
+    }
+
+    function getAttendanceSortTime(person) {
+      const email = String(person?.['Email'] || person?.email || '').toLowerCase();
+      const current = allData.find(item => String(item?.['Email'] || item?.email || '').toLowerCase() === email) || person;
+      const timestamp = current.lastAttendedAt ? new Date(current.lastAttendedAt).getTime() : NaN;
+      return Number.isFinite(timestamp) ? timestamp : Number.NEGATIVE_INFINITY;
+    }
+
+    function compareEventParticipants(a, b) {
+      const ageA = Number.parseInt(a['Age'] ?? a.age, 10);
+      const ageB = Number.parseInt(b['Age'] ?? b.age, 10);
+      const hasAgeA = Number.isFinite(ageA);
+      const hasAgeB = Number.isFinite(ageB);
+
+      // Age is the primary rule; keep missing ages after participants with known ages.
+      if (hasAgeA !== hasAgeB) return hasAgeA ? -1 : 1;
+      if (hasAgeA && ageA !== ageB) return ageA - ageB;
+
+      // For the same age, put people marked D (not attending) first.
+      const declinedA = getParticipantAvailability(a) === 'D';
+      const declinedB = getParticipantAvailability(b) === 'D';
+      if (declinedA !== declinedB) return declinedA ? -1 : 1;
+
+      // Within the same age/availability group, older attendance dates come first.
+      // Missing dates are treated as no recent attendance and appear before dated records.
+      return getAttendanceSortTime(a) - getAttendanceSortTime(b);
+    }
+
     function generateDates() {
       const dateGroups = {
         'Mono Long-Term': [],
@@ -1161,15 +1194,23 @@
 
     function createGenderColumn(dateName, gender, people) {
       const genderClass = gender === 'Woman' ? 'woman' : gender === 'Man' ? 'man' : 'other';
-      const sortedPeople = [...people].sort((a, b) => (parseInt(a['Age']) || 0) - (parseInt(b['Age']) || 0));
+      const sortedPeople = [...people].sort(compareEventParticipants);
       const participantNumbers = new Map(sortedPeople.map((person, index) => [person['Email'] || person.email || '', index + 1]));
+      const primarySlots = Array.from({ length: 4 }, (_, index) => ({
+        index,
+        person: selections[`${dateName}:${gender}:${index}`]
+      })).sort((a, b) => {
+        if (a.person && b.person) return compareEventParticipants(a.person, b.person);
+        if (a.person) return -1;
+        if (b.person) return 1;
+        return a.index - b.index;
+      });
       let html = `<div class="gender-column ${genderClass}">
         <div class="gender-column-title">${gender === 'Other' ? 'Diverse' : gender}</div>
         <div class="primary-slots">`;
 
-      for (let i = 0; i < 4; i++) {
-        const slotKey = `${dateName}:${gender}:${i}`;
-        const person = selections[slotKey];
+      for (const { index, person } of primarySlots) {
+        const slotKey = `${dateName}:${gender}:${index}`;
 
         if (person) {
           const ageIssues = checkAgeCompatibilityInSlots(dateName, gender, person);
