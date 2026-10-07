@@ -30,6 +30,15 @@ const pool = new Pool({
 export async function initializeDatabase() {
   try {
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS imported_data (
+        id SERIAL PRIMARY KEY,
+        data JSONB NOT NULL,
+        data_hash VARCHAR(64) UNIQUE NOT NULL,
+        imported_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS polls (
         id VARCHAR(36) PRIMARY KEY,
         admin_token VARCHAR(32) UNIQUE NOT NULL,
@@ -157,10 +166,17 @@ export async function initializeDatabase() {
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL UNIQUE,
         date VARCHAR(255),
+        participation_fee DECIMAL(10, 2) NOT NULL DEFAULT 5,
+        event_type VARCHAR(100),
+        is_failed BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS participation_fee DECIMAL(10, 2) NOT NULL DEFAULT 5`);
+    await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS event_type VARCHAR(100)`);
+    await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS is_failed BOOLEAN NOT NULL DEFAULT FALSE`);
 
     // Create event_participation table
     await pool.query(`
@@ -186,6 +202,39 @@ export async function initializeDatabase() {
       )
     `);
 
+    // Per-participant date-night outcomes, keyed to an event and participant.
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS date_stats (
+        id SERIAL PRIMARY KEY,
+        event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        participant_email VARCHAR(255) NOT NULL,
+        attended BOOLEAN DEFAULT NULL,
+        likes_given INTEGER NOT NULL DEFAULT 0 CHECK (likes_given >= 0),
+        likes_received INTEGER NOT NULL DEFAULT 0 CHECK (likes_received >= 0),
+        romantic_likes_given INTEGER NOT NULL DEFAULT 0 CHECK (romantic_likes_given >= 0),
+        social_likes_given INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_given >= 0),
+        romantic_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (romantic_likes_received >= 0),
+        social_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_received >= 0),
+        romantic_matches INTEGER NOT NULL DEFAULT 0 CHECK (romantic_matches >= 0),
+        social_matches INTEGER NOT NULL DEFAULT 0 CHECK (social_matches >= 0),
+        notes TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        UNIQUE(event_id, participant_email)
+      )
+    `);
+
+    // Older installations already have date_stats; add the new like categories safely.
+    await pool.query(`
+      ALTER TABLE date_stats
+        ALTER COLUMN attended DROP NOT NULL,
+        ALTER COLUMN attended DROP DEFAULT,
+        ADD COLUMN IF NOT EXISTS romantic_likes_given INTEGER NOT NULL DEFAULT 0 CHECK (romantic_likes_given >= 0),
+        ADD COLUMN IF NOT EXISTS social_likes_given INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_given >= 0),
+        ADD COLUMN IF NOT EXISTS romantic_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (romantic_likes_received >= 0),
+        ADD COLUMN IF NOT EXISTS social_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_received >= 0)
+    `);
+
     // Create participant_metadata table
     await pool.query(`
       CREATE TABLE IF NOT EXISTS participant_metadata (
@@ -194,6 +243,7 @@ export async function initializeDatabase() {
         phone VARCHAR(20),
         tags JSONB DEFAULT '[]',
         internal_notes TEXT,
+        reported BOOLEAN NOT NULL DEFAULT FALSE,
         total_attended INTEGER DEFAULT 0,
         total_paid DECIMAL(10, 2) DEFAULT 0,
         reward_tag VARCHAR(100),
@@ -201,6 +251,11 @@ export async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       )
+    `);
+
+    await pool.query(`
+      ALTER TABLE participant_metadata
+      ADD COLUMN IF NOT EXISTS reported BOOLEAN NOT NULL DEFAULT FALSE
     `);
 
     // Create quiz table

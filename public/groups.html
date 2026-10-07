@@ -616,7 +616,9 @@
       const container = document.getElementById('groupsContainer');
       container.innerHTML = '';
 
-      Object.entries(groups).forEach(([groupName, people]) => {
+      Object.entries(groups)
+        .sort(([, peopleA], [, peopleB]) => peopleB.length - peopleA.length)
+        .forEach(([groupName, people]) => {
         const card = document.createElement('div');
         card.className = 'group-card';
 
@@ -874,5 +876,6 @@
       <div id="profileContent"></div> 
     </div> 
   </div>
+  <script src="/nav-active.js" defer></script>
 </body>
 </html>

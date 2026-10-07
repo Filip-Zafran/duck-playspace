@@ -346,6 +346,7 @@
         showStatus('Please select a file', 'error');
         return;
       }
+      if (!window.confirm(`Upload ${selectedFile.name}? New participants will be added, matching email addresses will be updated, and existing participants will be kept.`)) return;
 
       const formData = new FormData();
       formData.append('file', selectedFile);
@@ -364,7 +365,7 @@
         loading.classList.remove('show');
 
         if (response.ok) {
-          const message = `✅ Success! Total rows in file: ${data.totalRows} | Imported: ${data.importedRows} | Skipped (duplicates): ${data.skippedRows}`;
+          const message = `✅ Success! Total rows in file: ${data.totalRows} | Added: ${data.importedRows} | Updated: ${data.updatedRows || 0} | Skipped (unchanged): ${data.skippedRows}`;
           showStatus(message, 'success');
           displayDataPreview(data.preview, data.columns);
           fileInfo.classList.remove('show');
@@ -441,5 +442,6 @@
       }
     });
   </script>
+  <script src="/nav-active.js" defer></script>
 </body>
 </html>

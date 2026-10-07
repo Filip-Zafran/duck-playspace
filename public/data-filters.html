@@ -472,7 +472,7 @@
       filterContainer.innerHTML = '';
 
       // Key columns to filter
-      const filterColumns = ['Gender', 'Sexuality', 'Attracted To', 'Staying In Berlin', 'Berlin Bezirk', 'Age', 'Main Intention'];
+      const filterColumns = ['Gender', 'Sexuality', 'Attracted To', 'Relationship Style', 'Staying In Berlin', 'Berlin Bezirk', 'Age', 'Main Intention'];
 
       filterColumns.forEach(col => {
         if (columns.includes(col)) {
@@ -637,5 +637,6 @@
     loadDashboard();
     setTimeout(setupScrollSync, 500);
   </script>
+  <script src="/nav-active.js" defer></script>
 </body>
 </html>

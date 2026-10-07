@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="styles.css">
   <style>
     .dashboard-wrapper { width: 100vw; margin-left: calc(-50vw + 50%); padding: 20px; }
+    .pinned-statistics { position: sticky; top: 0; z-index: 50; background: rgba(247, 248, 255, 0.97); padding: 12px 0 4px; backdrop-filter: blur(8px); }
+    .pinned-statistics .section-title { margin-bottom: 12px; }
+    .pinned-statistics .stats-grid { grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .pinned-statistics .stat-card { padding: 12px 14px; }
+    .pinned-statistics .stat-value { font-size: 22px; }
     .dashboard-nav { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
     .dashboard-tab { padding: 10px 20px; background: none; border: none; cursor: pointer; font-weight: 600; color: #666; font-size: 14px; border-bottom: 3px solid transparent; transition: all 0.3s; }
     .dashboard-tab.active { color: #667eea; border-bottom-color: #667eea; }
@@ -66,6 +71,21 @@
     .star { color: #ffc107; font-size: 14px; line-height: 1; } 
     .star.empty { color: #ddd; } 
     .responsiveness-label { font-size: 11px; color: #666; margin-left: 5px; }
+    .date-stats-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: white; border-radius: 10px; padding: 18px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .date-stats-form .filter-group { min-width: 0; }
+    .date-stats-form .input-field { font-size: 13px; padding: 9px 10px; }
+    .date-stats-form .form-wide { grid-column: 1 / -1; }
+    .date-stats-form .form-actions { display: flex; align-items: end; }
+    .date-stats-summary { margin-top: 20px; }
+    .date-stats-message { grid-column: 1 / -1; min-height: 1.2em; font-size: 12px; color: #555; }
+    .event-import-panel { background: #fff; border-radius: 10px; padding: 18px; margin: 0 0 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .event-import-preview { display: none; margin-top: 12px; padding: 12px; border-radius: 6px; background: #f3f4f6; font-size: 12px; }
+    .event-import-preview.active { display: block; }
+    .participant-edit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+    .participant-edit-grid .form-wide { grid-column: 1 / -1; }
+    .participant-edit-grid label { display: flex; flex-direction: column; gap: 5px; font-size: 11px; font-weight: 600; color: #555; }
+    .participant-edit-grid textarea { min-height: 90px; resize: vertical; }
+    @media (max-width: 650px) { .pinned-statistics { margin: 0 -8px; padding-left: 8px; padding-right: 8px; } .dashboard-nav { overflow-x: auto; } .dashboard-tab { white-space: nowrap; padding: 9px 12px; } }
   </style>
 </head>
 <body>
@@ -99,11 +119,16 @@
 
       <main class="content">
         <div class="dashboard-wrapper">
+          <section class="pinned-statistics" aria-label="Statistics">
+            <h2 class="section-title">📊 Statistics</h2>
+            <div class="stats-grid" id="statsGrid"></div>
+          </section>
+
           <div class="dashboard-nav">
-            <button class="dashboard-tab active" onclick="switchTab('statistics')">📊 Statistics</button>
-            <button class="dashboard-tab" onclick="switchTab('participants')">👥 Participants</button>
-            <button class="dashboard-tab" onclick="switchTab('events')">📅 Events</button>
-            <button class="dashboard-tab" onclick="switchTab('participation')">📋 Participation</button>
+            <button class="dashboard-tab active" onclick="switchTab('participants', this)">👥 Participants</button>
+            <button class="dashboard-tab" onclick="switchTab('events', this)">📅 Events</button>
+            <button class="dashboard-tab" onclick="switchTab('participation', this)">📋 Participation</button>
+            <button class="dashboard-tab" onclick="switchTab('date-stats', this)">💞 Date Stats</button>
           </div>
 
           <div id="loading" class="loading" style="display: none;">
@@ -111,14 +136,8 @@
             <p>Loading dashboard...</p>
           </div>
 
-          <!-- Statistics -->
-          <div id="statistics" class="dashboard-section active">
-            <h2 class="section-title">Dashboard Statistics</h2>
-            <div class="stats-grid" id="statsGrid"></div>
-          </div>
-
           <!-- Participants -->
-          <div id="participants" class="dashboard-section">
+          <div id="participants" class="dashboard-section active">
             <h2 class="section-title">Participants Management</h2>
             <div class="filter-bar">
               <div class="filter-group" style="flex: 1;">
@@ -139,7 +158,9 @@
                 <table class="dashboard-table">
                   <thead>
                     <tr>
-                      <th>Name</th><th>Email</th><th>Gender</th><th>Age</th><th>Status</th><th>Attended</th><th>Amount €</th><th>Reward</th><th>Tags</th><th>Actions</th>
+                <th>Name</th><th>Email</th><th>Gender</th><th>Age</th><th>Status</th><th>Events attended</th>
+                <th>Romantic likes given</th><th>Social likes given</th><th>Romantic likes received</th><th>Social likes received</th>
+                <th>Reported</th><th>Amount €</th><th>Reward</th><th>Tags</th><th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="participantsBody"></tbody>
@@ -151,12 +172,37 @@
           <!-- Events -->
           <div id="events" class="dashboard-section">
             <h2 class="section-title">Events Management</h2>
+            <div class="event-import-panel">
+              <h3 style="margin-top:0">Upload event data</h3>
+              <p>Upload an event admin PDF, Excel file, or CSV. The file creates or updates the event, participation, and Date Stats. The default fee is €5 per participant and is marked paid. For Excel/CSV, use one row per participant; separate interest names with commas.</p>
+              <form id="eventImportForm" onsubmit="prepareEventImport(event)">
+                <div class="filter-group"><label for="eventImportFile">Event file</label><input id="eventImportFile" class="input-field" type="file" accept=".pdf,.xlsx,.xls,.csv" required></div>
+                <button class="action-btn" type="submit" style="margin-top:12px">Review event data</button>
+                <button class="action-btn" type="button" onclick="downloadEventTemplate()" style="margin:12px 0 0 8px;background:#64748b">Download Excel/CSV template</button>
+              </form>
+              <div class="event-import-preview" id="eventImportPreview" role="status"></div>
+            </div>
+            <div class="event-import-panel">
+              <h3 style="margin-top:0">Record a failed event</h3>
+              <p>Record a planned event that did not happen. Add the people who clicked “Attend” and “Not attending”; no attendance or money will be counted. Use one participant email per line or separate emails with commas.</p>
+              <form id="failedEventForm" onsubmit="createFailedEvent(event)">
+                <div class="participant-edit-grid">
+                  <label>Event name<input id="failedEventName" class="input-field" maxlength="255" required></label>
+                  <label>Date<input id="failedEventDate" class="input-field" type="date"></label>
+                  <label>Event type<input id="failedEventType" class="input-field" list="eventTypeOptions" placeholder="Mono, Poly, Social…" maxlength="100" required><datalist id="eventTypeOptions"><option value="Mono"><option value="Poly"><option value="Mono + Poly"><option value="Social"><option value="Other"></datalist></label>
+                  <label>Clicked “Attend”<textarea id="failedEventYes" class="input-field" placeholder="person@example.com, one per line"></textarea></label>
+                  <label>Clicked “Not attending”<textarea id="failedEventNo" class="input-field" placeholder="person@example.com, one per line"></textarea></label>
+                  <div class="form-actions"><button class="action-btn" type="submit">Save failed event</button></div>
+                  <div class="date-stats-message" id="failedEventMessage" role="status"></div>
+                </div>
+              </form>
+            </div>
             <div class="table-container">
               <div class="table-wrapper">
                 <table class="dashboard-table">
                   <thead>
                     <tr>
-                      <th>Event Name</th><th>Date</th><th>Invited</th><th>Responded</th><th>Attending</th><th>Revenue €</th><th>Free</th><th>Referral</th><th>Actions</th>
+                      <th>Event Name</th><th>Date</th><th>Type</th><th>Event status</th><th>Fee €</th><th>RSVP yes</th><th>RSVP no</th><th>Attended</th><th>Revenue €</th><th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="eventsBody"></tbody>
@@ -181,10 +227,88 @@
                 <table class="dashboard-table">
                   <thead>
                     <tr>
-                      <th>Event</th><th>Participant</th><th>Invited</th><th>Status</th><th>Attended</th><th>Paid</th><th>Amount €</th><th>Free</th><th>Referral</th><th>Actions</th>
+                      <th>Event</th><th>Participant</th><th>Invited</th><th>Status</th><th>Attended</th><th>Paid</th><th>Amount €</th><th>Free</th><th>Referral</th><th>Notes</th><th>Action</th>
                     </tr>
                   </thead>
                   <tbody id="participationBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date statistics -->
+          <div id="date-stats" class="dashboard-section">
+            <h2 class="section-title">Date Stats</h2>
+            <p>Record one participant’s date-night outcomes per event. Saving the same participant and event again updates that record.</p>
+            <form class="date-stats-form" id="dateStatsImportForm" onsubmit="importEventStats(event)">
+              <div class="filter-group form-wide">
+                <label for="dateStatsImportFile">Import event and date stats from CSV or Excel</label>
+                <input id="dateStatsImportFile" class="input-field" type="file" accept=".csv,.xls,.xlsx" required>
+              </div>
+              <div class="form-actions">
+                <button class="action-btn" type="submit">Import stats</button>
+                <button class="action-btn" type="button" onclick="downloadDateStatsTemplate()" style="margin-left:8px;background:#64748b">Download template</button>
+              </div>
+              <div class="date-stats-message" id="dateStatsImportMessage" role="status">Use Event Name and Participant Email on every row. Optional columns: Invited, Responded, Participation Status, Attended Event, Paid, Amount, Free Entry, Referral, Participation Notes, Went On Date, Romantic Likes Given, Social Likes Given, Romantic Likes Received, Social Likes Received, Romantic Matches, Social Matches, Date Notes.</div>
+            </form>
+            <form class="date-stats-form" id="dateStatsForm" onsubmit="saveDateStats(event)">
+              <div class="filter-group">
+                <label for="dateStatEvent">Event</label>
+                <select id="dateStatEvent" class="input-field" required></select>
+              </div>
+              <div class="filter-group">
+                <label for="dateStatParticipant">Participant</label>
+                <select id="dateStatParticipant" class="input-field" required></select>
+              </div>
+              <div class="filter-group">
+                <label for="dateStatRomanticLikesGiven">Romantic likes given</label>
+                <input id="dateStatRomanticLikesGiven" class="input-field" type="number" min="0" step="1" value="0" required>
+              </div>
+              <div class="filter-group">
+                <label for="dateStatSocialLikesGiven">Social likes given</label>
+                <input id="dateStatSocialLikesGiven" class="input-field" type="number" min="0" step="1" value="0" required>
+              </div>
+              <div class="filter-group">
+                <label for="dateStatRomanticLikesReceived">Romantic likes received</label>
+                <input id="dateStatRomanticLikesReceived" class="input-field" type="number" min="0" step="1" value="0" required>
+              </div>
+              <div class="filter-group">
+                <label for="dateStatSocialLikesReceived">Social likes received</label>
+                <input id="dateStatSocialLikesReceived" class="input-field" type="number" min="0" step="1" value="0" required>
+              </div>
+              <div class="filter-group">
+                <label for="dateStatRomantic">Romantic matches</label>
+                <input id="dateStatRomantic" class="input-field" type="number" min="0" step="1" value="0" required>
+              </div>
+              <div class="filter-group">
+                <label for="dateStatSocial">Social matches</label>
+                <input id="dateStatSocial" class="input-field" type="number" min="0" step="1" value="0" required>
+              </div>
+              <label class="filter-group" style="flex-direction:row;align-items:center;gap:8px;padding-top:20px;">
+                <input id="dateStatAttended" type="checkbox" checked>
+                <span>Went on a date</span>
+              </label>
+              <div class="filter-group form-wide">
+                <label for="dateStatNotes">Notes</label>
+                <input id="dateStatNotes" class="input-field" type="text" maxlength="1000" placeholder="Optional notes">
+              </div>
+              <div class="form-actions">
+                <button class="action-btn" type="submit">Save date stats</button>
+              </div>
+              <div class="date-stats-message" id="dateStatsMessage" role="status"></div>
+            </form>
+            <div class="stats-grid date-stats-summary" id="dateStatsSummary"></div>
+            <div class="filter-bar">
+              <div class="filter-group">
+                <label for="dateStatsEventFilter">Filter by event</label>
+                <select id="dateStatsEventFilter" class="input-field" onchange="renderDateStats()"><option value="">All events</option></select>
+              </div>
+            </div>
+            <div class="table-container">
+              <div class="table-wrapper">
+                <table class="dashboard-table">
+                  <thead><tr><th>Event</th><th>Participant</th><th>Went on a date</th><th>Romantic likes given</th><th>Social likes given</th><th>Romantic likes received</th><th>Social likes received</th><th>Romantic matches</th><th>Social matches</th><th>Notes</th><th>Actions</th></tr></thead>
+                  <tbody id="dateStatsBody"></tbody>
                 </table>
               </div>
             </div>
@@ -195,7 +319,8 @@
   </div>
 
   <script>
-    let allData = { participants: [], events: [], participation: {} };
+    let allData = { participants: [], events: [], participation: {}, dateStats: [], reported: {}, participantMetadata: {} };
+    let eventImportPreview = null;
 
     async function loadDashboard() {
       document.getElementById('loading').style.display = 'block';
@@ -208,8 +333,16 @@
 
         const eventsResponse = await fetch('/api/events');
         const events = await eventsResponse.json();
+        const dateStatsResponse = await fetch('/api/date-stats');
+        const dateStats = await dateStatsResponse.json();
+        const reportedResponse = await fetch('/api/participants/report-flags');
+        const reportedRows = await reportedResponse.json();
+        const metadataResponse = await fetch('/api/participants/metadata');
+        const metadataRows = await metadataResponse.json();
 
-        allData = { participants, stats, events, participation: {} };
+        allData = { participants, stats, events, participation: {}, dateStats,
+          reported: Object.fromEntries(reportedRows.map(row => [String(row.email).toLowerCase(), Boolean(row.reported)])),
+          participantMetadata: Object.fromEntries(metadataRows.map(row => [String(row.email).toLowerCase(), row])) };
 
         // Load participation data for each event
         for (const event of events) {
@@ -224,10 +357,106 @@
         renderEvents();
         renderParticipation();
         populateEventFilter();
+        populateDateStatsOptions();
+        renderDateStats();
       } catch (err) {
         console.error('Error:', err);
         document.getElementById('loading').style.display = 'none';
       }
+    }
+
+    async function prepareEventImport(event) {
+      event.preventDefault();
+      const file = document.getElementById('eventImportFile').files[0];
+      const preview = document.getElementById('eventImportPreview');
+      if (!file) return;
+      preview.classList.add('active');
+      preview.textContent = 'Reading event file…';
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        body.append('preview', 'true');
+        const response = await fetch('/api/events/import', { method: 'POST', body });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not read this event file.');
+        eventImportPreview = result;
+        const revenue = Number(result.expectedRevenue || 0).toFixed(2);
+        preview.innerHTML = `<strong>Ready to save</strong><br>Event: ${escapeHtml(result.eventName)}<br>Date: ${escapeHtml(result.date || '-')}<br>Participants: ${result.participantCount}<br>Fee: €${Number(result.fee).toFixed(2)} per paid participant<br>Expected revenue: €${revenue}<br><small>Interest lists will update romantic/social likes given, received, and mutual matches.</small><br><button type="button" class="action-btn" onclick="confirmEventImport()" style="margin-top:10px">Confirm and save event</button> <button type="button" class="action-btn" onclick="cancelEventImport()" style="margin-top:10px;background:#64748b">Cancel</button>`;
+      } catch (error) {
+        eventImportPreview = null;
+        preview.textContent = error.message;
+      }
+    }
+
+    async function createFailedEvent(event) {
+      event.preventDefault();
+      const name = document.getElementById('failedEventName').value.trim();
+      const date = document.getElementById('failedEventDate').value;
+      const eventType = document.getElementById('failedEventType').value.trim();
+      const attendingEmails = document.getElementById('failedEventYes').value;
+      const notAttendingEmails = document.getElementById('failedEventNo').value;
+      const message = document.getElementById('failedEventMessage');
+      if (!window.confirm(`Save “${name}” as a failed ${eventType} event? RSVP responses will be saved, and no money or attendance will be counted.`)) return;
+      message.textContent = 'Saving failed event…';
+      try {
+        const response = await fetch('/api/events/failed', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, date: date || null, eventType, attendingEmails, notAttendingEmails })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save failed event.');
+        document.getElementById('failedEventForm').reset();
+        await loadDashboard();
+        message.textContent = `Saved ${result.eventName}: ${result.attendingCount} RSVP yes, ${result.notAttendingCount} RSVP no. Revenue: €0.00.`;
+      } catch (error) { message.textContent = error.message; }
+    }
+
+    async function confirmEventImport() {
+      const file = document.getElementById('eventImportFile').files[0];
+      const preview = document.getElementById('eventImportPreview');
+      if (!file || !eventImportPreview) return;
+      if (!window.confirm(`Create or update “${eventImportPreview.eventName}” for ${eventImportPreview.participantCount} participants? Each participant will be marked attended and paid €${Number(eventImportPreview.fee).toFixed(2)} unless the file says otherwise.`)) return;
+      preview.textContent = 'Saving event and participant stats…';
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        body.append('commit', 'true');
+        const response = await fetch('/api/events/import', { method: 'POST', body });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save event data.');
+        eventImportPreview = null;
+        document.getElementById('eventImportForm').reset();
+        await loadDashboard();
+        preview.textContent = `${result.eventName} saved. ${result.participantCount} participants updated; event revenue is €${Number(result.expectedRevenue).toFixed(2)}.`;
+      } catch (error) { preview.textContent = error.message; }
+    }
+
+    function cancelEventImport() {
+      eventImportPreview = null;
+      document.getElementById('eventImportPreview').classList.remove('active');
+    }
+
+    function downloadEventTemplate() {
+      const headers = ['Event Name','Event Date','Participation Fee','Participant Name','Participant Email','Romantic Interests','Social Interests','Attended','Paid','Amount','Free Entry','Romantic Likes Given','Social Likes Given','Romantic Likes Received','Social Likes Received','Romantic Matches','Social Matches'];
+      const csv = headers.map(value => `"${value}"`).join(',') + '\n';
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      const link = document.createElement('a'); link.href = url; link.download = 'duck-playspace-event-data-template.csv'; link.click(); URL.revokeObjectURL(url);
+    }
+
+    async function editEventFee(eventId) {
+      const event = allData.events.find(item => Number(item.id) === Number(eventId));
+      if (!event) return;
+      const rawFee = window.prompt(`Participation fee for ${event.name} (€):`, String(event.participation_fee ?? 5));
+      if (rawFee === null) return;
+      const fee = Number(rawFee);
+      if (!Number.isFinite(fee) || fee < 0 || Math.round(fee * 100) !== fee * 100) { alert('Enter a fee of €0 or more with up to two decimal places.'); return; }
+      if (!window.confirm(`Set ${event.name}’s participation fee to €${fee.toFixed(2)}? This updates the amount for all paid participants who do not have free entry and recalculates dashboard revenue.`)) return;
+      try {
+        const response = await fetch(`/api/events/${eventId}/fee`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fee }) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not update event fee.');
+        await loadDashboard();
+      } catch (error) { alert(error.message); }
     }
 
     function renderStatistics() {
@@ -236,10 +465,171 @@
         <div class="stat-card"><div class="stat-label">Total Participants</div><div class="stat-value">${stats.totalParticipants}</div></div>
         <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value">${stats.activeParticipants}</div></div>
         <div class="stat-card"><div class="stat-label">Total Events</div><div class="stat-value">${stats.totalEvents}</div></div>
+        <div class="stat-card"><div class="stat-label">Invited</div><div class="stat-value">${stats.invited || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Responded</div><div class="stat-value">${stats.responded || 0}</div></div>
+        <div class="stat-card"><div class="stat-label">Attended</div><div class="stat-value">${stats.attended || 0}</div></div>
         <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">€${stats.totalRevenue.toFixed(2)}</div></div>
         <div class="stat-card"><div class="stat-label">Referral Attendees</div><div class="stat-value">${stats.referralAttendees}</div></div>
       `;
       document.getElementById('statsGrid').innerHTML = html;
+    }
+
+    function populateDateStatsOptions() {
+      const eventOptions = allData.events.filter(event => !event.is_failed).map(e => `<option value="${e.id}">${escapeHtml(e.name)}${e.date ? ` — ${escapeHtml(e.date)}` : ''}</option>`).join('');
+      document.getElementById('dateStatEvent').innerHTML = '<option value="">Choose an event</option>' + eventOptions;
+      document.getElementById('dateStatsEventFilter').innerHTML = '<option value="">All events</option>' + eventOptions;
+      const participants = [...allData.participants].sort((a, b) => String(a.Name || a['Email'] || '').localeCompare(String(b.Name || b['Email'] || '')));
+      document.getElementById('dateStatParticipant').innerHTML = '<option value="">Choose a participant</option>' + participants.map(p => {
+        const email = p['Email'] || p.email || '';
+        const name = p.Name || p['Name'] || email || 'Unnamed participant';
+        return `<option value="${escapeHtml(email)}">${escapeHtml(name)}${email ? ` (${escapeHtml(email)})` : ''}</option>`;
+      }).join('');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      })[character]);
+    }
+
+    function renderDateStats() {
+      const records = allData.dateStats || [];
+      const filter = document.getElementById('dateStatsEventFilter')?.value || '';
+      const visibleRecords = filter ? records.filter(record => String(record.event_id) === filter) : records;
+      const sum = (field, rows = visibleRecords) => rows.reduce((total, row) => total + Number(row[field] || 0), 0);
+      const attendedCount = visibleRecords.filter(record => record.attended === true).length;
+      document.getElementById('dateStatsSummary').innerHTML = `
+        <div class="stat-card"><div class="stat-label">Date records</div><div class="stat-value">${visibleRecords.length}</div></div>
+        <div class="stat-card"><div class="stat-label">Attendees recorded</div><div class="stat-value">${attendedCount}</div></div>
+        <div class="stat-card"><div class="stat-label">Romantic likes given</div><div class="stat-value">${sum('romantic_likes_given')}</div></div>
+        <div class="stat-card"><div class="stat-label">Social likes given</div><div class="stat-value">${sum('social_likes_given')}</div></div>
+        <div class="stat-card"><div class="stat-label">Romantic likes received</div><div class="stat-value">${sum('romantic_likes_received')}</div></div>
+        <div class="stat-card"><div class="stat-label">Social likes received</div><div class="stat-value">${sum('social_likes_received')}</div></div>
+        <div class="stat-card"><div class="stat-label">Romantic matches</div><div class="stat-value">${sum('romantic_matches')}</div></div>
+        <div class="stat-card"><div class="stat-label">Social matches</div><div class="stat-value">${sum('social_matches')}</div></div>
+      `;
+      document.getElementById('dateStatsBody').innerHTML = visibleRecords.map(record => {
+        const participant = allData.participants.find(p => String(p['Email'] || p.email || '').toLowerCase() === String(record.participant_email).toLowerCase());
+        const name = participant?.Name || participant?.['Name'] || record.participant_email;
+        return `<tr>
+          <td>${escapeHtml(record.event_name || '')}</td><td>${escapeHtml(name)}<br><small>${escapeHtml(record.participant_email)}</small></td>
+          <td>${record.attended == null ? 'Unknown' : record.attended ? 'Yes' : 'No'}</td><td>${Number(record.romantic_likes_given || 0)}</td><td>${Number(record.social_likes_given || 0)}</td>
+          <td>${Number(record.romantic_likes_received || 0)}</td><td>${Number(record.social_likes_received || 0)}</td>
+          <td>${Number(record.romantic_matches || 0)}</td><td>${Number(record.social_matches || 0)}</td><td>${escapeHtml(record.notes || '')}</td>
+          <td><button class="action-btn" type="button" onclick="editDateStats(${Number(record.id)})">Edit</button></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="11">No date stats have been recorded yet.</td></tr>';
+    }
+
+    async function importEventStats(event) {
+      event.preventDefault();
+      const form = document.getElementById('dateStatsImportForm');
+      const file = document.getElementById('dateStatsImportFile').files[0];
+      const message = document.getElementById('dateStatsImportMessage');
+      const button = form.querySelector('button[type="submit"]');
+      if (!file) return;
+      if (!window.confirm(`Import ${file.name}? Matching event and participant records will be updated, and unrelated records will be kept.`)) return;
+      button.disabled = true;
+      message.textContent = 'Importing…';
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        const response = await fetch('/api/date-stats/import', { method: 'POST', body });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not import stats.');
+        form.reset();
+        await loadDashboard();
+        message.textContent = `${result.rowsProcessed} rows processed; ${result.participationSaved} participation records and ${result.dateStatsSaved} date-stat records saved. Existing records were updated in place; unrelated records were kept.`;
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function downloadDateStatsTemplate() {
+      const headers = [
+        'Event Name', 'Participant Email', 'Invited', 'Responded', 'Participation Status',
+        'Attended Event', 'Paid', 'Amount', 'Free Entry', 'Referral', 'Participation Notes',
+        'Went On Date', 'Romantic Likes Given', 'Social Likes Given', 'Romantic Likes Received',
+        'Social Likes Received', 'Romantic Matches', 'Social Matches', 'Date Notes'
+      ];
+      const blob = new Blob([headers.join(',') + '\n'], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'duck-playspace-event-stats-template.csv';
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function saveDateStats(event) {
+      event.preventDefault();
+      const message = document.getElementById('dateStatsMessage');
+      const button = document.querySelector('#dateStatsForm button[type="submit"]');
+      const payload = {
+        eventId: document.getElementById('dateStatEvent').value,
+        participantEmail: document.getElementById('dateStatParticipant').value,
+        attended: document.getElementById('dateStatAttended').indeterminate ? null : document.getElementById('dateStatAttended').checked,
+        romanticLikesGiven: Number(document.getElementById('dateStatRomanticLikesGiven').value),
+        socialLikesGiven: Number(document.getElementById('dateStatSocialLikesGiven').value),
+        romanticLikesReceived: Number(document.getElementById('dateStatRomanticLikesReceived').value),
+        socialLikesReceived: Number(document.getElementById('dateStatSocialLikesReceived').value),
+        romanticMatches: Number(document.getElementById('dateStatRomantic').value),
+        socialMatches: Number(document.getElementById('dateStatSocial').value),
+        notes: document.getElementById('dateStatNotes').value
+      };
+      if (!window.confirm('Save these date stats? This will create or update the record for this event and participant.')) return;
+      message.textContent = 'Saving…';
+      button.disabled = true;
+      try {
+        const response = await fetch('/api/date-stats', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save date stats.');
+        const refreshed = await fetch('/api/date-stats');
+        allData.dateStats = await refreshed.json();
+        document.getElementById('dateStatsForm').reset();
+        document.getElementById('dateStatAttended').checked = true;
+        document.getElementById('dateStatAttended').indeterminate = false;
+        document.getElementById('dateStatRomanticLikesGiven').value = '0';
+        document.getElementById('dateStatSocialLikesGiven').value = '0';
+        document.getElementById('dateStatRomanticLikesReceived').value = '0';
+        document.getElementById('dateStatSocialLikesReceived').value = '0';
+        document.getElementById('dateStatRomantic').value = '0';
+        document.getElementById('dateStatSocial').value = '0';
+        document.getElementById('dateStatEvent').disabled = false;
+        document.getElementById('dateStatParticipant').disabled = false;
+        renderParticipants();
+        renderDateStats();
+        message.textContent = 'Date stats saved.';
+        document.querySelector('#dateStatsForm button[type="submit"]').textContent = 'Save date stats';
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function editDateStats(id) {
+      const record = allData.dateStats.find(item => Number(item.id) === Number(id));
+      if (!record) return;
+      document.getElementById('dateStatEvent').disabled = true;
+      document.getElementById('dateStatParticipant').disabled = true;
+      document.querySelector('#dateStatsForm button[type="submit"]').textContent = 'Update date stats';
+      document.getElementById('dateStatEvent').value = record.event_id;
+      document.getElementById('dateStatParticipant').value = record.participant_email;
+      document.getElementById('dateStatAttended').checked = record.attended === true;
+      document.getElementById('dateStatAttended').indeterminate = record.attended === null;
+      document.getElementById('dateStatRomanticLikesGiven').value = record.romantic_likes_given;
+      document.getElementById('dateStatSocialLikesGiven').value = record.social_likes_given;
+      document.getElementById('dateStatRomanticLikesReceived').value = record.romantic_likes_received;
+      document.getElementById('dateStatSocialLikesReceived').value = record.social_likes_received;
+      document.getElementById('dateStatRomantic').value = record.romantic_matches;
+      document.getElementById('dateStatSocial').value = record.social_matches;
+      document.getElementById('dateStatNotes').value = record.notes || '';
+      document.getElementById('dateStatsForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function getGenderClass(g) {
@@ -250,19 +640,41 @@
 
     function renderParticipants() {
       const tbody = document.getElementById('participantsBody');
-      tbody.innerHTML = allData.participants.map(p => {
-        const email = p['Email'] || '';
+      const search = (document.getElementById('participantSearch')?.value || '').trim().toLowerCase();
+      const selectedStatus = document.getElementById('statusFilter')?.value || '';
+      const visibleParticipants = allData.participants.filter(person => {
+        const email = String(person['Email'] || person.email || '').toLowerCase();
+        const name = String(person.Name || person['Name'] || '').toLowerCase();
+        const status = String(allData.participantMetadata[email]?.status || 'Active').trim().toLowerCase();
+        return (!search || email.includes(search) || name.includes(search)) && (!selectedStatus || status === selectedStatus.toLowerCase());
+      });
+      tbody.innerHTML = visibleParticipants.map(p => {
+        const email = String(p['Email'] || p.email || '');
         const starRating = calculateResponsivenessStar(email);
+        const emailKey = email.toLowerCase();
+        const participantStatus = allData.participantMetadata[emailKey]?.status || 'Active';
+      const eventsAttended = Object.values(allData.participation).flat()
+          .filter(record => String(record.email || '').toLowerCase() === emailKey && record.attended).length;
+        const paidRecords = allData.events.filter(event => !event.is_failed).flatMap(event => allData.participation[event.name] || []);
+        const totalPaid = paidRecords
+          .filter(record => String(record.email || '').toLowerCase() === emailKey && record.paid)
+          .reduce((total, record) => total + Number(record.amount || 0), 0);
+        const dateRecords = allData.dateStats.filter(record => String(record.participant_email || '').toLowerCase() === emailKey);
+        const dateTotal = field => dateRecords.reduce((total, record) => total + Number(record[field] || 0), 0);
         return `
           <tr>
-            <td><span class="person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')">${p.Name || 'N/A'}</span></td>
-            <td>${email}</td>
+            <td><span class="person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')">${escapeHtml(p.Name || p['Name'] || 'N/A')}</span></td>
+            <td>${escapeHtml(email)}</td>
             <td><span class="gender-badge ${getGenderClass(p['Gender'])}">${p['Gender'] || '?'}</span></td>
             <td>${p['Age'] || '?'}</td>
-            <td><span class="status-badge active">Active</span></td>
-            <td>0</td><td>€0.00</td><td>${renderStars(starRating)}</td>
+            <td><span class="status-badge ${participantStatus.toLowerCase() === 'paused' ? 'paused' : 'active'}">${escapeHtml(participantStatus)}</span></td>
+            <td>${eventsAttended}</td>
+            <td>${dateTotal('romantic_likes_given')}</td><td>${dateTotal('social_likes_given')}</td>
+            <td>${dateTotal('romantic_likes_received')}</td><td>${dateTotal('social_likes_received')}</td>
+            <td><label><input type="checkbox" ${allData.reported[emailKey] ? 'checked' : ''} onchange="toggleReported('${encodeURIComponent(email)}', this)"> Reported</label></td>
+            <td>€${totalPaid.toFixed(2)}</td><td>${renderStars(starRating)}</td>
             <td><div class="tags"></div></td>
-            <td><button class="action-btn" onclick="editParticipant('${email}')">Edit</button></td>
+            <td><button class="action-btn" onclick="editParticipant('${encodeURIComponent(email)}')">Edit</button></td>
           </tr>
         `;
       }).join('');
@@ -270,14 +682,19 @@
 
     function renderEvents() {
       const tbody = document.getElementById('eventsBody');
-      tbody.innerHTML = allData.events.map(e => `
-        <tr>
-          <td>${e.name}</td><td>${e.date || '-'}</td>
-          <td>${Object.keys(allData.participation[e.name] || {}).length}</td>
-          <td>0</td><td>0</td><td>€0</td><td>0</td><td>0</td>
-          <td><button class="action-btn" onclick="viewEvent(${e.id})">View</button></td>
-        </tr>
-      `).join('');
+      tbody.innerHTML = allData.events.map(e => {
+        const parts = allData.participation[e.name] || [];
+        const isFailed = Boolean(e.is_failed);
+        const rsvpYes = isFailed ? parts.filter(p => p.status === 'attending').length : parts.filter(p => p.responded && ['accepted', 'attending'].includes(String(p.status || '').toLowerCase())).length;
+        const rsvpNo = isFailed ? parts.filter(p => p.status === 'not_attending').length : parts.filter(p => p.responded && ['declined', 'not_attending'].includes(String(p.status || '').toLowerCase())).length;
+        const attending = parts.filter(p => p.attended).length;
+        const revenue = isFailed ? 0 : parts.filter(p => p.paid).reduce((total, p) => total + Number(p.amount || 0), 0);
+        return `<tr>
+          <td>${escapeHtml(e.name)}</td><td>${escapeHtml(e.date || '-')}</td><td>${escapeHtml(e.event_type || '-')}</td><td>${isFailed ? 'Failed' : 'Regular'}</td>
+          <td>€${isFailed ? '0.00' : Number(e.participation_fee ?? 5).toFixed(2)}</td><td>${rsvpYes}</td><td>${rsvpNo}</td><td>${attending}</td><td>€${revenue.toFixed(2)}</td>
+          <td><button class="action-btn" onclick="viewEvent(${Number(e.id)})">View</button> ${isFailed ? '' : `<button class="action-btn" onclick="editEventFee(${Number(e.id)})">Edit fee</button>`}</td>
+        </tr>`;
+      }).join('');
     }
 
     function renderParticipation() {
@@ -285,27 +702,62 @@
       let rows = [];
       Object.entries(allData.participation).forEach(([eventName, parts]) => {
         parts.forEach(p => {
-          rows.push({ ...p, eventName });
+          if (!document.getElementById('eventFilter').value || document.getElementById('eventFilter').value === eventName) {
+            rows.push({ ...p, eventName });
+          }
         });
       });
       tbody.innerHTML = rows.map(r => `
         <tr>
-          <td>${r.eventName}</td><td>${r.email}</td>
-          <td><input type="checkbox" class="checkbox" ${r.invited ? 'checked' : ''}></td>
-          <td>${r.status || '-'}</td>
-          <td><input type="checkbox" class="checkbox" ${r.attended ? 'checked' : ''}></td>
-          <td><input type="checkbox" class="checkbox" ${r.paid ? 'checked' : ''}></td>
-          <td>€${r.amount || 0}</td>
-          <td><input type="checkbox" class="checkbox" ${r.free_entry ? 'checked' : ''}></td>
-          <td><input type="checkbox" class="checkbox" ${r.referral ? 'checked' : ''}></td>
-          <td><button class="action-btn" onclick="syncParticipation()">Sync</button></td>
+          <td>${escapeHtml(r.eventName)}</td><td>${escapeHtml(r.email)}</td>
+          <td>${r.invited ? 'Yes' : 'No'}</td><td>${escapeHtml(r.status || '-')}</td>
+          <td>${r.attended ? 'Yes' : 'No'}</td><td>${r.paid ? 'Yes' : 'No'}</td>
+          <td>€${Number(r.amount || 0).toFixed(2)}</td>
+          <td>${r.free_entry ? 'Yes' : 'No'}</td><td>${r.referral ? 'Yes' : 'No'}</td>
+          <td>${escapeHtml(r.notes || '-')}</td>
+          <td><button class="action-btn" type="button" onclick="editParticipation(${Number(r.event_id)}, '${encodeURIComponent(r.email)}')">Edit</button></td>
         </tr>
       `).join('');
     }
 
+    function editParticipation(eventId, encodedEmail) {
+      const email = decodeURIComponent(encodedEmail);
+      const event = allData.events.find(item => Number(item.id) === Number(eventId));
+      const row = (allData.participation[event?.name] || []).find(item => item.email.toLowerCase() === email.toLowerCase());
+      if (!row) return;
+      const form = document.getElementById('participationEditForm');
+      form.elements.eventId.value = eventId;
+      form.elements.email.value = email;
+      ['invited','responded','attended','paid','freeEntry','referral'].forEach(key => form.elements[key].checked = Boolean(row[key === 'freeEntry' ? 'free_entry' : key]));
+      form.elements.status.value = row.status || '';
+      form.elements.amount.value = Number(row.amount || 0);
+      form.elements.notes.value = row.notes || '';
+      document.getElementById('participationEditModal').classList.add('active');
+    }
+
+    async function saveParticipationData(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const email = form.elements.email.value;
+      const eventId = form.elements.eventId.value;
+      const payload = {
+        invited: form.elements.invited.checked, responded: form.elements.responded.checked,
+        status: form.elements.status.value, attended: form.elements.attended.checked,
+        paid: form.elements.paid.checked, amount: Number(form.elements.amount.value),
+        freeEntry: form.elements.freeEntry.checked, referral: form.elements.referral.checked,
+        notes: form.elements.notes.value
+      };
+      if (!window.confirm(`Save participation changes for ${email}?`)) return;
+      try {
+        const response = await fetch(`/api/events/${eventId}/participation/${encodeURIComponent(email)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save participation.');
+        document.getElementById('participationEditModal').classList.remove('active');
+        await loadDashboard();
+      } catch (error) { alert(error.message); }
+    }
+
     function filterParticipants() {
-      const search = document.getElementById('participantSearch').value.toLowerCase();
-      const status = document.getElementById('statusFilter').value;
       renderParticipants();
     }
 
@@ -318,23 +770,96 @@
       select.innerHTML = '<option value="">All Events</option>' + allData.events.map(e => `<option value="${e.name}">${e.name}</option>`).join('');
     }
 
-    function switchTab(tab) {
+    function switchTab(tab, button) {
       document.querySelectorAll('.dashboard-section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.dashboard-tab').forEach(t => t.classList.remove('active'));
       document.getElementById(tab).classList.add('active');
-      event.target.classList.add('active');
+      button.classList.add('active');
     }
 
-    function editParticipant(email) {
-      alert('Edit participant: ' + email);
+    function editParticipant(encodedEmail) {
+      const email = decodeURIComponent(encodedEmail);
+      const person = allData.participants.find(p => String(p['Email'] || p.email || '').toLowerCase() === email.toLowerCase());
+      if (!person) return;
+      document.getElementById('profileName').textContent = `Edit participant: ${person.Name || email}`;
+      const fields = Object.entries(person).filter(([key]) => key !== 'Sexuality');
+      document.getElementById('profileContent').innerHTML = `
+        <form id="participantEditForm" onsubmit="saveParticipantData(event, '${encodeURIComponent(email)}')">
+          <p>Changes are saved to participant data. If you change the email, linked event and date records are updated too.</p>
+          <div class="participant-edit-grid">${fields.map(([key, value]) => {
+            const text = Array.isArray(value) ? value.join(', ') : (value ?? '');
+            const control = /bio|about|notes/i.test(key)
+              ? `<textarea class="input-field" data-field="${escapeHtml(key)}">${escapeHtml(text)}</textarea>`
+              : `<input class="input-field" data-field="${escapeHtml(key)}" type="text" value="${escapeHtml(text)}" ${/^email$/i.test(key) ? 'required' : ''}>`;
+            return `<label>${escapeHtml(key)}${control}</label>`;
+          }).join('')}</div>
+          <div style="display:flex;gap:10px;margin-top:18px"><button class="action-btn" type="submit">Save participant</button><button class="action-btn" type="button" onclick="closePersonProfile()" style="background:#64748b">Cancel</button></div>
+          <p id="participantEditMessage" role="status"></p>
+        </form>`;
+      document.getElementById('personProfileModal').classList.add('active');
+    }
+
+    async function saveParticipantData(event, encodedEmail) {
+      event.preventDefault();
+      const email = decodeURIComponent(encodedEmail);
+      const person = allData.participants.find(p => String(p['Email'] || p.email || '').toLowerCase() === email.toLowerCase());
+      const data = { ...person };
+      document.querySelectorAll('#participantEditForm [data-field]').forEach(input => { data[input.dataset.field] = input.value; });
+      const name = data.Name || data.name || email;
+      if (!window.confirm(`Save these participant changes for ${name}?`)) return;
+      const message = document.getElementById('participantEditMessage');
+      const button = document.querySelector('#participantEditForm button[type="submit"]');
+      button.disabled = true;
+      message.textContent = 'Saving…';
+      try {
+        const response = await fetch(`/api/participants/${encodeURIComponent(email)}`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not save participant changes.');
+        closePersonProfile();
+        await loadDashboard();
+      } catch (error) {
+        message.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    async function toggleReported(encodedEmail, checkbox) {
+      const email = decodeURIComponent(encodedEmail);
+      const participant = allData.participants.find(p => String(p['Email'] || p.email || '').toLowerCase() === email.toLowerCase());
+      const reported = checkbox.checked;
+      if (!window.confirm(`${reported ? 'Mark' : 'Unmark'} ${participant?.Name || email} as reported?`)) {
+        checkbox.checked = !reported;
+        return;
+      }
+      checkbox.disabled = true;
+      try {
+        const response = await fetch(`/api/participants/${encodeURIComponent(email)}/reported`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reported })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Could not update report status.');
+        allData.reported[email.toLowerCase()] = reported;
+      } catch (error) {
+        checkbox.checked = !reported;
+        window.alert(error.message);
+      } finally {
+        checkbox.disabled = false;
+      }
     }
 
     function viewEvent(id) {
-      alert('View event: ' + id);
-    }
-
-    function syncParticipation() {
-      alert('Syncing with Dates page...');
+      const selectedEvent = allData.events.find(item => Number(item.id) === Number(id));
+      if (!selectedEvent) return;
+      const participationTab = [...document.querySelectorAll('.dashboard-tab')]
+        .find(button => button.getAttribute('onclick')?.includes("switchTab('participation'"));
+      if (participationTab) switchTab('participation', participationTab);
+      const eventFilter = document.getElementById('eventFilter');
+      eventFilter.value = selectedEvent.name;
+      filterParticipation();
+      document.getElementById('participation').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -346,8 +871,7 @@
     loadDashboard();
 
     function openPersonProfile(email) {
-      const person = allParticipants.find(p => (p['Email'] || p['email']) === email) || 
-                     allData.participants.find(p => (p['Email'] || p['email']) === email);
+      const person = allData.participants.find(p => String(p['Email'] || p.email || '').toLowerCase() === String(email).toLowerCase());
       if (!person) return;
 
       const modal = document.getElementById('personProfileModal');
@@ -488,5 +1012,19 @@
       <div id="profileContent"></div> 
     </div> 
   </div>
+  <div class="profile-modal" id="participationEditModal">
+    <div class="profile-modal-content">
+      <div class="profile-header"><div class="profile-title">Edit participation</div><button type="button" class="profile-close" onclick="document.getElementById('participationEditModal').classList.remove('active')">✕</button></div>
+      <form id="participationEditForm" onsubmit="saveParticipationData(event)">
+        <input type="hidden" name="eventId"><input type="hidden" name="email">
+        <div class="participant-edit-grid">
+          <label><input type="checkbox" name="invited"> Invited</label><label><input type="checkbox" name="responded"> Responded</label><label><input type="checkbox" name="attended"> Attended</label><label><input type="checkbox" name="paid"> Paid</label><label><input type="checkbox" name="freeEntry"> Free entry</label><label><input type="checkbox" name="referral"> Referral</label>
+          <label>Status<input class="input-field" name="status"></label><label>Amount (€)<input class="input-field" name="amount" type="number" min="0" step="0.01"></label>
+          <label class="form-wide">Notes<textarea class="input-field" name="notes" maxlength="2000"></textarea></label>
+        </div><button class="action-btn" type="submit">Save participation</button>
+      </form>
+    </div>
+  </div>
+  <script src="/nav-active.js" defer></script>
 </body>
 </html>

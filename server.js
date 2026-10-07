@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import multer from 'multer';
 import XLSX from 'xlsx';
 import { initializeDatabase, getPool } from './db.js';
+import { parseEventUpload } from './event-import.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -885,32 +886,16 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
 
     const pool = getPool();
     const tableName = 'imported_data';
-    console.log('3. About to check table');
+    const client = await pool.connect();
+    let importedRows = 0;
+    let updatedRows = 0;
+    let skippedRows = 0;
 
-    // Check if table exists and has correct schema
-    const checkTable = await pool.query(`
-      SELECT EXISTS (
-        SELECT FROM information_schema.tables
-        WHERE table_name = $1
-      );
-    `, [tableName]);
-
-    const tableExists = checkTable.rows[0].exists;
-
-    // If table exists, drop it to recreate with correct schema
-    if (tableExists) {
-      try {
-        await pool.query(`DROP TABLE IF EXISTS ${tableName} CASCADE;`);
-        console.log('Dropped old table schema');
-      } catch (err) {
-        console.error(`Error dropping table: ${err.message}`);
-      }
-    }
-
-    // Create fresh table with JSONB storage
-    console.log('4. About to create table');
     try {
-      await pool.query(`
+      await client.query('BEGIN');
+      // Serialize imports so concurrent uploads cannot create duplicate participant rows.
+      await client.query("SELECT pg_advisory_xact_lock(hashtext('imported_data_upload'))");
+      await client.query(`
         CREATE TABLE IF NOT EXISTS ${tableName} (
           id SERIAL PRIMARY KEY,
           data JSONB NOT NULL,
@@ -918,53 +903,65 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
           imported_at TIMESTAMP DEFAULT NOW()
         )
       `);
-      console.log('Table created with correct JSONB schema');
-    } catch (err) {
-      console.error(`Error creating table: ${err.message}`);
-      return res.status(500).json({ error: `Failed to create table: ${err.message}` });
-    }
 
-    // Insert data with duplicate checking
-    let importedRows = 0;
-    let skippedRows = 0;
-    let errorRows = 0;
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const email = String(row.Email || row.email || '').trim();
+        let existingParticipant = null;
 
-    console.log('5. About to insert first row');
-    console.log(`Starting to import ${data.length} rows...`);
+        if (email) {
+          const existing = await client.query(`
+            SELECT id, data, data_hash FROM ${tableName}
+            WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
+            ORDER BY id LIMIT 2 FOR UPDATE
+          `, [email]);
+          if (existing.rows.length > 1) {
+            throw new Error(`Multiple existing participant rows use ${email}. Resolve the duplicate before importing.`);
+          }
+          existingParticipant = existing.rows[0] || null;
+          if (existingParticipant) {
+            const canonicalEmail = existingParticipant.data.Email || existingParticipant.data.email;
+            if (Object.hasOwn(row, 'Email')) row.Email = canonicalEmail;
+            if (Object.hasOwn(row, 'email')) row.email = canonicalEmail;
+          }
+        }
 
-    for (let i = 0; i < data.length; i++) {
-      const row = data[i];
-      try {
-        // Create a hash of the row data to check for duplicates
         const rowString = JSON.stringify(row);
         const dataHash = crypto.createHash('sha256').update(rowString).digest('hex');
-
-        // Check if this data already exists
-        const checkResult = await pool.query(
-          `SELECT id FROM ${tableName} WHERE data_hash = $1`,
-          [dataHash]
-        );
-
-        if (checkResult.rows.length === 0) {
-          // Insert new row as JSONB (PostgreSQL handles JSON encoding/decoding)
-          await pool.query(
-            `INSERT INTO ${tableName} (data, data_hash) VALUES ($1, $2)`,
-            [JSON.stringify(row), dataHash]
-          );
-          importedRows++;
-          if ((i + 1) % 100 === 0) {
-            console.log(`Processed ${i + 1} rows, imported ${importedRows}...`);
+        if (existingParticipant) {
+          if (existingParticipant.data_hash === dataHash) {
+            skippedRows++;
+            continue;
           }
-        } else {
-          skippedRows++;
+          await client.query(
+            `UPDATE ${tableName} SET data = $1, data_hash = $2, imported_at = NOW() WHERE id = $3`,
+            [rowString, dataHash, existingParticipant.id]
+          );
+          updatedRows++;
+          continue;
         }
-      } catch (err) {
-        console.error(`Error inserting row ${i + 1}: ${err.message}`);
-        errorRows++;
+
+        const inserted = await client.query(
+          `INSERT INTO ${tableName} (data, data_hash) VALUES ($1, $2) ON CONFLICT (data_hash) DO NOTHING RETURNING id`,
+          [rowString, dataHash]
+        );
+        if (inserted.rowCount) importedRows++;
+        else skippedRows++;
+
+        if ((i + 1) % 100 === 0) {
+          console.log(`Processed ${i + 1} rows, added ${importedRows}, updated ${updatedRows}...`);
+        }
       }
+
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
     }
 
-    console.log(`Import complete: ${importedRows} imported, ${skippedRows} skipped, ${errorRows} errors out of ${data.length} total`);
+    console.log(`Import complete: ${importedRows} added, ${updatedRows} updated, ${skippedRows} unchanged out of ${data.length} total`);
 
     // Get preview of imported rows (max 10)
     const previewResult = await pool.query(`
@@ -977,11 +974,12 @@ app.post('/api/upload-data', requireAuth, upload.single('file'), async (req, res
 
     res.json({
       importedRows,
+      updatedRows,
       skippedRows,
       totalRows: data.length,
       preview,
       columns: columns_response,
-      message: `Successfully imported ${importedRows} rows and skipped ${skippedRows} duplicates`
+      message: `Added ${importedRows} participants, updated ${updatedRows}, and skipped ${skippedRows} unchanged rows`
     });
   } catch (error) {
     console.error('Error uploading data:', error);
@@ -1048,7 +1046,335 @@ app.get('/api/dashboard-data', requireAuth, async (req, res) => {
   }
 });
 
+// Edit one participant's uploaded record. If their email changes, carry linked stats along too.
+app.put('/api/participants/:email', requireAuth, async (req, res) => {
+  const originalEmail = decodeURIComponent(req.params.email);
+  const updatedData = req.body?.data;
+  if (!updatedData || typeof updatedData !== 'object' || Array.isArray(updatedData)) {
+    return res.status(400).json({ error: 'Participant data must be an object.' });
+  }
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const existingResult = await client.query(`
+      SELECT id, data FROM imported_data
+      WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
+      ORDER BY id LIMIT 2 FOR UPDATE
+    `, [originalEmail]);
+    if (!existingResult.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Participant was not found.' });
+    }
+    if (existingResult.rows.length > 1) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'This email identifies multiple uploaded rows. Resolve the duplicate before editing.' });
+    }
+    const existing = existingResult.rows[0];
+    const data = { ...existing.data, ...updatedData };
+    const emailKey = Object.hasOwn(data, 'Email') ? 'Email' : (Object.hasOwn(data, 'email') ? 'email' : 'Email');
+    const newEmail = String(data[emailKey] || '').trim();
+    if (!newEmail) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Email cannot be blank.' });
+    }
+    if (newEmail.toLowerCase() !== originalEmail.toLowerCase()) {
+      const collision = await client.query(`
+        SELECT id FROM imported_data
+        WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1) AND id <> $2
+        LIMIT 1
+      `, [newEmail, existing.id]);
+      if (collision.rows.length) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Another participant already uses that email.' });
+      }
+      // Any uniqueness conflict in linked records aborts the whole edit.
+      await client.query('UPDATE event_participation SET email = $1 WHERE LOWER(email) = LOWER($2)', [newEmail, originalEmail]);
+      await client.query('UPDATE date_stats SET participant_email = $1 WHERE LOWER(participant_email) = LOWER($2)', [newEmail, originalEmail]);
+      await client.query('UPDATE participant_metadata SET email = $1 WHERE LOWER(email) = LOWER($2)', [newEmail, originalEmail]);
+    }
+    const dataHash = crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
+    await client.query('UPDATE imported_data SET data = $1, data_hash = $2 WHERE id = $3', [JSON.stringify(data), dataHash, existing.id]);
+    await client.query('COMMIT');
+    res.json({ success: true, data });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error updating participant data:', error);
+    if (error.code === '23505') return res.status(409).json({ error: 'The change conflicts with another participant record.' });
+    res.status(500).json({ error: 'Failed to update participant data.' });
+  } finally {
+    client.release();
+  }
+});
+
+app.get('/api/participants/report-flags', requireAuth, async (req, res) => {
+  try {
+    const result = await getPool().query('SELECT email, reported FROM participant_metadata WHERE reported = TRUE');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching reported flags:', error);
+    res.status(500).json({ error: 'Failed to fetch report flags.' });
+  }
+});
+
+app.put('/api/participants/:email/reported', requireAuth, async (req, res) => {
+  const email = decodeURIComponent(req.params.email);
+  const { reported } = req.body || {};
+  if (typeof reported !== 'boolean') return res.status(400).json({ error: 'Reported must be true or false.' });
+  try {
+    const result = await getPool().query(`
+      INSERT INTO participant_metadata (email, reported) VALUES ($1, $2)
+      ON CONFLICT (email) DO UPDATE SET reported = EXCLUDED.reported, updated_at = NOW()
+      RETURNING email, reported
+    `, [email, reported]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating reported flag:', error);
+    res.status(500).json({ error: 'Failed to update report flag.' });
+  }
+});
+
 // ===== Dashboard API Endpoints =====
+
+// Read date outcomes recorded per participant and event.
+app.get('/api/date-stats', requireAuth, async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query(`
+      SELECT ds.*, e.name AS event_name, e.date AS event_date
+      FROM date_stats ds
+      JOIN events e ON e.id = ds.event_id
+      ORDER BY e.date DESC NULLS LAST, e.name, ds.participant_email
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching date stats:', error);
+    res.status(500).json({ error: 'Failed to fetch date stats' });
+  }
+});
+
+// Import event participation and date outcomes without clearing existing records.
+app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Choose a CSV or Excel file to import.' });
+
+  const normalizeHeader = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const parseBoolean = (value, label, rowNumber) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const normalized = String(value).trim().toLowerCase();
+    if (['yes', 'y', 'true', '1', 'attended', 'invited', 'paid'].includes(normalized)) return true;
+    if (['no', 'n', 'false', '0', 'notattended', 'unpaid'].includes(normalized)) return false;
+    throw new Error(`Row ${rowNumber}: ${label} must be Yes or No.`);
+  };
+  const parseCount = (value, label, rowNumber, allowDecimal = false) => {
+    if (value === '' || value === null || value === undefined) return null;
+    const number = Number(value);
+    if (!Number.isFinite(number) || number < 0 || (!allowDecimal && !Number.isInteger(number))) {
+      throw new Error(`Row ${rowNumber}: ${label} must be a non-negative ${allowDecimal ? 'number' : 'whole number'}.`);
+    }
+    return number;
+  };
+
+  try {
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer', raw: false });
+    const sheetName = workbook.SheetNames[0];
+    if (!sheetName) return res.status(400).json({ error: 'The file has no worksheet.' });
+    const sourceRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: false });
+    if (!sourceRows.length) return res.status(400).json({ error: 'The first worksheet has no data rows.' });
+
+    const rows = sourceRows.map((source, index) => {
+      const rowNumber = index + 2;
+      const values = new Map(Object.entries(source).map(([key, value]) => [normalizeHeader(key), value]));
+      const read = (...aliases) => {
+        for (const alias of aliases) {
+          const key = normalizeHeader(alias);
+          if (values.has(key)) {
+            const value = values.get(key);
+            return value === '' || value === null || value === undefined ? null : String(value).trim();
+          }
+        }
+        return null;
+      };
+      const eventName = read('Event', 'Event Name');
+      const email = read('Participant Email', 'Email');
+      if (!eventName || !email) throw new Error(`Row ${rowNumber}: Event Name and Participant Email are required.`);
+
+      const participation = {
+        invited: parseBoolean(read('Invited'), 'Invited', rowNumber),
+        responded: parseBoolean(read('Responded'), 'Responded', rowNumber),
+        status: read('Participation Status', 'Status'),
+        attended: parseBoolean(read('Attended Event', 'Event Attended', 'Attended'), 'Attended Event', rowNumber),
+        paid: parseBoolean(read('Paid'), 'Paid', rowNumber),
+        amount: parseCount(read('Amount', 'Amount Paid'), 'Amount', rowNumber, true),
+        freeEntry: parseBoolean(read('Free Entry'), 'Free Entry', rowNumber),
+        referral: parseBoolean(read('Referral'), 'Referral', rowNumber),
+        notes: read('Participation Notes')
+      };
+      const dateStats = {
+        attended: parseBoolean(read('Went On Date', 'Had Date', 'Date Attended'), 'Went On Date', rowNumber),
+        likesGiven: parseCount(read('Likes Given'), 'Likes Given', rowNumber),
+        likesReceived: parseCount(read('Likes Received'), 'Likes Received', rowNumber),
+        romanticLikesGiven: parseCount(read('Romantic Likes Given', 'Likes Given Romantic'), 'Romantic Likes Given', rowNumber),
+        socialLikesGiven: parseCount(read('Social Likes Given', 'Likes Given Social'), 'Social Likes Given', rowNumber),
+        romanticLikesReceived: parseCount(read('Romantic Likes Received', 'Likes Received Romantic'), 'Romantic Likes Received', rowNumber),
+        socialLikesReceived: parseCount(read('Social Likes Received', 'Likes Received Social'), 'Social Likes Received', rowNumber),
+        romanticMatches: parseCount(read('Romantic Matches'), 'Romantic Matches', rowNumber),
+        socialMatches: parseCount(read('Social Matches'), 'Social Matches', rowNumber),
+        notes: read('Date Notes')
+      };
+      const hasParticipation = Object.values(participation).some(value => value !== null);
+      const hasDateStats = Object.values(dateStats).some(value => value !== null);
+      if (!hasParticipation && !hasDateStats) throw new Error(`Row ${rowNumber}: No event participation or date stats were provided.`);
+      return { rowNumber, eventName, email, participation, dateStats, hasParticipation, hasDateStats };
+    });
+
+    const client = await getPool().connect();
+    let participationSaved = 0;
+    let dateStatsSaved = 0;
+    const rollupEmails = new Set();
+    try {
+      await client.query('BEGIN');
+      for (const row of rows) {
+        const eventResult = await client.query('SELECT id, is_failed FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1', [row.eventName]);
+        if (!eventResult.rows.length) throw new Error(`Row ${row.rowNumber}: Event “${row.eventName}” was not found. Add it in Events first.`);
+        if (eventResult.rows[0].is_failed && row.hasDateStats) throw new Error(`Row ${row.rowNumber}: Date stats cannot be recorded for a failed event.`);
+        if (eventResult.rows[0].is_failed && (row.participation.paid === true || Number(row.participation.amount || 0) > 0)) {
+          throw new Error(`Row ${row.rowNumber}: Failed events cannot record payments or revenue.`);
+        }
+        const participantResult = await client.query(`
+          SELECT COALESCE(data->>'Email', data->>'email') AS email
+          FROM imported_data
+          WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
+          LIMIT 1
+        `, [row.email]);
+        if (!participantResult.rows.length) throw new Error(`Row ${row.rowNumber}: Participant email “${row.email}” was not found in uploaded participant data.`);
+        const eventId = eventResult.rows[0].id;
+        const participantEmail = participantResult.rows[0].email;
+
+        if (row.hasParticipation) {
+          const p = row.participation;
+          const pFlags = [p.invited, p.responded, p.status, p.attended, p.paid, p.amount, p.freeEntry, p.referral, p.notes].map(value => value !== null);
+          await client.query(`
+            INSERT INTO event_participation
+              (event_id, email, invited, responded, status, attended, paid, amount, free_entry, referral, notes)
+            VALUES ($1, $2, COALESCE($3, FALSE), COALESCE($4, FALSE), COALESCE($5, 'waiting'), COALESCE($6, FALSE), COALESCE($7, FALSE), COALESCE($8, 0), COALESCE($9, FALSE), COALESCE($10, FALSE), $11)
+            ON CONFLICT (event_id, email) DO UPDATE SET
+              invited = CASE WHEN $12 THEN EXCLUDED.invited ELSE event_participation.invited END,
+              responded = CASE WHEN $13 THEN EXCLUDED.responded ELSE event_participation.responded END,
+              status = CASE WHEN $14 THEN EXCLUDED.status ELSE event_participation.status END,
+              attended = CASE WHEN $15 THEN EXCLUDED.attended ELSE event_participation.attended END,
+              paid = CASE WHEN $16 THEN EXCLUDED.paid ELSE event_participation.paid END,
+              amount = CASE WHEN $17 THEN EXCLUDED.amount ELSE event_participation.amount END,
+              free_entry = CASE WHEN $18 THEN EXCLUDED.free_entry ELSE event_participation.free_entry END,
+              referral = CASE WHEN $19 THEN EXCLUDED.referral ELSE event_participation.referral END,
+              notes = CASE WHEN $20 THEN EXCLUDED.notes ELSE event_participation.notes END,
+              updated_at = NOW()
+          `, [eventId, participantEmail, p.invited, p.responded, p.status, p.attended, p.paid, p.amount, p.freeEntry, p.referral, p.notes, ...pFlags]);
+          participationSaved++;
+          rollupEmails.add(participantEmail);
+        }
+
+        if (row.hasDateStats) {
+          const d = row.dateStats;
+          const dFlags = [d.attended, d.likesGiven, d.likesReceived, d.romanticLikesGiven, d.socialLikesGiven,
+            d.romanticLikesReceived, d.socialLikesReceived, d.romanticMatches, d.socialMatches, d.notes].map(value => value !== null);
+          await client.query(`
+            INSERT INTO date_stats
+            (event_id, participant_email, attended, likes_given, likes_received, romantic_likes_given, social_likes_given,
+             romantic_likes_received, social_likes_received, romantic_matches, social_matches, notes)
+          VALUES ($1, $2, $3, COALESCE($4, COALESCE($6, 0) + COALESCE($7, 0)),
+              COALESCE($5, COALESCE($8, 0) + COALESCE($9, 0)), COALESCE($6, 0), COALESCE($7, 0),
+              COALESCE($8, 0), COALESCE($9, 0), COALESCE($10, 0), COALESCE($11, 0), $12)
+            ON CONFLICT (event_id, participant_email) DO UPDATE SET
+              attended = CASE WHEN $13 THEN EXCLUDED.attended ELSE date_stats.attended END,
+              likes_given = CASE WHEN $14 THEN EXCLUDED.likes_given
+                WHEN ($16 OR $17) THEN (CASE WHEN $16 THEN EXCLUDED.romantic_likes_given ELSE date_stats.romantic_likes_given END
+                  + CASE WHEN $17 THEN EXCLUDED.social_likes_given ELSE date_stats.social_likes_given END)
+                ELSE date_stats.likes_given END,
+              likes_received = CASE WHEN $15 THEN EXCLUDED.likes_received
+                WHEN ($18 OR $19) THEN (CASE WHEN $18 THEN EXCLUDED.romantic_likes_received ELSE date_stats.romantic_likes_received END
+                  + CASE WHEN $19 THEN EXCLUDED.social_likes_received ELSE date_stats.social_likes_received END)
+                ELSE date_stats.likes_received END,
+              romantic_likes_given = CASE WHEN $16 THEN EXCLUDED.romantic_likes_given ELSE date_stats.romantic_likes_given END,
+              social_likes_given = CASE WHEN $17 THEN EXCLUDED.social_likes_given ELSE date_stats.social_likes_given END,
+              romantic_likes_received = CASE WHEN $18 THEN EXCLUDED.romantic_likes_received ELSE date_stats.romantic_likes_received END,
+              social_likes_received = CASE WHEN $19 THEN EXCLUDED.social_likes_received ELSE date_stats.social_likes_received END,
+              romantic_matches = CASE WHEN $20 THEN EXCLUDED.romantic_matches ELSE date_stats.romantic_matches END,
+              social_matches = CASE WHEN $21 THEN EXCLUDED.social_matches ELSE date_stats.social_matches END,
+              notes = CASE WHEN $22 THEN EXCLUDED.notes ELSE date_stats.notes END,
+              updated_at = NOW()
+          `, [eventId, participantEmail, d.attended, d.likesGiven, d.likesReceived, d.romanticLikesGiven, d.socialLikesGiven,
+            d.romanticLikesReceived, d.socialLikesReceived, d.romanticMatches, d.socialMatches, d.notes, ...dFlags]);
+          dateStatsSaved++;
+        }
+      }
+      await refreshParticipantRollups(client, [...rollupEmails]);
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+
+    res.json({ rowsProcessed: rows.length, participationSaved, dateStatsSaved, message: 'Import saved. Existing event and participant records were updated only for fields present in the file; other saved records were kept.' });
+  } catch (error) {
+    console.error('Error importing event stats:', error);
+    res.status(400).json({ error: error.message || 'Failed to import event stats.' });
+  }
+});
+
+// Save or update one participant's outcomes for an event.
+app.post('/api/date-stats', requireAuth, async (req, res) => {
+  try {
+    const { eventId, participantEmail, attended = true, romanticLikesGiven = 0, socialLikesGiven = 0,
+      romanticLikesReceived = 0, socialLikesReceived = 0, romanticMatches = 0, socialMatches = 0, notes = '' } = req.body;
+    const counts = [romanticLikesGiven, socialLikesGiven, romanticLikesReceived, socialLikesReceived, romanticMatches, socialMatches];
+    const numericEventId = Number(eventId);
+    if (!Number.isInteger(numericEventId) || numericEventId <= 0 ||
+        typeof participantEmail !== 'string' || !participantEmail.trim() ||
+        (attended !== null && typeof attended !== 'boolean') ||
+        counts.some(value => !Number.isInteger(Number(value)) || Number(value) < 0) ||
+        typeof notes !== 'string' || notes.length > 1000) {
+      return res.status(400).json({ error: 'Choose an event and participant, and enter non-negative whole-number counts.' });
+    }
+
+    const pool = getPool();
+    const eventResult = await pool.query('SELECT is_failed FROM events WHERE id = $1', [numericEventId]);
+    if (!eventResult.rows.length) return res.status(404).json({ error: 'Event not found.' });
+    if (eventResult.rows[0].is_failed) return res.status(400).json({ error: 'Date stats cannot be recorded for a failed event.' });
+    const participantResult = await pool.query(`
+      SELECT COALESCE(data->>'Email', data->>'email') AS email
+      FROM imported_data
+      WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
+      ORDER BY id LIMIT 1
+    `, [participantEmail.trim()]);
+    if (!participantResult.rows.length) return res.status(400).json({ error: 'Participant was not found in participant data.' });
+    const canonicalEmail = participantResult.rows[0].email;
+    const result = await pool.query(`
+      INSERT INTO date_stats
+        (event_id, participant_email, attended, likes_given, likes_received, romantic_likes_given, social_likes_given,
+         romantic_likes_received, social_likes_received, romantic_matches, social_matches, notes)
+      VALUES ($1, $2, $3, $4 + $5, $6 + $7, $4, $5, $6, $7, $8, $9, $10)
+      ON CONFLICT (event_id, participant_email) DO UPDATE SET
+        attended = COALESCE(EXCLUDED.attended, date_stats.attended),
+        likes_given = EXCLUDED.likes_given,
+        likes_received = EXCLUDED.likes_received,
+        romantic_likes_given = EXCLUDED.romantic_likes_given,
+        social_likes_given = EXCLUDED.social_likes_given,
+        romantic_likes_received = EXCLUDED.romantic_likes_received,
+        social_likes_received = EXCLUDED.social_likes_received,
+        romantic_matches = EXCLUDED.romantic_matches,
+        social_matches = EXCLUDED.social_matches,
+        notes = EXCLUDED.notes,
+        updated_at = NOW()
+      RETURNING *
+    `, [numericEventId, canonicalEmail, attended, ...counts.map(Number), notes.trim()]);
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error saving date stats:', error);
+    if (error.code === '23503') return res.status(400).json({ error: 'The selected event no longer exists.' });
+    res.status(500).json({ error: 'Failed to save date stats' });
+  }
+});
 
 // Get all events
 app.get('/api/events', requireAuth, async (req, res) => {
@@ -1060,6 +1386,198 @@ app.get('/api/events', requireAuth, async (req, res) => {
     console.error('Error fetching events:', error);
     res.status(500).json({ error: 'Failed to fetch events' });
   }
+});
+
+// Record a planned event that was cancelled/failed and its RSVP yes/no responses.
+app.post('/api/events/failed', requireAuth, async (req, res) => {
+  const { name, date, eventType, attendingEmails, notAttendingEmails } = req.body || {};
+  const parseEmails = value => String(value || '').split(/[\n,;]+/).map(email => email.trim().toLowerCase()).filter(Boolean);
+  const attending = parseEmails(attendingEmails);
+  const notAttending = parseEmails(notAttendingEmails);
+  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (typeof name !== 'string' || !name.trim() || name.trim().length > 255 ||
+      typeof eventType !== 'string' || !eventType.trim() || eventType.trim().length > 100 ||
+      (date !== null && date !== undefined && date !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(date)) ||
+      attending.length + notAttending.length === 0 || attending.length + notAttending.length > 1000 ||
+      [...attending, ...notAttending].some(email => !emailPattern.test(email))) {
+    return res.status(400).json({ error: 'Enter an event name, event type, and at least one valid participant email.' });
+  }
+  if (new Set(attending).size !== attending.length || new Set(notAttending).size !== notAttending.length ||
+      attending.some(email => notAttending.includes(email))) {
+    return res.status(400).json({ error: 'Each participant must appear once and can only have one RSVP response.' });
+  }
+
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const duplicateEvent = await client.query('SELECT id FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1', [name.trim()]);
+    if (duplicateEvent.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: 'An event with this name already exists.' });
+    }
+
+    const emails = [...attending, ...notAttending];
+    const participants = await client.query(`
+      SELECT DISTINCT ON (LOWER(COALESCE(data->>'Email', data->>'email')))
+        COALESCE(data->>'Email', data->>'email') AS email
+      FROM imported_data
+      WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = ANY($1::text[])
+      ORDER BY LOWER(COALESCE(data->>'Email', data->>'email')), id
+    `, [emails]);
+    const participantByEmail = new Map(participants.rows.map(row => [row.email.toLowerCase(), row.email]));
+    const unknownEmails = emails.filter(email => !participantByEmail.has(email));
+    if (unknownEmails.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: `These emails are not in participant data: ${unknownEmails.slice(0, 5).join(', ')}${unknownEmails.length > 5 ? ', …' : ''}` });
+    }
+
+    const created = await client.query(`
+      INSERT INTO events (name, date, participation_fee, event_type, is_failed)
+      VALUES ($1, $2, 0, $3, TRUE) RETURNING id
+    `, [name.trim(), date || null, eventType.trim()]);
+    const eventId = created.rows[0].id;
+    for (const [emailsForResponse, status] of [[attending, 'attending'], [notAttending, 'not_attending']]) {
+      for (const inputEmail of emailsForResponse) {
+        await client.query(`
+          INSERT INTO event_participation
+            (event_id, email, invited, responded, status, attended, paid, amount, free_entry)
+          VALUES ($1, $2, TRUE, TRUE, $3, FALSE, FALSE, 0, FALSE)
+        `, [eventId, participantByEmail.get(inputEmail)]);
+      }
+    }
+    await client.query('COMMIT');
+    res.status(201).json({ eventId, eventName: name.trim(), attendingCount: attending.length, notAttendingCount: notAttending.length });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating failed event:', error);
+    res.status(500).json({ error: 'Failed to save failed event.' });
+  } finally {
+    client.release();
+  }
+});
+
+async function refreshParticipantRollups(client, emails) {
+  for (const email of [...new Set(emails.map(value => String(value).trim()).filter(Boolean))]) {
+    const totals = await client.query(`
+      SELECT COUNT(*) FILTER (WHERE attended)::INTEGER AS total_attended,
+             COALESCE(SUM(amount) FILTER (WHERE paid), 0) AS total_paid
+      FROM event_participation ep
+      JOIN events e ON e.id = ep.event_id
+      WHERE LOWER(ep.email) = LOWER($1) AND e.is_failed = FALSE
+    `, [email]);
+    await client.query(`
+      INSERT INTO participant_metadata (email, total_attended, total_paid, reward_tag)
+      VALUES ($1, $2, $3, CASE WHEN $2 >= 5 THEN 'FREE EVENT' WHEN $2 >= 3 THEN '50% OFF' ELSE NULL END)
+      ON CONFLICT (email) DO UPDATE SET
+        total_attended = EXCLUDED.total_attended,
+        total_paid = EXCLUDED.total_paid,
+        reward_tag = EXCLUDED.reward_tag,
+        updated_at = NOW()
+    `, [email, totals.rows[0].total_attended, totals.rows[0].total_paid]);
+  }
+}
+
+// Preview or import one event admin PDF, Excel workbook, or CSV without deleting unrelated records.
+app.post('/api/events/import', requireAuth, upload.single('file'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Choose an event PDF, Excel, or CSV file.' });
+  try {
+    const eventData = await parseEventUpload(req.file);
+    const expectedRevenue = eventData.people.filter(person => person.paid && !person.freeEntry).reduce((sum, person) => sum + Number(person.amount || 0), 0);
+    if (req.body.preview === 'true') {
+      const existing = await getPool().query('SELECT id FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1', [eventData.eventName]);
+      return res.json({ eventName: eventData.eventName, date: eventData.date, fee: eventData.fee, participantCount: eventData.people.length, expectedRevenue, existing: existing.rows.length > 0 });
+    }
+    if (req.body.commit !== 'true') return res.status(400).json({ error: 'Review the file first, then confirm before saving.' });
+
+    const client = await getPool().connect();
+    try {
+      await client.query('BEGIN');
+      let eventResult = await client.query('SELECT id, is_failed FROM events WHERE LOWER(name) = LOWER($1) ORDER BY id LIMIT 1 FOR UPDATE', [eventData.eventName]);
+      let eventId;
+      const rollupEmails = new Set(eventData.people.map(person => person.email.trim()));
+      if (eventResult.rows.length) {
+        eventId = eventResult.rows[0].id;
+        if (eventResult.rows[0].is_failed) throw new Error(`Event “${eventData.eventName}” is marked failed. Use the failed-event RSVP form to update it.`);
+        await client.query('UPDATE events SET date = COALESCE($1, date), participation_fee = $2, updated_at = NOW() WHERE id = $3', [eventData.date, eventData.fee, eventId]);
+        const updatedPayments = await client.query('UPDATE event_participation SET amount = $1, updated_at = NOW() WHERE event_id = $2 AND paid = TRUE AND free_entry = FALSE RETURNING email', [eventData.fee, eventId]);
+        updatedPayments.rows.forEach(row => rollupEmails.add(row.email));
+      } else {
+        const created = await client.query('INSERT INTO events (name, date, participation_fee) VALUES ($1, $2, $3) RETURNING id', [eventData.eventName, eventData.date, eventData.fee]);
+        eventId = created.rows[0].id;
+      }
+
+      for (const person of eventData.people) {
+        const registered = await client.query(`
+          SELECT COALESCE(data->>'Email', data->>'email') AS email FROM imported_data
+          WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
+          ORDER BY id LIMIT 1
+        `, [person.email]);
+        let participantEmail = registered.rows[0]?.email || person.email.trim();
+        if (!registered.rows.length) {
+          const minimalProfile = { Name: person.name, Email: participantEmail };
+          const profileHash = crypto.createHash('sha256').update(JSON.stringify(minimalProfile)).digest('hex');
+          await client.query('INSERT INTO imported_data (data, data_hash) VALUES ($1, $2) ON CONFLICT (data_hash) DO NOTHING', [JSON.stringify(minimalProfile), profileHash]);
+        }
+        rollupEmails.add(participantEmail);
+        await client.query(`
+          INSERT INTO event_participation
+            (event_id, email, invited, responded, status, attended, paid, amount, free_entry)
+          VALUES ($1, $2, TRUE, TRUE, 'accepted', $3, $4, $5, $6)
+          ON CONFLICT (event_id, email) DO UPDATE SET
+            invited = TRUE, responded = TRUE, status = 'accepted',
+            attended = EXCLUDED.attended, paid = EXCLUDED.paid, amount = EXCLUDED.amount,
+            free_entry = EXCLUDED.free_entry, updated_at = NOW()
+        `, [eventId, participantEmail, person.attended, person.paid, person.amount, person.freeEntry]);
+
+        await client.query(`
+          INSERT INTO date_stats
+            (event_id, participant_email, attended, likes_given, likes_received, romantic_likes_given, social_likes_given,
+             romantic_likes_received, social_likes_received, romantic_matches, social_matches, notes)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'Imported from event data upload')
+          ON CONFLICT (event_id, participant_email) DO UPDATE SET
+            attended = COALESCE(EXCLUDED.attended, date_stats.attended), likes_given = EXCLUDED.likes_given, likes_received = EXCLUDED.likes_received,
+            romantic_likes_given = EXCLUDED.romantic_likes_given, social_likes_given = EXCLUDED.social_likes_given,
+            romantic_likes_received = EXCLUDED.romantic_likes_received, social_likes_received = EXCLUDED.social_likes_received,
+            romantic_matches = EXCLUDED.romantic_matches, social_matches = EXCLUDED.social_matches,
+            notes = EXCLUDED.notes, updated_at = NOW()
+        `, [eventId, participantEmail, person.dateAttended, person.romanticLikesGiven + person.socialLikesGiven,
+          person.romanticLikesReceived + person.socialLikesReceived, person.romanticLikesGiven, person.socialLikesGiven,
+          person.romanticLikesReceived, person.socialLikesReceived, person.romanticMatches, person.socialMatches]);
+      }
+      await refreshParticipantRollups(client, [...rollupEmails]);
+      await client.query('COMMIT');
+      res.json({ eventId, eventName: eventData.eventName, participantCount: eventData.people.length, expectedRevenue });
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally { client.release(); }
+  } catch (error) {
+    console.error('Error importing event data:', error);
+    res.status(400).json({ error: error.message || 'Could not import event data.' });
+  }
+});
+
+app.put('/api/events/:eventId/fee', requireAuth, async (req, res) => {
+  const fee = Number(req.body?.fee);
+  if (!Number.isFinite(fee) || fee < 0 || Math.round(fee * 100) !== fee * 100) return res.status(400).json({ error: 'Fee must be a non-negative amount with up to two decimal places.' });
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    const eventResult = await client.query('UPDATE events SET participation_fee = $1, updated_at = NOW() WHERE id = $2 AND is_failed = FALSE RETURNING id, name, date, participation_fee', [fee, req.params.eventId]);
+    if (!eventResult.rows.length) {
+      const exists = await client.query('SELECT is_failed FROM events WHERE id = $1', [req.params.eventId]);
+      await client.query('ROLLBACK');
+      return exists.rows.length ? res.status(400).json({ error: 'Failed events cannot have a participation fee.' }) : res.status(404).json({ error: 'Event not found.' });
+    }
+    const updated = await client.query('UPDATE event_participation SET amount = $1, updated_at = NOW() WHERE event_id = $2 AND paid = TRUE AND free_entry = FALSE RETURNING email', [fee, req.params.eventId]);
+    await refreshParticipantRollups(client, updated.rows.map(row => row.email));
+    await client.query('COMMIT');
+    res.json({ event: eventResult.rows[0], participantsUpdated: updated.rowCount });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error updating event fee:', error);
+    res.status(500).json({ error: 'Failed to update event fee.' });
+  } finally { client.release(); }
 });
 
 // Get event participation
@@ -1077,12 +1595,34 @@ app.get('/api/events/:eventId/participation', requireAuth, async (req, res) => {
 
 // Update event participation
 app.put('/api/events/:eventId/participation/:email', requireAuth, async (req, res) => {
+  const client = await getPool().connect();
   try {
-    const pool = getPool();
     const { eventId, email } = req.params;
     const { invited, responded, status, attended, paid, amount, freeEntry, referral, notes } = req.body;
+    await client.query('BEGIN');
+    const eventRecord = await client.query('SELECT id, is_failed FROM events WHERE id = $1 FOR UPDATE', [eventId]);
+    if (!eventRecord.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Event not found.' });
+    }
+    const failedEvent = eventRecord.rows[0].is_failed;
+    if (failedEvent && (paid === true || Number(amount || 0) > 0)) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Failed events cannot record payments or revenue.' });
+    }
+    const registered = await client.query(`
+      SELECT COALESCE(data->>'Email', data->>'email') AS email
+      FROM imported_data
+      WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
+      ORDER BY id LIMIT 1
+    `, [email]);
+    if (!registered.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Participant was not found in participant data.' });
+    }
+    const canonicalEmail = registered.rows[0].email;
 
-    const result = await pool.query(`
+    const result = await client.query(`
       INSERT INTO event_participation
       (event_id, email, invited, responded, status, attended, paid, amount, free_entry, referral, notes)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -1098,37 +1638,46 @@ app.put('/api/events/:eventId/participation/:email', requireAuth, async (req, re
         notes = COALESCE($11, notes),
         updated_at = NOW()
       RETURNING *
-    `, [eventId, email, invited, responded, status, attended, paid, amount, freeEntry, referral, notes]);
+    `, [eventId, canonicalEmail, invited, responded, status, failedEvent ? false : attended, failedEvent ? false : paid, failedEvent ? 0 : amount, failedEvent ? false : freeEntry, referral, notes]);
 
-    // Update participant metadata
-    const participantMeta = result.rows[0];
-    if (attended) {
-      await pool.query(`
-        INSERT INTO participant_metadata (email, total_attended, last_event_name)
-        VALUES ($1, 1, $2)
-        ON CONFLICT (email) DO UPDATE SET
-          total_attended = total_attended + 1,
-          last_event_name = $2,
-          updated_at = NOW()
-      `, [email, `Event ${eventId}`]);
-    }
-
-    if (paid && amount) {
-      await pool.query(`
-        UPDATE participant_metadata
-        SET total_paid = total_paid + $1, updated_at = NOW()
-        WHERE email = $2
-      `, [amount, email]);
-    }
+    const lastEvent = await client.query(`
+      SELECT e.name
+      FROM event_participation ep
+      JOIN events e ON e.id = ep.event_id
+      WHERE LOWER(ep.email) = LOWER($1) AND ep.attended = TRUE
+      ORDER BY CASE WHEN e.date ~ '^\\d{4}-\\d{2}-\\d{2}$' THEN e.date::date END DESC NULLS LAST,
+               ep.updated_at DESC
+      LIMIT 1
+    `, [canonicalEmail]);
+    await client.query(`
+      INSERT INTO participant_metadata (email, last_event_name)
+      VALUES ($1, $2)
+      ON CONFLICT (email) DO UPDATE SET last_event_name = EXCLUDED.last_event_name, updated_at = NOW()
+    `, [canonicalEmail, lastEvent.rows[0]?.name || null]);
+    await refreshParticipantRollups(client, [canonicalEmail]);
+    await client.query('COMMIT');
 
     res.json(result.rows[0]);
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error updating participation:', error);
     res.status(500).json({ error: 'Failed to update participation' });
+  } finally {
+    client.release();
   }
 });
 
 // Get participant metadata
+app.get('/api/participants/metadata', requireAuth, async (req, res) => {
+  try {
+    const result = await getPool().query('SELECT * FROM participant_metadata ORDER BY email');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching participant metadata:', error);
+    res.status(500).json({ error: 'Failed to fetch participant metadata.' });
+  }
+});
+
 app.get('/api/participants/:email/metadata', requireAuth, async (req, res) => {
   try {
     const pool = getPool();
@@ -1203,13 +1752,11 @@ app.post('/api/participants/:email/calculate-reward', requireAuth, async (req, r
       reward = '50% OFF';
     }
 
-    if (reward) {
-      await pool.query(`
-        UPDATE participant_metadata
-        SET reward_tag = $1, updated_at = NOW()
-        WHERE email = $2
-      `, [reward, email]);
-    }
+    await pool.query(`
+      UPDATE participant_metadata
+      SET reward_tag = $1, updated_at = NOW()
+      WHERE email = $2
+    `, [reward, email]);
 
     res.json({ reward, attended });
   } catch (error) {
@@ -1220,31 +1767,50 @@ app.post('/api/participants/:email/calculate-reward', requireAuth, async (req, r
 
 // Sync Dates page data to Dashboard
 app.post('/api/sync-from-dates', requireAuth, async (req, res) => {
+  const client = await getPool().connect();
   try {
-    const pool = getPool();
     const { dateName, people, paymentData, availabilityData } = req.body;
+    if (typeof dateName !== 'string' || !dateName.trim() || !Array.isArray(people)) {
+      return res.status(400).json({ error: 'An event name and participant list are required.' });
+    }
+    await client.query('BEGIN');
+    const existingEvent = await client.query('SELECT id, is_failed FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1 FOR UPDATE', [dateName.trim()]);
+    if (existingEvent.rows[0]?.is_failed) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Failed events cannot receive attendance or payment data.' });
+    }
 
-    // Create or update event
-    await pool.query(`
-      INSERT INTO events (name, date)
-      VALUES ($1, NOW())
-      ON CONFLICT (name) DO UPDATE SET updated_at = NOW()
-    `, [dateName]);
-
-    const eventResult = await pool.query('SELECT id FROM events WHERE name = $1', [dateName]);
-    const eventId = eventResult.rows[0].id;
+    let eventId;
+    if (existingEvent.rows.length) {
+      eventId = existingEvent.rows[0].id;
+      await client.query('UPDATE events SET updated_at = NOW() WHERE id = $1', [eventId]);
+    } else {
+      const created = await client.query('INSERT INTO events (name, date) VALUES ($1, NOW()) RETURNING id', [dateName.trim()]);
+      eventId = created.rows[0].id;
+    }
+    const rollupEmails = new Set();
 
     // Update participation for each person
     for (const person of people) {
-      const email = person.Email || person.email || '';
-      const paid = paymentData?.[email]?.paid || false;
-      const amount = paymentData?.[email]?.amount || 0;
-      const availability = availabilityData?.[email] || '';
+      const inputEmail = String(person.Email || person.email || '').trim();
+      if (!inputEmail) throw new Error('Every participant needs an email address.');
+      const registered = await client.query(`
+        SELECT COALESCE(data->>'Email', data->>'email') AS email
+        FROM imported_data
+        WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
+        ORDER BY id LIMIT 1
+      `, [inputEmail]);
+      if (!registered.rows.length) throw new Error(`Participant ${inputEmail} was not found in participant data.`);
+      const email = registered.rows[0].email;
+      const responseData = paymentData?.[inputEmail] || paymentData?.[email] || {};
+      const paid = Boolean(responseData.paid);
+      const amount = Number(responseData.amount || 0);
+      const availability = availabilityData?.[inputEmail] || availabilityData?.[email] || '';
 
       const attended = availability !== 'D';
       const declined = availability === 'D';
 
-      await pool.query(`
+      await client.query(`
         INSERT INTO event_participation
         (event_id, email, invited, responded, status, attended, paid, amount)
         VALUES ($1, $2, true, $3, $4, $5, $6, $7)
@@ -1257,12 +1823,18 @@ app.post('/api/sync-from-dates', requireAuth, async (req, res) => {
           amount = $7,
           updated_at = NOW()
       `, [eventId, email, !!availability, declined ? 'declined' : 'accepted', attended, paid, amount]);
+      rollupEmails.add(email);
     }
 
+    await refreshParticipantRollups(client, [...rollupEmails]);
+    await client.query('COMMIT');
     res.json({ success: true, eventId });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error syncing from Dates:', error);
     res.status(500).json({ error: 'Failed to sync data' });
+  } finally {
+    client.release();
   }
 });
 
@@ -1311,24 +1883,34 @@ app.get('/api/dashboard-stats', requireAuth, async (req, res) => {
     const participantsResult = await pool.query('SELECT data FROM imported_data');
     const totalParticipants = participantsResult.rows.length;
 
-    const metadataResult = await pool.query('SELECT COUNT(*) as count FROM participant_metadata WHERE status = $1', ['Active']);
+    const metadataResult = await pool.query("SELECT COUNT(*) as count FROM participant_metadata WHERE LOWER(COALESCE(status, '')) = 'active'");
     const activeParticipants = parseInt(metadataResult.rows[0].count);
 
     const eventsResult = await pool.query('SELECT COUNT(*) as count FROM events');
     const totalEvents = parseInt(eventsResult.rows[0].count);
 
-    const revenueResult = await pool.query('SELECT SUM(amount) as total FROM event_participation WHERE paid = true');
+    const revenueResult = await pool.query('SELECT SUM(ep.amount) as total FROM event_participation ep JOIN events e ON e.id = ep.event_id WHERE ep.paid = true AND e.is_failed = false');
     const totalRevenue = revenueResult.rows[0].total || 0;
 
     const referralsResult = await pool.query('SELECT COUNT(*) as count FROM event_participation WHERE referral = true AND attended = true');
     const referralAttendees = parseInt(referralsResult.rows[0].count);
+    const participationResult = await pool.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE invited = true)::int AS invited,
+        COUNT(*) FILTER (WHERE responded = true)::int AS responded,
+        COUNT(*) FILTER (WHERE attended = true)::int AS attended
+      FROM event_participation
+    `);
 
     res.json({
       totalParticipants,
       activeParticipants,
       totalEvents,
       totalRevenue: parseFloat(totalRevenue),
-      referralAttendees
+      referralAttendees,
+      invited: participationResult.rows[0].invited,
+      responded: participationResult.rows[0].responded,
+      attended: participationResult.rows[0].attended
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

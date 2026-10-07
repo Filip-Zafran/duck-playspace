@@ -162,6 +162,13 @@
       margin-bottom: 20px;
     }
 
+    .slots-container.has-others { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .gender-column.other { background: #fff7ed; border-color: #f59e0b; }
+    .gender-column.other .gender-column-title { color: #92400e; border-bottom-color: #f59e0b; }
+    @media (max-width: 900px) {
+      .slots-container, .slots-container.has-others { grid-template-columns: 1fr; }
+    }
+
     .gender-column {
       border: 2px solid #e0e0e0;
       border-radius: 8px;
@@ -252,7 +259,7 @@
     .slot-person-name {
       font-weight: 600;
       color: #333;
-      font-size: 12px;
+      font-size: 15px;
     }
 
     .slot-person-details {
@@ -360,9 +367,19 @@
     }
 
     .person-name {
-      font-weight: 600;
+      font-weight: 700;
       color: #333;
       margin-bottom: 4px;
+      font-size: 16px;
+    }
+
+    .participant-number {
+      display: inline-block;
+      min-width: 25px;
+      margin-right: 5px;
+      color: #4f46e5;
+      font-size: 16px;
+      font-weight: 800;
     }
 
     .person-details {
@@ -548,13 +565,10 @@
     .event-group-content {
       padding: 20px;
       background: white;
-      max-height: 2000px;
-      overflow: hidden;
-      transition: max-height 0.3s;
     }
 
     .event-group-content.collapsed {
-      max-height: 0;
+      display: none;
       padding: 0 20px;
     }
 
@@ -1075,7 +1089,7 @@
       const men = people.filter(p => p['Gender'] === 'Man');
       const others = people.filter(p => p['Gender'] !== 'Woman' && p['Gender'] !== 'Man');
 
-      let html = '<div class="slots-container">';
+      let html = `<div class="slots-container${others.length ? ' has-others' : ''}">`;
 
       // Women column
       html += createGenderColumn(dateName, 'Woman', women);
@@ -1083,18 +1097,19 @@
       // Men column
       html += createGenderColumn(dateName, 'Man', men);
 
-      html += '</div>';
-
-      // Others if LGBTQ+
+      // Keep other gender identities in a matching participant column.
       if (others.length > 0) {
         html += createGenderColumn(dateName, 'Other', others);
       }
 
+      html += '</div>';
       return html;
     }
 
     function createGenderColumn(dateName, gender, people) {
       const genderClass = gender === 'Woman' ? 'woman' : gender === 'Man' ? 'man' : 'other';
+      const sortedPeople = [...people].sort((a, b) => (parseInt(a['Age']) || 0) - (parseInt(b['Age']) || 0));
+      const participantNumbers = new Map(sortedPeople.map((person, index) => [person['Email'] || person.email || '', index + 1]));
       let html = `<div class="gender-column ${genderClass}">
         <div class="gender-column-title">${gender}</div>
         <div class="primary-slots">`;
@@ -1114,7 +1129,7 @@
           html += `
             <div class="primary-slot filled ${issueClass}" title="${issueTitle}">
               <div class="slot-person">
-                <div class="slot-person-name person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')">${person.Name || person.Email}</div>
+                <div class="slot-person-name person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')"><span class="participant-number">${participantNumbers.get(email) || ''}.</span>${person.Name || person.Email}</div>
                 <div class="slot-person-details">${person.Age} yrs ${hasIssue ? '⚠️' : ''}</div>
                 <div class="person-controls" style="margin-top: 8px; border-top: 1px solid #ddd; padding-top: 8px;">
                   <div class="control-group">
@@ -1148,13 +1163,6 @@
       }
 
       html += '</div><div class="backup-title">Backups:</div><div class="backup-people">';
-
-      // Sort people by age
-      const sortedPeople = [...people].sort((a, b) => {
-        const ageA = parseInt(a['Age']) || 0;
-        const ageB = parseInt(b['Age']) || 0;
-        return ageA - ageB;
-      });
 
       sortedPeople.forEach(person => {
         const email = person['Email'] || '';
@@ -1198,7 +1206,7 @@
           html += `
             <div class="person-card ${colorClass} ${mismatchClass}">
               <div class="person-info">
-                <div class="person-name person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')">${person.Name || email}</div>
+                <div class="person-name person-link" onclick="openPersonProfile('${email.replace(/'/g, "\\'")}')"><span class="participant-number">${participantNumbers.get(email) || ''}.</span>${person.Name || email}</div>
                 <div>${renderStars(starRating)}</div>
                 <div class="person-details">
                   ${age} yrs | ${bezirk} | Prefers: ${prefMin}-${prefMax}
@@ -1729,5 +1737,6 @@
       updateCustomEventDisplay();
     });
   </script>
+  <script src="/nav-active.js" defer></script>
 </body>
 </html>
