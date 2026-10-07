@@ -1624,8 +1624,8 @@ app.put('/api/events/:eventId/participation/:email', requireAuth, async (req, re
 
     const result = await client.query(`
       INSERT INTO event_participation
-      (event_id, email, invited, responded, status, attended, paid, amount, free_entry, referral, notes)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      (event_id, email, invited, responded, status, attended, paid, amount, free_entry, referral, notes, invitation_date)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CASE WHEN $3 IS TRUE THEN NOW() ELSE NULL END)
       ON CONFLICT (event_id, email) DO UPDATE SET
         invited = COALESCE($3, invited),
         responded = COALESCE($4, responded),
@@ -1636,6 +1636,10 @@ app.put('/api/events/:eventId/participation/:email', requireAuth, async (req, re
         free_entry = COALESCE($9, free_entry),
         referral = COALESCE($10, referral),
         notes = COALESCE($11, notes),
+        invitation_date = CASE
+          WHEN $3 IS TRUE AND event_participation.invited IS DISTINCT FROM TRUE THEN NOW()
+          ELSE event_participation.invitation_date
+        END,
         updated_at = NOW()
       RETURNING *
     `, [eventId, canonicalEmail, invited, responded, status, failedEvent ? false : attended, failedEvent ? false : paid, failedEvent ? 0 : amount, failedEvent ? false : freeEntry, referral, notes]);
@@ -1726,6 +1730,42 @@ app.put('/api/participants/:email/metadata', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error updating participant metadata:', error);
     res.status(500).json({ error: 'Failed to update metadata' });
+  }
+});
+
+app.get('/api/participants/activity', requireAuth, async (req, res) => {
+  try {
+    const result = await getPool().query(`
+      WITH participants AS (
+        SELECT DISTINCT LOWER(COALESCE(data->>'Email', data->>'email')) AS email_key
+        FROM imported_data
+        WHERE COALESCE(data->>'Email', data->>'email') IS NOT NULL
+      ), invite_activity AS (
+        SELECT LOWER(email) AS email_key, MAX(invitation_date) AS last_invited_at
+        FROM event_participation
+        WHERE invited = TRUE AND invitation_date IS NOT NULL
+        GROUP BY LOWER(email)
+      ), attendance_ranked AS (
+        SELECT LOWER(ep.email) AS email_key, e.date AS last_attended_at,
+          ROW_NUMBER() OVER (
+            PARTITION BY LOWER(ep.email)
+            ORDER BY CASE WHEN e.date ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN LEFT(e.date, 10) END DESC NULLS LAST,
+              ep.updated_at DESC
+          ) AS position
+        FROM event_participation ep
+        JOIN events e ON e.id = ep.event_id
+        WHERE ep.attended = TRUE AND e.is_failed = FALSE
+      )
+      SELECT participants.email_key AS email, invite_activity.last_invited_at, attendance_ranked.last_attended_at
+      FROM participants
+      LEFT JOIN invite_activity ON invite_activity.email_key = participants.email_key
+      LEFT JOIN attendance_ranked ON attendance_ranked.email_key = participants.email_key AND attendance_ranked.position = 1
+      ORDER BY participants.email_key
+    `);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching participant activity dates:', error);
+    res.status(500).json({ error: 'Failed to fetch participant activity dates.' });
   }
 });
 

@@ -201,6 +201,7 @@ export async function initializeDatabase() {
         UNIQUE(event_id, email)
       )
     `);
+    await pool.query(`ALTER TABLE event_participation ADD COLUMN IF NOT EXISTS invitation_date TIMESTAMP`);
 
     // Per-participant date-night outcomes, keyed to an event and participant.
     await pool.query(`

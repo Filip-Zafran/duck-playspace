@@ -21,6 +21,9 @@ Last updated: 2026-10-07
 - [x] **Event upload date parsing.** Preserved calendar dates from CSV and Excel cells instead of allowing local timezone conversion to shift them by a day. ISO, slash-formatted, month-name, and Excel date-cell inputs now retain the intended date.
 - [x] **Poll navigation script placement.** Moved the shared navigation marker out of the generated AMP email template and into the actual Poll page; the previous placement broke inline script parsing.
 - [x] **Dependency audit findings.** Updated Multer, `proxy-addr`, and `qs`; replaced the stale npm-registry `xlsx` package with the official SheetJS 0.20.3 tarball. The user ran `npm audit` and confirmed zero vulnerabilities. Local parser smoke checks passed with the replacement package.
+- [x] **Participant invitation and attendance dates.** Dashboard data now includes each participant’s latest recorded invitation timestamp and most recent attended event date. Marking an invitation in Participation records the timestamp; older invitation rows without one remain “Not recorded.”
+- [x] **Events gender totals and orientation groups.** Events now displays a Diverse counter in group and custom-event totals, labels the non-Woman/non-Man column Diverse, and separates orientation groups into Gay/Lesbian/Bi/Queer and Straight/Bi. Bi/Pan participants appear in both overlapping groups.
+- [x] **Events availability labels.** Availability dropdowns now explain that A, B, and C are available choices (Options A–C), while D means not attending; stored values remain compatible with existing event data.
 
 ## Remaining
 

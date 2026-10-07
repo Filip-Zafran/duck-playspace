@@ -158,7 +158,7 @@
                 <table class="dashboard-table">
                   <thead>
                     <tr>
-                <th>Name</th><th>Email</th><th>Gender</th><th>Age</th><th>Status</th><th>Events attended</th>
+                <th>Name</th><th>Email</th><th>Gender</th><th>Age</th><th>Status</th><th>Events attended</th><th>Last invited</th><th>Last attended event</th>
                 <th>Romantic likes given</th><th>Social likes given</th><th>Romantic likes received</th><th>Social likes received</th>
                 <th>Reported</th><th>Amount €</th><th>Reward</th><th>Tags</th><th>Actions</th>
                     </tr>
@@ -330,6 +330,14 @@
         
         const statsResponse = await fetch('/api/dashboard-stats');
         const stats = await statsResponse.json();
+        const activityResponse = await fetch('/api/participants/activity');
+        const activityRows = await activityResponse.json();
+        const activityByEmail = Object.fromEntries(activityRows.map(row => [String(row.email).toLowerCase(), row]));
+        const participantsWithActivity = participants.map(person => {
+          const email = String(person['Email'] || person.email || '').toLowerCase();
+          const activity = activityByEmail[email] || {};
+          return { ...person, lastInvitedAt: activity.last_invited_at, lastAttendedAt: activity.last_attended_at };
+        });
 
         const eventsResponse = await fetch('/api/events');
         const events = await eventsResponse.json();
@@ -340,7 +348,7 @@
         const metadataResponse = await fetch('/api/participants/metadata');
         const metadataRows = await metadataResponse.json();
 
-        allData = { participants, stats, events, participation: {}, dateStats,
+        allData = { participants: participantsWithActivity, stats, events, participation: {}, dateStats,
           reported: Object.fromEntries(reportedRows.map(row => [String(row.email).toLowerCase(), Boolean(row.reported)])),
           participantMetadata: Object.fromEntries(metadataRows.map(row => [String(row.email).toLowerCase(), row])) };
 
@@ -490,6 +498,20 @@
       return String(value ?? '').replace(/[&<>"']/g, character => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
       })[character]);
+    }
+
+    function formatActivityDate(value, includeTime = false) {
+      if (!value) return 'Not recorded';
+      const raw = String(value);
+      const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const date = dateOnly
+        ? new Date(Number(dateOnly[1]), Number(dateOnly[2]) - 1, Number(dateOnly[3]))
+        : new Date(raw);
+      if (Number.isNaN(date.getTime())) return escapeHtml(raw);
+      const showTime = includeTime || /[T ]\d{2}:\d{2}/.test(raw);
+      return new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium', ...(showTime ? { timeStyle: 'short' } : {})
+      }).format(date);
     }
 
     function renderDateStats() {
@@ -669,6 +691,7 @@
             <td>${p['Age'] || '?'}</td>
             <td><span class="status-badge ${participantStatus.toLowerCase() === 'paused' ? 'paused' : 'active'}">${escapeHtml(participantStatus)}</span></td>
             <td>${eventsAttended}</td>
+            <td>${formatActivityDate(p.lastInvitedAt, true)}</td><td>${formatActivityDate(p.lastAttendedAt)}</td>
             <td>${dateTotal('romantic_likes_given')}</td><td>${dateTotal('social_likes_given')}</td>
             <td>${dateTotal('romantic_likes_received')}</td><td>${dateTotal('social_likes_received')}</td>
             <td><label><input type="checkbox" ${allData.reported[emailKey] ? 'checked' : ''} onchange="toggleReported('${encodeURIComponent(email)}', this)"> Reported</label></td>
@@ -782,7 +805,7 @@
       const person = allData.participants.find(p => String(p['Email'] || p.email || '').toLowerCase() === email.toLowerCase());
       if (!person) return;
       document.getElementById('profileName').textContent = `Edit participant: ${person.Name || email}`;
-      const fields = Object.entries(person).filter(([key]) => key !== 'Sexuality');
+      const fields = Object.entries(person).filter(([key]) => !['Sexuality', 'lastInvitedAt', 'lastAttendedAt'].includes(key));
       document.getElementById('profileContent').innerHTML = `
         <form id="participantEditForm" onsubmit="saveParticipantData(event, '${encodeURIComponent(email)}')">
           <p>Changes are saved to participant data. If you change the email, linked event and date records are updated too.</p>
