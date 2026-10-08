@@ -1,28 +1,33 @@
 import pkg from 'pg';
 const { Pool } = pkg;
 
-let connectionString = process.env.DATABASE_URL;
-
-console.log('DATABASE_URL env var exists:', !!process.env.DATABASE_URL);
-console.log('DATABASE_URL first 30 chars:', connectionString?.substring(0, 30) || 'not set');
+const databaseUrl = process.env.DATABASE_URL?.trim();
+let connectionString = databaseUrl;
 
 // Convert postgres:// to postgresql:// for modern drivers
 if (connectionString && connectionString.startsWith('postgres://')) {
   connectionString = connectionString.replace('postgres://', 'postgresql://');
-  console.log('Converted postgres:// to postgresql://');
 }
 
 // Fall back to individual DB_* env vars if DATABASE_URL not set
 if (!connectionString) {
-  console.log('Using individual DB_* env vars');
+  const requiredVariables = ['DB_USER', 'DB_PASSWORD', 'DB_HOST', 'DB_PORT', 'DB_NAME'];
+  const missingVariables = requiredVariables.filter((name) => !process.env[name]);
+
+  if (missingVariables.length > 0) {
+    throw new Error(
+      `Database configuration is missing. Set DATABASE_URL or all of: ${requiredVariables.join(', ')}`
+    );
+  }
+
   connectionString = `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
 }
 
-console.log('Final connection string format:', connectionString?.substring(0, 30) || 'empty');
-
 const pool = new Pool({
   connectionString,
-  ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
+  // Render services expose RENDER_SERVICE_ID. Keep local database connections
+  // unencrypted while allowing Render Postgres' internal URL to use TLS.
+  ssl: process.env.RENDER_SERVICE_ID ? { rejectUnauthorized: false } : false,
   connectionTimeoutMillis: 5000,
   idleTimeoutMillis: 30000
 });
