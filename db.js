@@ -223,6 +223,9 @@ export async function initializeDatabase() {
         social_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_received >= 0),
         romantic_matches INTEGER NOT NULL DEFAULT 0 CHECK (romantic_matches >= 0),
         social_matches INTEGER NOT NULL DEFAULT 0 CHECK (social_matches >= 0),
+        total_matches INTEGER CHECK (total_matches IS NULL OR total_matches >= 0),
+        romantic_matches_names JSONB NOT NULL DEFAULT '[]'::jsonb,
+        social_matches_names JSONB NOT NULL DEFAULT '[]'::jsonb,
         notes TEXT,
         created_at TIMESTAMP NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
@@ -238,7 +241,10 @@ export async function initializeDatabase() {
         ADD COLUMN IF NOT EXISTS romantic_likes_given INTEGER NOT NULL DEFAULT 0 CHECK (romantic_likes_given >= 0),
         ADD COLUMN IF NOT EXISTS social_likes_given INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_given >= 0),
         ADD COLUMN IF NOT EXISTS romantic_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (romantic_likes_received >= 0),
-        ADD COLUMN IF NOT EXISTS social_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_received >= 0)
+        ADD COLUMN IF NOT EXISTS social_likes_received INTEGER NOT NULL DEFAULT 0 CHECK (social_likes_received >= 0),
+        ADD COLUMN IF NOT EXISTS total_matches INTEGER CHECK (total_matches IS NULL OR total_matches >= 0),
+        ADD COLUMN IF NOT EXISTS romantic_matches_names JSONB NOT NULL DEFAULT '[]'::jsonb,
+        ADD COLUMN IF NOT EXISTS social_matches_names JSONB NOT NULL DEFAULT '[]'::jsonb
     `);
 
     // Create participant_metadata table

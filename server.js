@@ -1155,6 +1155,10 @@ app.get('/api/date-stats', requireAuth, async (req, res) => {
 // Import event participation and date outcomes without clearing existing records.
 app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Choose a CSV or Excel file to import.' });
+  const extension = path.extname(req.file.originalname).toLowerCase();
+  if (!['.csv', '.xls', '.xlsx'].includes(extension)) {
+    return res.status(400).json({ error: 'Choose a CSV (.csv) or Excel (.xls, .xlsx) file.' });
+  }
 
   const normalizeHeader = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const parseBoolean = (value, label, rowNumber) => {
@@ -1172,6 +1176,26 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
     }
     return number;
   };
+  const parseNameList = (entry, label, rowNumber) => {
+    if (!entry.found) return null;
+    const raw = String(entry.value ?? '').trim();
+    if (!raw) return [];
+    const names = raw.split(/[|;\n]+/).map(name => name.trim()).filter(Boolean);
+    if (!names.length) throw new Error(`Row ${rowNumber}: ${label} contains no readable names.`);
+    return [...new Set(names)];
+  };
+  const parseEventDate = (value, rowNumber) => {
+    if (value === null || value === undefined || value === '') return null;
+    const raw = String(value).trim();
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) throw new Error(`Row ${rowNumber}: Event Date must use YYYY-MM-DD format.`);
+    const [, year, month, day] = match;
+    const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+    if (date.getUTCFullYear() !== Number(year) || date.getUTCMonth() + 1 !== Number(month) || date.getUTCDate() !== Number(day)) {
+      throw new Error(`Row ${rowNumber}: Event Date is not a valid calendar date.`);
+    }
+    return raw;
+  };
 
   try {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', raw: false });
@@ -1183,19 +1207,32 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
     const rows = sourceRows.map((source, index) => {
       const rowNumber = index + 2;
       const values = new Map(Object.entries(source).map(([key, value]) => [normalizeHeader(key), value]));
-      const read = (...aliases) => {
+      const readEntry = (...aliases) => {
         for (const alias of aliases) {
           const key = normalizeHeader(alias);
           if (values.has(key)) {
             const value = values.get(key);
-            return value === '' || value === null || value === undefined ? null : String(value).trim();
+            return {
+              found: true,
+              value: value === '' || value === null || value === undefined ? null : String(value).trim()
+            };
           }
         }
-        return null;
+        return { found: false, value: null };
       };
-      const eventName = read('Event', 'Event Name');
+      const read = (...aliases) => readEntry(...aliases).value;
+      const eventId = parseCount(read('Event ID', 'event_id'), 'Event ID', rowNumber);
+      const eventName = read('Event Name', 'Event');
+      const eventDate = parseEventDate(read('Event Date', 'Date'), rowNumber);
       const email = read('Participant Email', 'Email');
-      if (!eventName || !email) throw new Error(`Row ${rowNumber}: Event Name and Participant Email are required.`);
+      const participantName = read('Participant Name', 'Name');
+      if ((!eventId && !eventName) || !email) {
+        throw new Error(`Row ${rowNumber}: Event ID or Event Name, and Participant Email are required.`);
+      }
+      if (eventId === 0) throw new Error(`Row ${rowNumber}: Event ID must be greater than zero.`);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error(`Row ${rowNumber}: Participant Email is not a valid email address.`);
+      }
 
       const participation = {
         invited: parseBoolean(read('Invited'), 'Invited', rowNumber),
@@ -1218,36 +1255,104 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
         socialLikesReceived: parseCount(read('Social Likes Received', 'Likes Received Social'), 'Social Likes Received', rowNumber),
         romanticMatches: parseCount(read('Romantic Matches'), 'Romantic Matches', rowNumber),
         socialMatches: parseCount(read('Social Matches'), 'Social Matches', rowNumber),
+        totalMatches: parseCount(read('Total Matches'), 'Total Matches', rowNumber),
+        romanticMatchesNames: parseNameList(readEntry('Romantic Matches Names'), 'Romantic Matches Names', rowNumber),
+        socialMatchesNames: parseNameList(readEntry('Social Matches Names'), 'Social Matches Names', rowNumber),
         notes: read('Date Notes')
       };
       const hasParticipation = Object.values(participation).some(value => value !== null);
       const hasDateStats = Object.values(dateStats).some(value => value !== null);
       if (!hasParticipation && !hasDateStats) throw new Error(`Row ${rowNumber}: No event participation or date stats were provided.`);
-      return { rowNumber, eventName, email, participation, dateStats, hasParticipation, hasDateStats };
+      return { rowNumber, eventId, eventName, eventDate, email, participantName, participation, dateStats, hasParticipation, hasDateStats };
     });
+
+    const seenParticipants = new Set();
+    for (const row of rows) {
+      const eventKey = row.eventId ? `id:${row.eventId}` : `name:${row.eventName.toLowerCase()}`;
+      const key = `${eventKey}|${row.email.toLowerCase()}`;
+      if (seenParticipants.has(key)) {
+        throw new Error(`Row ${row.rowNumber}: This event and participant email appear more than once in the file.`);
+      }
+      seenParticipants.add(key);
+    }
 
     const client = await getPool().connect();
     let participationSaved = 0;
     let dateStatsSaved = 0;
+    let participantsCreated = 0;
+    let participantsUpdated = 0;
     const rollupEmails = new Set();
     try {
       await client.query('BEGIN');
+      const resolvedParticipants = new Set();
       for (const row of rows) {
-        const eventResult = await client.query('SELECT id, is_failed FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1', [row.eventName]);
-        if (!eventResult.rows.length) throw new Error(`Row ${row.rowNumber}: Event “${row.eventName}” was not found. Add it in Events first.`);
+        const eventResult = row.eventId
+          ? await client.query(
+              row.eventName
+                ? 'SELECT id, name, date::text AS event_date, is_failed FROM events WHERE id = $1 AND LOWER(name) = LOWER($2) LIMIT 1'
+                : 'SELECT id, name, date::text AS event_date, is_failed FROM events WHERE id = $1 LIMIT 1',
+              row.eventName ? [row.eventId, row.eventName] : [row.eventId]
+            )
+          : await client.query('SELECT id, name, date::text AS event_date, is_failed FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1', [row.eventName]);
+        if (!eventResult.rows.length) {
+          const eventLabel = row.eventId ? `ID ${row.eventId}${row.eventName ? ` (“${row.eventName}”)` : ''}` : `“${row.eventName}”`;
+          throw new Error(`Row ${row.rowNumber}: Event ${eventLabel} was not found. Check the event ID/name and add the event in Events first.`);
+        }
+        const event = eventResult.rows[0];
+        if (row.eventDate && event.event_date && row.eventDate !== event.event_date) {
+          throw new Error(`Row ${row.rowNumber}: Event Date does not match the saved date for “${event.name}” (ID ${event.id}).`);
+        }
+        if (row.eventDate && !event.event_date) {
+          await client.query('UPDATE events SET date = $1 WHERE id = $2', [row.eventDate, event.id]);
+        }
+        const resolvedKey = `${event.id}|${row.email.toLowerCase()}`;
+        if (resolvedParticipants.has(resolvedKey)) {
+          throw new Error(`Row ${row.rowNumber}: This event and participant email appear more than once in the file.`);
+        }
+        resolvedParticipants.add(resolvedKey);
         if (eventResult.rows[0].is_failed && row.hasDateStats) throw new Error(`Row ${row.rowNumber}: Date stats cannot be recorded for a failed event.`);
         if (eventResult.rows[0].is_failed && (row.participation.paid === true || Number(row.participation.amount || 0) > 0)) {
           throw new Error(`Row ${row.rowNumber}: Failed events cannot record payments or revenue.`);
         }
         const participantResult = await client.query(`
-          SELECT COALESCE(data->>'Email', data->>'email') AS email
+          SELECT id, data, COALESCE(data->>'Email', data->>'email') AS email
           FROM imported_data
           WHERE LOWER(COALESCE(data->>'Email', data->>'email')) = LOWER($1)
-          LIMIT 1
+          ORDER BY id LIMIT 2 FOR UPDATE
         `, [row.email]);
-        if (!participantResult.rows.length) throw new Error(`Row ${row.rowNumber}: Participant email “${row.email}” was not found in uploaded participant data.`);
+        if (participantResult.rows.length > 1) {
+          throw new Error(`Row ${row.rowNumber}: Multiple participant records use this email. Resolve the duplicate before importing.`);
+        }
+        let participantEmail;
+        if (!participantResult.rows.length) {
+          if (!row.participantName) {
+            throw new Error(`Row ${row.rowNumber}: Participant Name is required to add a participant that is not already in the database.`);
+          }
+          const profile = { Name: row.participantName, Email: row.email };
+          const profileString = JSON.stringify(profile);
+          const profileHash = crypto.createHash('sha256').update(profileString).digest('hex');
+          await client.query(
+            'INSERT INTO imported_data (data, data_hash) VALUES ($1, $2) ON CONFLICT (data_hash) DO NOTHING',
+            [profileString, profileHash]
+          );
+          participantEmail = row.email;
+          participantsCreated++;
+        } else {
+          const existingParticipant = participantResult.rows[0];
+          participantEmail = existingParticipant.email;
+          if (row.participantName) {
+            const profile = existingParticipant.data || {};
+            const nameKey = Object.hasOwn(profile, 'Name') ? 'Name' : Object.hasOwn(profile, 'name') ? 'name' : 'Name';
+            if (profile[nameKey] !== row.participantName) {
+              profile[nameKey] = row.participantName;
+              const profileString = JSON.stringify(profile);
+              const profileHash = crypto.createHash('sha256').update(profileString).digest('hex');
+              await client.query('UPDATE imported_data SET data = $1, data_hash = $2 WHERE id = $3', [profileString, profileHash, existingParticipant.id]);
+              participantsUpdated++;
+            }
+          }
+        }
         const eventId = eventResult.rows[0].id;
-        const participantEmail = participantResult.rows[0].email;
 
         if (row.hasParticipation) {
           const p = row.participation;
@@ -1275,34 +1380,42 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
         if (row.hasDateStats) {
           const d = row.dateStats;
           const dFlags = [d.attended, d.likesGiven, d.likesReceived, d.romanticLikesGiven, d.socialLikesGiven,
-            d.romanticLikesReceived, d.socialLikesReceived, d.romanticMatches, d.socialMatches, d.notes].map(value => value !== null);
+            d.romanticLikesReceived, d.socialLikesReceived, d.romanticMatches, d.socialMatches, d.notes,
+            d.romanticMatchesNames, d.socialMatchesNames, d.totalMatches].map(value => value !== null);
           await client.query(`
             INSERT INTO date_stats
             (event_id, participant_email, attended, likes_given, likes_received, romantic_likes_given, social_likes_given,
-             romantic_likes_received, social_likes_received, romantic_matches, social_matches, notes)
+             romantic_likes_received, social_likes_received, romantic_matches, social_matches, notes,
+             romantic_matches_names, social_matches_names, total_matches)
           VALUES ($1, $2, $3, COALESCE($4, COALESCE($6, 0) + COALESCE($7, 0)),
               COALESCE($5, COALESCE($8, 0) + COALESCE($9, 0)), COALESCE($6, 0), COALESCE($7, 0),
-              COALESCE($8, 0), COALESCE($9, 0), COALESCE($10, 0), COALESCE($11, 0), $12)
+              COALESCE($8, 0), COALESCE($9, 0), COALESCE($10, 0), COALESCE($11, 0), $12,
+              COALESCE($13::jsonb, '[]'::jsonb), COALESCE($14::jsonb, '[]'::jsonb), $15)
             ON CONFLICT (event_id, participant_email) DO UPDATE SET
-              attended = CASE WHEN $13 THEN EXCLUDED.attended ELSE date_stats.attended END,
-              likes_given = CASE WHEN $14 THEN EXCLUDED.likes_given
-                WHEN ($16 OR $17) THEN (CASE WHEN $16 THEN EXCLUDED.romantic_likes_given ELSE date_stats.romantic_likes_given END
-                  + CASE WHEN $17 THEN EXCLUDED.social_likes_given ELSE date_stats.social_likes_given END)
+              attended = CASE WHEN $16 THEN EXCLUDED.attended ELSE date_stats.attended END,
+              likes_given = CASE WHEN $17 THEN EXCLUDED.likes_given
+                WHEN ($19 OR $20) THEN (CASE WHEN $19 THEN EXCLUDED.romantic_likes_given ELSE date_stats.romantic_likes_given END
+                  + CASE WHEN $20 THEN EXCLUDED.social_likes_given ELSE date_stats.social_likes_given END)
                 ELSE date_stats.likes_given END,
-              likes_received = CASE WHEN $15 THEN EXCLUDED.likes_received
-                WHEN ($18 OR $19) THEN (CASE WHEN $18 THEN EXCLUDED.romantic_likes_received ELSE date_stats.romantic_likes_received END
-                  + CASE WHEN $19 THEN EXCLUDED.social_likes_received ELSE date_stats.social_likes_received END)
+              likes_received = CASE WHEN $18 THEN EXCLUDED.likes_received
+                WHEN ($21 OR $22) THEN (CASE WHEN $21 THEN EXCLUDED.romantic_likes_received ELSE date_stats.romantic_likes_received END
+                  + CASE WHEN $22 THEN EXCLUDED.social_likes_received ELSE date_stats.social_likes_received END)
                 ELSE date_stats.likes_received END,
-              romantic_likes_given = CASE WHEN $16 THEN EXCLUDED.romantic_likes_given ELSE date_stats.romantic_likes_given END,
-              social_likes_given = CASE WHEN $17 THEN EXCLUDED.social_likes_given ELSE date_stats.social_likes_given END,
-              romantic_likes_received = CASE WHEN $18 THEN EXCLUDED.romantic_likes_received ELSE date_stats.romantic_likes_received END,
-              social_likes_received = CASE WHEN $19 THEN EXCLUDED.social_likes_received ELSE date_stats.social_likes_received END,
-              romantic_matches = CASE WHEN $20 THEN EXCLUDED.romantic_matches ELSE date_stats.romantic_matches END,
-              social_matches = CASE WHEN $21 THEN EXCLUDED.social_matches ELSE date_stats.social_matches END,
-              notes = CASE WHEN $22 THEN EXCLUDED.notes ELSE date_stats.notes END,
+              romantic_likes_given = CASE WHEN $19 THEN EXCLUDED.romantic_likes_given ELSE date_stats.romantic_likes_given END,
+              social_likes_given = CASE WHEN $20 THEN EXCLUDED.social_likes_given ELSE date_stats.social_likes_given END,
+              romantic_likes_received = CASE WHEN $21 THEN EXCLUDED.romantic_likes_received ELSE date_stats.romantic_likes_received END,
+              social_likes_received = CASE WHEN $22 THEN EXCLUDED.social_likes_received ELSE date_stats.social_likes_received END,
+              romantic_matches = CASE WHEN $23 THEN EXCLUDED.romantic_matches ELSE date_stats.romantic_matches END,
+              social_matches = CASE WHEN $24 THEN EXCLUDED.social_matches ELSE date_stats.social_matches END,
+              notes = CASE WHEN $25 THEN EXCLUDED.notes ELSE date_stats.notes END,
+              romantic_matches_names = CASE WHEN $26 THEN EXCLUDED.romantic_matches_names ELSE date_stats.romantic_matches_names END,
+              social_matches_names = CASE WHEN $27 THEN EXCLUDED.social_matches_names ELSE date_stats.social_matches_names END,
+              total_matches = CASE WHEN $28 THEN EXCLUDED.total_matches ELSE date_stats.total_matches END,
               updated_at = NOW()
           `, [eventId, participantEmail, d.attended, d.likesGiven, d.likesReceived, d.romanticLikesGiven, d.socialLikesGiven,
-            d.romanticLikesReceived, d.socialLikesReceived, d.romanticMatches, d.socialMatches, d.notes, ...dFlags]);
+            d.romanticLikesReceived, d.socialLikesReceived, d.romanticMatches, d.socialMatches, d.notes,
+            d.romanticMatchesNames === null ? null : JSON.stringify(d.romanticMatchesNames),
+            d.socialMatchesNames === null ? null : JSON.stringify(d.socialMatchesNames), d.totalMatches, ...dFlags]);
           dateStatsSaved++;
         }
       }
@@ -1315,7 +1428,8 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
       client.release();
     }
 
-    res.json({ rowsProcessed: rows.length, participationSaved, dateStatsSaved, message: 'Import saved. Existing event and participant records were updated only for fields present in the file; other saved records were kept.' });
+    res.json({ rowsProcessed: rows.length, participationSaved, dateStatsSaved, participantsCreated, participantsUpdated,
+      message: 'Import saved. Existing event and participant records were updated only for fields present in the file; other saved records were kept.' });
   } catch (error) {
     console.error('Error importing event stats:', error);
     res.status(400).json({ error: error.message || 'Failed to import event stats.' });

@@ -249,7 +249,7 @@
                 <button class="action-btn" type="submit">Import stats</button>
                 <button class="action-btn" type="button" onclick="downloadDateStatsTemplate()" style="margin-left:8px;background:#64748b">Download template</button>
               </div>
-              <div class="date-stats-message" id="dateStatsImportMessage" role="status">Use Event Name and Participant Email on every row. Optional columns: Invited, Responded, Participation Status, Attended Event, Paid, Amount, Free Entry, Referral, Participation Notes, Went On Date, Romantic Likes Given, Social Likes Given, Romantic Likes Received, Social Likes Received, Romantic Matches, Social Matches, Date Notes.</div>
+              <div class="date-stats-message" id="dateStatsImportMessage" role="status">Use Event ID (or Event Name) and Participant Email on each row. Include Participant Name to add a participant not already in the database. Optional columns include romantic/social likes and matches; match-name lists can use | separators.</div>
             </form>
             <form class="date-stats-form" id="dateStatsForm" onsubmit="saveDateStats(event)">
               <div class="filter-group">
@@ -561,7 +561,7 @@
         if (!response.ok) throw new Error(result.error || 'Could not import stats.');
         form.reset();
         await loadDashboard();
-        message.textContent = `${result.rowsProcessed} rows processed; ${result.participationSaved} participation records and ${result.dateStatsSaved} date-stat records saved. Existing records were updated in place; unrelated records were kept.`;
+        message.textContent = `${result.rowsProcessed} rows processed; ${result.participationSaved} participation records and ${result.dateStatsSaved} date-stat records saved; ${result.participantsCreated} participants added and ${result.participantsUpdated} names updated. Existing records were updated in place; unrelated records were kept.`;
       } catch (error) {
         message.textContent = error.message;
       } finally {
