@@ -1,7 +1,6 @@
 (() => {
   const normalizePath = path => path.replace(/\/+$/, '') || '/';
   const pathAliases = {
-    '/dashboard': '/home',
     '/quiz-editor': '/communication'
   };
   const currentPath = pathAliases[normalizePath(window.location.pathname)] || normalizePath(window.location.pathname);

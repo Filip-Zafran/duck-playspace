@@ -256,6 +256,12 @@ body {
   display: inline-block;
 }
 
+.header a[href="/dashboard"] {
+  padding: 10px 20px !important;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+}
+
 .nav-link:hover {
   color: #ff5b92;
 }
