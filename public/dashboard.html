@@ -249,7 +249,7 @@
                 <button class="action-btn" type="submit">Import stats</button>
                 <button class="action-btn" type="button" onclick="downloadDateStatsTemplate()" style="margin-left:8px;background:#64748b">Download template</button>
               </div>
-              <div class="date-stats-message" id="dateStatsImportMessage" role="status">Use Event ID (or Event Name) and Participant Email on each row. Include Participant Name to add a participant not already in the database. Optional columns include romantic/social likes and matches; match-name lists can use | separators.</div>
+              <div class="date-stats-message" id="dateStatsImportMessage" role="status">Put Event Name and ID in the first column, for example Riverside Golden Hour (crm-event-id). Include Event Date (YYYY-MM-DD), Participant Email, and Participant Name for new participants. Optional romantic/social likes and matches are saved; match-name lists can use | separators.</div>
             </form>
             <form class="date-stats-form" id="dateStatsForm" onsubmit="saveDateStats(event)">
               <div class="filter-group">
@@ -571,10 +571,12 @@
 
     function downloadDateStatsTemplate() {
       const headers = [
-        'Event Name', 'Participant Email', 'Invited', 'Responded', 'Participation Status',
-        'Attended Event', 'Paid', 'Amount', 'Free Entry', 'Referral', 'Participation Notes',
-        'Went On Date', 'Romantic Likes Given', 'Social Likes Given', 'Romantic Likes Received',
-        'Social Likes Received', 'Romantic Matches', 'Social Matches', 'Date Notes'
+        'Event Name and ID', 'Event Date', 'Participant Email', 'Participant Name',
+        'Invited', 'Responded', 'Participation Status', 'Attended Event', 'Paid', 'Amount',
+        'Free Entry', 'Referral', 'Participation Notes', 'Went On Date',
+        'Romantic Likes Given', 'Social Likes Given', 'Romantic Likes Received',
+        'Social Likes Received', 'Romantic Matches', 'Social Matches', 'Total Matches',
+        'Romantic Matches Names', 'Social Matches Names', 'Date Notes'
       ];
       const blob = new Blob([headers.join(',') + '\n'], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);

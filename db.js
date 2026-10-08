@@ -170,6 +170,7 @@ export async function initializeDatabase() {
       CREATE TABLE IF NOT EXISTS events (
         id SERIAL PRIMARY KEY,
         name VARCHAR(255) NOT NULL UNIQUE,
+        external_event_id VARCHAR(120),
         date VARCHAR(255),
         participation_fee DECIMAL(10, 2) NOT NULL DEFAULT 5,
         event_type VARCHAR(100),
@@ -180,6 +181,8 @@ export async function initializeDatabase() {
     `);
 
     await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS participation_fee DECIMAL(10, 2) NOT NULL DEFAULT 5`);
+    await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS external_event_id VARCHAR(120)`);
+    await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS events_external_event_id_unique ON events(external_event_id) WHERE external_event_id IS NOT NULL`);
     await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS event_type VARCHAR(100)`);
     await pool.query(`ALTER TABLE events ADD COLUMN IF NOT EXISTS is_failed BOOLEAN NOT NULL DEFAULT FALSE`);
 

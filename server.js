@@ -1184,6 +1184,12 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
     if (!names.length) throw new Error(`Row ${rowNumber}: ${label} contains no readable names.`);
     return [...new Set(names)];
   };
+  const splitEventIdentity = value => {
+    const raw = String(value || '').trim();
+    const match = raw.match(/^(.*?)\s*(?:\(([^()]+)\)|\[([^\]]+)\]|\|\s*([^|]+))\s*$/);
+    if (!match) return { name: raw, id: '' };
+    return { name: (match[1] || '').trim(), id: (match[2] || match[3] || match[4] || '').trim() };
+  };
   const parseEventDate = (value, rowNumber) => {
     if (value === null || value === undefined || value === '') return null;
     const raw = String(value).trim();
@@ -1203,6 +1209,10 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
     if (!sheetName) return res.status(400).json({ error: 'The file has no worksheet.' });
     const sourceRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '', raw: false });
     if (!sourceRows.length) return res.status(400).json({ error: 'The first worksheet has no data rows.' });
+    const firstHeader = normalizeHeader(Object.keys(sourceRows[0])[0]);
+    if (!['eventnameandid', 'eventnameid', 'eventname'].includes(firstHeader)) {
+      return res.status(400).json({ error: 'The first column must be Event Name and ID. Use a value like Event Name (event-id), followed by Event Date and participant columns.' });
+    }
 
     const rows = sourceRows.map((source, index) => {
       const rowNumber = index + 2;
@@ -1221,15 +1231,19 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
         return { found: false, value: null };
       };
       const read = (...aliases) => readEntry(...aliases).value;
-      const eventId = parseCount(read('Event ID', 'event_id'), 'Event ID', rowNumber);
-      const eventName = read('Event Name', 'Event');
+      const combinedIdentity = read('Event Name and ID', 'Event Name & ID', 'Event Name/ID');
+      const separateEventName = read('Event Name', 'Event');
+      const separateEventId = read('Event ID', 'event_id');
+      const parsedIdentity = splitEventIdentity(combinedIdentity || separateEventName);
+      const eventName = parsedIdentity.name;
+      const externalEventId = parsedIdentity.id || separateEventId || '';
       const eventDate = parseEventDate(read('Event Date', 'Date'), rowNumber);
       const email = read('Participant Email', 'Email');
       const participantName = read('Participant Name', 'Name');
-      if ((!eventId && !eventName) || !email) {
-        throw new Error(`Row ${rowNumber}: Event ID or Event Name, and Participant Email are required.`);
+      if (!eventName || !externalEventId || !email) {
+        throw new Error(`Row ${rowNumber}: Event Name and ID, and Participant Email are required. Put the event name and ID in the first column, for example “Riverside Golden Hour (event-id)”.`);
       }
-      if (eventId === 0) throw new Error(`Row ${rowNumber}: Event ID must be greater than zero.`);
+      if (externalEventId.length > 120) throw new Error(`Row ${rowNumber}: Event ID must be 120 characters or fewer.`);
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new Error(`Row ${rowNumber}: Participant Email is not a valid email address.`);
       }
@@ -1263,13 +1277,12 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
       const hasParticipation = Object.values(participation).some(value => value !== null);
       const hasDateStats = Object.values(dateStats).some(value => value !== null);
       if (!hasParticipation && !hasDateStats) throw new Error(`Row ${rowNumber}: No event participation or date stats were provided.`);
-      return { rowNumber, eventId, eventName, eventDate, email, participantName, participation, dateStats, hasParticipation, hasDateStats };
+      return { rowNumber, externalEventId, eventName, eventDate, email, participantName, participation, dateStats, hasParticipation, hasDateStats };
     });
 
     const seenParticipants = new Set();
     for (const row of rows) {
-      const eventKey = row.eventId ? `id:${row.eventId}` : `name:${row.eventName.toLowerCase()}`;
-      const key = `${eventKey}|${row.email.toLowerCase()}`;
+      const key = `${row.externalEventId.toLowerCase()}|${row.email.toLowerCase()}`;
       if (seenParticipants.has(key)) {
         throw new Error(`Row ${row.rowNumber}: This event and participant email appear more than once in the file.`);
       }
@@ -1286,19 +1299,35 @@ app.post('/api/date-stats/import', requireAuth, upload.single('file'), async (re
       await client.query('BEGIN');
       const resolvedParticipants = new Set();
       for (const row of rows) {
-        const eventResult = row.eventId
-          ? await client.query(
-              row.eventName
-                ? 'SELECT id, name, date::text AS event_date, is_failed FROM events WHERE id = $1 AND LOWER(name) = LOWER($2) LIMIT 1'
-                : 'SELECT id, name, date::text AS event_date, is_failed FROM events WHERE id = $1 LIMIT 1',
-              row.eventName ? [row.eventId, row.eventName] : [row.eventId]
-            )
-          : await client.query('SELECT id, name, date::text AS event_date, is_failed FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1', [row.eventName]);
+        let eventResult = await client.query(
+          'SELECT id, name, external_event_id, date::text AS event_date, is_failed FROM events WHERE external_event_id = $1 LIMIT 1',
+          [row.externalEventId]
+        );
+        if (!eventResult.rows.length && /^\d+$/.test(row.externalEventId)) {
+          eventResult = await client.query(
+            'SELECT id, name, external_event_id, date::text AS event_date, is_failed FROM events WHERE id = $1 LIMIT 1',
+            [Number(row.externalEventId)]
+          );
+        }
         if (!eventResult.rows.length) {
-          const eventLabel = row.eventId ? `ID ${row.eventId}${row.eventName ? ` (“${row.eventName}”)` : ''}` : `“${row.eventName}”`;
-          throw new Error(`Row ${row.rowNumber}: Event ${eventLabel} was not found. Check the event ID/name and add the event in Events first.`);
+          eventResult = await client.query(
+            'SELECT id, name, external_event_id, date::text AS event_date, is_failed FROM events WHERE LOWER(name) = LOWER($1) LIMIT 1',
+            [row.eventName]
+          );
+        }
+        if (!eventResult.rows.length) {
+          throw new Error(`Row ${row.rowNumber}: Event “${row.eventName}” (ID ${row.externalEventId}) was not found. Add it in Events first.`);
         }
         const event = eventResult.rows[0];
+        if (event.name.toLowerCase() !== row.eventName.toLowerCase()) {
+          throw new Error(`Row ${row.rowNumber}: Event ID ${row.externalEventId} belongs to “${event.name}”, not “${row.eventName}”.`);
+        }
+        if (event.external_event_id && event.external_event_id !== row.externalEventId) {
+          throw new Error(`Row ${row.rowNumber}: Event “${event.name}” already has a different Event ID saved.`);
+        }
+        if (!event.external_event_id) {
+          await client.query('UPDATE events SET external_event_id = $1 WHERE id = $2', [row.externalEventId, event.id]);
+        }
         if (row.eventDate && event.event_date && row.eventDate !== event.event_date) {
           throw new Error(`Row ${row.rowNumber}: Event Date does not match the saved date for “${event.name}” (ID ${event.id}).`);
         }
